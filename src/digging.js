@@ -36,7 +36,6 @@ function createCellsInRange(state, row, column) {
     if (row < 0) return false;
     const range = Math.round(getRangeAtDepth(state, getDepth(state, row, column)));
     const candidatesForReveal = [];
-    const minColumn = column - range, maxColumn = column + range;
     for (const cellCoords of  getCellsInRange(state, row, column, range)) {
         state = createCell(state, cellCoords.row, cellCoords.column);
         candidatesForReveal[cellCoords.distance] = candidatesForReveal[cellCoords.distance] || [];
@@ -259,32 +258,12 @@ function advanceDigging(state) {
             state.selected = state.overCell;
         }
     }
-    /*if (state.selected) {
+    if (state.selected) {
         const targetLeft = state.selected.column * COLUMN_WIDTH + SHORT_EDGE + EDGE_LENGTH / 2 - WIDTH / 2;
         const rowOffset = (state.selected.column % 2) ? ROW_HEIGHT / 2 : 0;
         const targetTop = Math.max(-100, (state.selected.row + 0.5) * ROW_HEIGHT + rowOffset - HEIGHT / 2);
         camera.top = Math.round((camera.top * 10 + targetTop) / 11);
         camera.left = Math.round((camera.left * 10 + targetLeft) / 11);
-    }*/
-    if (state.overCell) {
-        const {row, column} = state.overCell;
-        if (state.rows[row] && state.rows[row][column]) {
-            lastValidOverCell = state.overCell;
-        } else {
-            lastValidOverCell = null;
-        }
-    }
-    if (state.lastValidOverCell && state.mouseCoords) {
-        //const {row, column} = state.lastValidOverCell;
-        const x = state.mouseCoords.x;//column * COLUMN_WIDTH + SHORT_EDGE + EDGE_LENGTH / 2 - state.camera.left;
-        const y = state.mouseCoords.y;//row * ROW_HEIGHT + ((column % 2) ? LONG_EDGE : 0) + ROW_HEIGHT / 2 - state.camera.top;
-        const left = 200, right = WIDTH - 200;
-        if (x < left) camera.left -= (left - x) / 20;
-        if (x > right) camera.left += (x - right) / 20;
-        const top = 150, bottom = HEIGHT - 150;
-        if (y < top) camera.top -= (top - y) / 20;
-        if (y > bottom) camera.top += (y - bottom) / 20;
-
     }
     fuel = Math.min(state.saved.maxFuel, Math.max(0, fuel));
     let saved = state.saved;

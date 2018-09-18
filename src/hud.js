@@ -90,6 +90,76 @@ const rangeButton = {
     top: fuelButton.top + fuelButton.height + 10,
 };
 
+const scrollDownButton = {
+    render(context, state, button) {
+        context.save();
+        context.globalAlpha = state.overButton === button ? 1 : 0.5;
+        context.fillStyle = 'white';
+        context.fillRect(button.left, button.top, button.width, button.height);
+        context.fillStyle = 'black';
+        context.beginPath();
+        const x = button.left + button.width / 2;
+        const y = button.top + button.height / 2;
+        const r = Math.min(button.height, button.width) / 3;
+        context.moveTo(x + r * Math.cos(button.angle), y + r * Math.sin(button.angle));
+        context.lineTo(x + r * Math.cos(button.angle + 2 * Math.PI / 3), y + r * Math.sin(button.angle + 2 * Math.PI / 3));
+        context.lineTo(x + r * Math.cos(button.angle + 4 * Math.PI / 3), y + r * Math.sin(button.angle + 4 * Math.PI / 3));
+        context.fill();
+        context.restore();
+    },
+    advance(state, button) {
+        if (state.overButton === button) {
+            state = button.scroll(state, button);
+            state = {...state, selected: null};
+        }
+        return state;
+    },
+    scroll(state) {
+        const camera = {...state.camera};
+        camera.top += 10;
+        return {...state, camera};
+    },
+    angle: Math.PI / 2,
+    left: WIDTH / 2 - 40,
+    top: HEIGHT - 40,
+    width: 80,
+    height: 40,
+};
+const scrollUpButton = {
+    ...scrollDownButton,
+    angle: 3 * Math.PI / 2,
+    scroll(state) {
+        const camera = {...state.camera};
+        camera.top = Math.max(-100, camera.top - 10);
+        return {...state, camera};
+    },
+    top: 0,
+};
+const scrollLeftButton = {
+    ...scrollDownButton,
+    angle: Math.PI,
+    scroll(state) {
+        const camera = {...state.camera};
+        camera.left -= 10;
+        return {...state, camera};
+    },
+    width: 40,
+    height: 80,
+    top: HEIGHT / 2 - 40,
+    left: 0
+};
+const scrollRightButton = {
+    ...scrollLeftButton,
+    angle: 0,
+    scroll(state) {
+        const camera = {...state.camera};
+        camera.left += 10;
+        return {...state, camera};
+    },
+    left: WIDTH - 40,
+};
+
+
 function getHUDButtons(state) {
     if (state.shop) {
         return [
@@ -99,7 +169,11 @@ function getHUDButtons(state) {
         ];
     }
     return [
-        sleepButton
+        sleepButton,
+        scrollUpButton,
+        scrollDownButton,
+        scrollLeftButton,
+        scrollRightButton,
     ];
 }
 

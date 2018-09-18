@@ -73,6 +73,11 @@ function setOverButton(state) {
 }
 function advanceState(state) {
     state = setOverButton(state);
+    for (const hudButton of getHUDButtons(state)) {
+        if (hudButton.advance) {
+            state = hudButton.advance(state, hudButton);
+        }
+    }
     if (state.clicked && state.overButton) {
         state = state.overButton.onClick(state, state.overButton);
     }
