@@ -1,0 +1,25 @@
+{
+    "parserOptions": {
+        "ecmaVersion": 2018,
+        "sourceType": "module",
+        "ecmaFeatures": {
+            "jsx": true
+        }
+    },
+    "globals": {
+        "console": true,
+        "document": true,
+        "module": true,
+        "require": true,
+        "setInterval": true,
+        "window": true
+    },
+    "extends": "eslint:recommended",
+    "rules": {
+        "no-console": 0,
+        "no-debugger": 0,
+        "no-unused-vars": 1,
+        "no-unreachable": 1,
+        "no-extra-semi": 1
+    }
+}

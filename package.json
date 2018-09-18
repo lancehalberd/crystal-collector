@@ -1,0 +1,24 @@
+{
+  "name": "Crystal Collector",
+  "version": "1.0.0",
+  "description": "Rogue-like Puzzle Mining Game",
+  "main": "index.js",
+  "dependencies": {
+    "body-parser": "1.18.2",
+    "eslintify": "^3.1.0"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
+    "babel-preset-env": "^1.6.1",
+    "babelify": "^8.0.0",
+    "browserify": "^16.1.1",
+    "watchify": "^3.11.0"
+  },
+  "scripts": {
+    "build": "node build.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Chris Brewer",
+  "license": "ISC"
+}

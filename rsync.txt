@@ -1,0 +1,1 @@
+rsync --rsh=ssh -a --rsync-path="mkdir -p ~/chrisflash.com/crystal-collector && rsync" --exclude='node_modules' --exclude='etc' ~/Sites/crystal-collector/public/ mevolve@ps264245.dreamhostps.com:~/chrisflash.com/crystal-collector/;
