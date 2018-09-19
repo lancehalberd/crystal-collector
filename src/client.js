@@ -43,6 +43,41 @@ const context = canvas.getContext('2d');
 context.imageSmoothingEnabled = false;
 document.body.appendChild(canvas);
 
+function getEventCoords(event) {
+    let x = 0, y = 0;
+    if (event.changedTouches && event.changedTouches.length) {
+        for (const changedTouch of event.changedTouches) {
+            x += changedTouch.pageX;
+            y += changedTouch.pageY;
+        }
+        x = Math.round(x / event.changedTouches.length);
+        y = Math.round(y / event.changedTouches.length);
+    } else {
+        x = event.pageX;
+        y = event.pageY;
+    }
+    x -= canvas.offsetLeft;
+    y -= canvas.offsetTop;
+    return {x, y};
+}
+function onMouseDown(event) {
+    state.interacted = true;
+    state.mouseDown = true;
+    state.mouseDownCoords = state.lastMouseCoords = getEventCoords(event);
+    event.preventDefault();
+    return false;
+}
+function onMouseMove(event) {
+    state.lastMouseCoords = getEventCoords(event);
+    event.preventDefault();
+    return false;
+}
+function onMouseUp(event) {
+    state.mouseDown = false;
+    event.preventDefault();
+    return false;
+}
+
 const update = () => {
     if (!state) {
         state = getNewState();
@@ -56,22 +91,23 @@ const update = () => {
             }
         }
         savedState = state.saved;
-        canvas.onclick = function () {
-            state.clicked = true;
-            state.interacted = true;
-        };
-        canvas.oncontextmenu = function () {
+        canvas.onmousedown = canvas.ontouchstart = onMouseDown;
+        canvas.oncontextmenu = function (event) {
             state.rightClicked = true;
+            state.mouseDownCoords = false;
+            state.mouseDown = false;
+            event.preventDefault();
             return false;
         }
-        canvas.onmousemove = function (event) {
-            const x = event.pageX - canvas.offsetLeft;
-            const y = event.pageY - canvas.offsetTop;
-            state.mouseCoords = {x, y};
-        };
+        canvas.onmousemove = canvas.ontouchmove = onMouseMove;
+        canvas.onmouseup = canvas.ontouchend = onMouseUp;
         canvas.onmouseout = function () {
-            state.mouseCoords = null;
+            state.mouseDownCoords = state.lastMouseCoords = null;
+            return false;
         };
+        canvas.addEventListener("touchstart", onMouseDown, false);
+        canvas.addEventListener("touchend", onMouseUp, false);
+        canvas.addEventListener("touchmove", onMouseMove, false);
     }
 
     if (!preloadedSounds && state.interacted) {

@@ -179,14 +179,14 @@ function getHUDButtons(state) {
 
 function renderHUD(context, state) {
     // Draw DEPTH indicator
-    if (!state.shop && state.overCell && state.overCell.row >= 0) {
+    if (!state.shop && state.overButton && state.overButton.cell) {
         context.textAlign = 'left';
         context.textBaseline = 'bottom';
         context.font = `36px sans-serif`;
         context.fillStyle = 'black';
         context.lineWidth = 1;
         context.strokeStyle = 'white';
-        const depth = getDepth(state, state.overCell.row, state.overCell.column);
+        const depth = getDepth(state, state.overButton.row, state.overButton.column);
         context.fillText(`DEPTH: ${depth}`, 10, HEIGHT - 10);
         context.strokeText(`DEPTH: ${depth}`, 10, HEIGHT - 10);
     }
@@ -212,13 +212,18 @@ function renderHUD(context, state) {
         context.fillStyle = '#080';
         const fuelWidth = Math.round(200 * state.fuel / state.saved.maxFuel);
         context.fillRect(10, 10, fuelWidth, 20);
-        if (state.overCell) {
-            const {row, column} = state.overCell;
+        if (state.overButton && state.overButton.cell) {
+            const {row, column} = state.overButton;
             if (canExploreCell(state, row, column) && getFlagValue(state, row, column) !== 2) {
                 const fuelCost = getFuelCost(state, row, column);
                 const fuelLeft = 10 + Math.round(200 * Math.max(0, state.fuel - fuelCost) / state.saved.maxFuel);
                 context.fillStyle = (fuelCost <= state.fuel) ? 'orange' : 'red';
                 context.fillRect(fuelLeft, 10, 10 + fuelWidth - fuelLeft, 20);
+                if (fuelCost <= state.fuel) {
+                    const fuelBonus = Math.min(state.saved.maxFuel, state.fuel + Math.floor(fuelCost * 0.1));
+                    context.fillStyle = '#0F0';
+                    context.fillRect(10 + fuelWidth, 10, Math.round(200 * fuelBonus / state.saved.maxFuel) - fuelWidth, 20);
+                }
             }
         }
         context.textAlign = 'left';

@@ -38,8 +38,8 @@ function renderDigging(context, state) {
             renderCell(context,state, row, column, state.camera.top, state.camera.left);
         }
     }
-    if (state.overCell && state.overCell.row >= 0) {
-        let {row, column} = state.overCell;
+    if (state.overButton && state.overButton.cell) {
+        let {row, column} = state.overButton;
         context.lineWidth = 2;
         if (isCellRevealed(state, row, column)) {
             context.strokeStyle = '#EEE';

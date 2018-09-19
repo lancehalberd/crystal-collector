@@ -144,7 +144,7 @@ function updateCell(state, row, column, properties) {
         }
     };
 }
-
+/*
 function setOverCell(state) {
     let overCell = null;
     if (state.overButton || !state.mouseCoords) {
@@ -180,6 +180,35 @@ function setOverCell(state) {
     rowOffset = (column % 2) ? ROW_HEIGHT / 2 : 0;
     row = Math.round((top - rowOffset) / ROW_HEIGHT);
     return {...state, overCell: {column, row}};
+}*/
+function getOverCell(state, {x, y}) {
+    x += state.camera.left;
+    y += state.camera.top;
+    let column = Math.floor(x / COLUMN_WIDTH);
+    let rowOffset = (column % 2) ? ROW_HEIGHT / 2 : 0;
+    let row = Math.floor((y + rowOffset) / ROW_HEIGHT);
+    let top = row * ROW_HEIGHT - rowOffset;
+    let left = column * COLUMN_WIDTH;
+    if (x < left + SHORT_EDGE) {
+        if (y < top + LONG_EDGE) {
+            const lineY = top + LONG_EDGE - SLOPE * (x - left);
+            if (y < lineY) {
+                left -= COLUMN_WIDTH;
+                top -= ROW_HEIGHT / 2;
+            }
+        } else {
+            const lineY = top + LONG_EDGE + SLOPE * (x - left);
+            if (y > lineY) {
+                left -= COLUMN_WIDTH;
+                top += ROW_HEIGHT / 2;
+            }
+        }
+    }
+    column = Math.round(left / COLUMN_WIDTH);
+    rowOffset = (column % 2) ? ROW_HEIGHT / 2 : 0;
+    row = Math.round((top - rowOffset) / ROW_HEIGHT);
+    if (row < 0) return null;
+    return {cell: true, column, row};
 }
 
 function getCellCenter(state, row, column) {
@@ -201,11 +230,10 @@ function advanceDigging(state) {
         state = revealCell(state, 0, 0);
     }
     let camera = {...state.camera};
-    let { fuel, lastValidOverCell } = state;
+    let { fuel } = state;
     let { playedToday, score } = state.saved;
-    state = setOverCell(state);
-    if (state.rightClicked && state.overCell) {
-        const {row, column} = state.overCell;
+    if (state.rightClicked && state.overButton && state.overButton.cell) {
+        const {row, column} = state.overButton;
         if (canExploreCell(state, row, column)) {
             const selectedRow = {...state.flags[row]} || {};
             let flagValue = getFlagValue(state, row, column) || 0;
@@ -217,8 +245,8 @@ function advanceDigging(state) {
             state = {...state, flags: {...state.flags, [row]: selectedRow}};
         }
     }
-    if (state.clicked && state.overCell) {
-        const {row, column} = state.overCell;
+    if (!state.rightClicked && state.clicked && state.overButton && state.overButton.cell) {
+        const {row, column} = state.overButton;
         const fuelCost = getFuelCost(state, row, column);
         if (canExploreCell(state, row, column) && getFlagValue(state, row, column) !== 2 && fuelCost <= state.fuel) {
             state = revealCell(state, row, column);
@@ -231,7 +259,6 @@ function advanceDigging(state) {
                 const cellsInRange = getCellsInRange(state, row, column, explosionRange).sort(
                     (A, B) => A.distance - B.distance
                 );
-                console.log({row, column, explosionRange, cellsInRange});
                 for (const cellCoords of cellsInRange) {
                     state = blowUpCell(state, cellCoords.row, cellCoords.column, frameDelay += 2);
                 }
@@ -255,7 +282,7 @@ function advanceDigging(state) {
             playedToday = true;
         }
         if (isCellRevealed(state, row, column) || getFlagValue(state, row, column)) {
-            state.selected = state.overCell;
+            state.selected = state.overButton;
         }
     }
     if (state.selected) {
@@ -270,7 +297,7 @@ function advanceDigging(state) {
     if (playedToday !== saved.playedToday || score !== saved.score) {
         saved = {...saved, playedToday, score};
     }
-    return {...state, camera, fuel, saved, lastValidOverCell };
+    return {...state, camera, fuel, saved };
 }
 
 module.exports = {
@@ -283,6 +310,7 @@ module.exports = {
     getDepth,
     getRangeAtDepth,
     getCellCenter,
+    getOverCell,
 };
 
 const { addSprite, crystalSprite, explosionSprite } = require('sprites');

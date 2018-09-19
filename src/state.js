@@ -50,13 +50,37 @@ function nextDay(state) {
         flags: {},
         fuel: state.saved.maxFuel,
         selected: null,
-        lastValidOverCell: null,
         shop: true,
     };
 }
 
-function setOverButton(state) {
-    let overButton = null;
+function getOverButton(state, coords = {}) {
+    const {x, y} = coords;
+    if (!(x >= 0 && x <= WIDTH && y >= 0 && y <= HEIGHT)) return null;
+    for (const hudButton of getHUDButtons(state)) {
+        if (new Rectangle(hudButton).containsPoint(x, y)) {
+            return hudButton;
+        }
+    }
+    return getOverCell(state, {x, y});
+}
+
+function setButtonState(state) {
+    if (state.mouseDownCoords && !state.mouseDown) {
+        const startButton = getOverButton(state, state.mouseDownCoords);
+        const lastButton = getOverButton(state, state.lastMouseCoords);
+        if (lastButton === startButton ||
+            (lastButton.cell && lastButton.row === startButton.row && lastButton.column === startButton.column)
+        ) {
+            state = {...state, clicked: true};
+        }
+        state = {...state, mouseDownCoords: false, lastMouseCoords: false};
+    }
+    if (state.lastMouseCoords) {
+        state = {...state, overButton: getOverButton(state, state.lastMouseCoords)};
+    }
+    return state;
+    /*let overButton = null;
     if (!state.mouseCoords) {
         return {...state, overButton};
     }
@@ -69,16 +93,16 @@ function setOverButton(state) {
             return {...state, overButton: hudButton};
         }
     }
-    return {...state, overButton};
+    return {...state, overButton};*/
 }
 function advanceState(state) {
-    state = setOverButton(state);
+    state = setButtonState(state);
     for (const hudButton of getHUDButtons(state)) {
         if (hudButton.advance) {
             state = hudButton.advance(state, hudButton);
         }
     }
-    if (state.clicked && state.overButton) {
+    if (state.clicked && state.overButton && state.overButton.onClick) {
         state = state.overButton.onClick(state, state.overButton);
     }
     if (!state.shop) {
@@ -110,6 +134,6 @@ module.exports = {
 
 const { getHUDButtons } = require('hud');
 
-const { advanceDigging } = require('digging');
+const { advanceDigging, getOverCell } = require('digging');
 
 
