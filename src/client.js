@@ -62,7 +62,7 @@ function getEventCoords(event) {
 }
 function onMouseDown(event) {
     state.interacted = true;
-    state.mouseDown = true;
+    state.mouseDown = state.time;
     state.mouseDownCoords = state.lastMouseCoords = getEventCoords(event);
     event.preventDefault();
     return false;

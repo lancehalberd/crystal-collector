@@ -2,9 +2,7 @@ const Rectangle = require('Rectangle');
 const random = require('random');
 
 const {
-    FRAME_LENGTH, WIDTH, HEIGHT,
-    EDGE_LENGTH, COLUMN_WIDTH, ROW_HEIGHT,
-    SHORT_EDGE, LONG_EDGE,
+    FRAME_LENGTH, WIDTH, HEIGHT, EDGE_LENGTH,
 } = require('gameConstants');
 
 function getNewState() {
@@ -20,6 +18,7 @@ function getNewState() {
         sfx: {},
         bgm: 'bgm/title.mp3',
         interacted: false,
+        time: 0,
         spriteMap: {},
         saved: {
             range: 1.2,
@@ -66,7 +65,9 @@ function getOverButton(state, coords = {}) {
 }
 
 function setButtonState(state) {
-    if (state.mouseDownCoords && !state.mouseDown) {
+    if (state.mouseDown && state.time - state.mouseDown >= 500) {
+        state = {...state, mouseDown: false, rightClicked: true, mouseDownCoords: false};
+    } else if (state.mouseDownCoords && !state.mouseDown) {
         const startButton = getOverButton(state, state.mouseDownCoords);
         const lastButton = getOverButton(state, state.lastMouseCoords);
         if (lastButton === startButton ||
@@ -112,7 +113,7 @@ function advanceState(state) {
         state = state.spriteMap[spriteId].advance(state, state.spriteMap[spriteId]);
     }
     //camera.top += 1;
-    return {...state, clicked: false, rightClicked: false};
+    return {...state, time: state.time + FRAME_LENGTH, clicked: false, rightClicked: false};
 }
 
 function applyActions(state, actions) {
