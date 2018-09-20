@@ -3,21 +3,15 @@ const {
     HEIGHT,
 } = require('gameConstants');
 const Rectangle = require('Rectangle');
-const { drawImage } = require('draw');
+const { drawImage, drawText } = require('draw');
 
 function renderBasicButton(context, state, button) {
     let label = button.label;
     if (button.getLabel) label = button.getLabel(state, button);
-    context.fillStyle = state.overButton === button ? '#EEE' : '#CCC';
-    if (button.isEnabled && !button.isEnabled(state, button)) {
-        context.fillStyle = state.overButton === button ? '#F00' : '#F88';
-    }
-    context.fillRect(button.left, button.top, button.width, button.height);
-    context.fillStyle = 'black';
-    context.textAlign = 'center';
-    context.textBaseline = 'middle';
-    context.font = `${button.height - 2}px sans-serif`;
-    context.fillText(label, button.left + button.width / 2, button.top + button.height / 2);
+    renderButtonBackground(context, state, button);
+    drawText(context, label, button.left + button.width / 2, button.top + button.height / 2,
+        {fillStyle: 'white', textAlign: 'center', textBaseline: 'middle', size: button.height - 30}
+    );
 }
 
 const sleepButton = {
@@ -26,10 +20,25 @@ const sleepButton = {
     onClick(state) {
         return nextDay(state);
     },
-    left: WIDTH - 100,
+    left: WIDTH - 130,
     top: 10,
-    width: 90,
-    height: 20,
+    width: 120,
+    height: 60,
+};
+const achievementButton = {
+    render(context, state, button) {
+        context.save();
+        context.globalAlpha = state.overButton === button ? 1 : 0.6;
+        drawImage(context, goldMedalFrame.image, goldMedalFrame, new Rectangle(button).pad(-1));
+        context.restore();
+    },
+    onClick(state) {
+        return {...state, showAchievements: state.time};
+    },
+    left: sleepButton.left - 60,
+    top: sleepButton.top + sleepButton.height / 2 - 25,
+    width: 50,
+    height: 50,
 };
 
 const digButton = {
@@ -38,12 +47,79 @@ const digButton = {
     onClick(state) {
         return {...state, shop: false, fuel: state.saved.maxFuel};
     },
+    left: WIDTH / 2 - sleepButton.width / 2,
+    top: HEIGHT - 80,
 };
 
+const closeButton = {
+    ...digButton,
+    label: 'Close',
+    onClick(state) {
+        return {...state, showAchievements: false};
+    },
+    left: WIDTH / 2 - digButton.width / 2,
+    top: HEIGHT - 80,
+};
+
+function renderButtonBackground(context, state, button) {
+    const enabled = !button.isEnabled || button.isEnabled(state, button);
+    context.fillStyle = state.overButton === button ? (enabled ? '#0A4' : '#A00') : '#00A';
+    context.fillRect(button.left, button.top, button.width, button.height);
+
+    context.strokeStyle = 'black';
+    context.lineWidth = 4;
+    context.strokeRect(button.left + 1, button.top + 1, button.width - 2, button.height - 2);
+
+    context.strokeStyle = 'white';
+    context.lineWidth = 2;
+    context.strokeRect(button.left, button.top, button.width, button.height);
+
+    context.strokeStyle = 'white';
+    context.lineWidth = 2;
+    context.strokeRect(button.left + 5, button.top + 5, button.width - 10, button.height - 10);
+}
+
 const shopButton = {
-    render: renderBasicButton,
-    getLabel(state, button) {
-        return `$${button.getCost(state, button)}: ${button.getName(state, button)}`
+    render(context, state, button) {
+        renderButtonBackground(context, state, button);
+
+        context.beginPath();
+        context.moveTo(button.left + 20, button.top + 70);
+        context.lineTo(button.left + button.width - 20, button.top + 70);
+        context.stroke();
+
+        drawText(context, button.getLabel(state, button), button.left + button.width / 2, button.top + 10 + 30,
+            {fillStyle: 'white', textAlign: 'center', textBaseline: 'middle', size: 30}
+        );
+
+        const x = button.left + button.width / 2;
+        const y = button.top + 10 + 90;
+
+        context.beginPath();
+        context.moveTo(x - 10, y);
+        context.lineTo(x + 10, y);
+        context.lineTo(x + 5, y - 5);
+        context.moveTo(x + 10, y);
+        context.lineTo(x + 5, y + 5);
+        context.stroke();
+
+        drawText(context, button.getCurrentValue(state, button), button.left + button.width / 2 - 15, button.top + 10 + 90,
+            {fillStyle: 'white', textAlign: 'right', textBaseline: 'middle', size: 30}
+        );
+
+        drawText(context, button.getNextValue(state, button), button.left + button.width / 2 + 15, button.top + 10 + 90,
+            {fillStyle: '#0F0', textAlign: 'left', textBaseline: 'middle', size: 30}
+        );
+
+        const cost = button.getCost(state, button);
+        const fillStyle = (cost <= state.saved.score) ? '#4AF' : '#F00';
+        const costWidth = drawText(context, cost, button.left + button.width - 20, button.top + 10 + 150,
+            {fillStyle, strokeStyle: 'white', textAlign: 'right', textBaseline: 'middle', size: 36, measure: true}
+        );
+        const iconRectangle = new Rectangle(crystalFrame).scale(2);
+        drawImage(context, crystalFrame.image, crystalFrame,
+            iconRectangle.moveCenterTo(button.left + button.width - 20 - costWidth - 5 - iconRectangle.width / 2, button.top + 10 + 150)
+        );
     },
     isEnabled(state, button) {
         return state.saved.score >= button.getCost(state, button);
@@ -54,7 +130,9 @@ const shopButton = {
             return button.onPurchase(state, button);
         }
         return state;
-    }
+    },
+    width: 320,
+    height: 200, // 3 60px lines 10px border
 };
 
 const fuelButton = {
@@ -62,8 +140,11 @@ const fuelButton = {
     getCost(state) {
         return Math.round(state.saved.maxFuel * Math.log10(state.saved.maxFuel) * Math.log10(state.saved.maxFuel) / 4);
     },
-    getName(state, button){
-        return `Max Fuel ${this.getNextValue(state, button)}`;
+    getLabel(){
+        return 'Max Fuel';
+    },
+    getCurrentValue(state) {
+        return state.saved.maxFuel;
     },
     getNextValue(state) {
         return Math.round(state.saved.maxFuel * 1.2 + 50);
@@ -73,21 +154,26 @@ const fuelButton = {
     },
     left: 50,
     top: 50,
-    height: 30,
-    width: 400,
 };
 const rangeButton = {
     ...fuelButton,
     getCost(state) {
         return Math.round(100 * Math.pow(1.5, 2 * (state.saved.range - 0.2) - 1));
     },
-    getName(state){
-        return `Range @${state.saved.maxDepth} ${getRangeAtDepth(state, state.saved.maxDepth, 0.5).toFixed(2)}`;
+    getLabel(state){
+        return `Range At Depth ${state.saved.maxDepth}`;
+    },
+    getCurrentValue(state) {
+        return getRangeAtDepth(state, state.saved.maxDepth, 0).toFixed(2);
+    },
+    getNextValue(state) {
+        return getRangeAtDepth(state, state.saved.maxDepth, 0.5).toFixed(2);
     },
     onPurchase(state) {
         return {...state, saved: {...state.saved, range: state.saved.range + 0.5}};
     },
-    top: fuelButton.top + fuelButton.height + 10,
+    left: 430,
+    top: 50,
 };
 
 const scrollDownButton = {
@@ -161,6 +247,9 @@ const scrollRightButton = {
 
 
 function getHUDButtons(state) {
+    if (state.showAchievements) {
+        return [closeButton];
+    }
     if (state.shop) {
         return [
             digButton,
@@ -170,6 +259,7 @@ function getHUDButtons(state) {
     }
     return [
         sleepButton,
+        achievementButton,
         scrollUpButton,
         scrollDownButton,
         scrollLeftButton,
@@ -191,27 +281,31 @@ function renderHUD(context, state) {
         context.strokeText(`DEPTH: ${depth}`, 10, HEIGHT - 10);
     }
     // Draw SCORE indicator
-    context.textAlign = 'right';
-    context.textBaseline = 'bottom';
-    context.font = `36px sans-serif`;
-    context.fillStyle = '#4AF';
-    context.lineWidth = 1;
-    context.strokeStyle = 'white';
-    context.fillText(state.saved.score, WIDTH - 10, HEIGHT - 10);
-    context.strokeText(state.saved.score, WIDTH - 10, HEIGHT - 10);
-    const scoreWidth = context.measureText(state.saved.score).width;
+    const scoreWidth = drawText(context, state.saved.score,WIDTH - 20, HEIGHT - 20,
+        {fillStyle: '#4AF', strokeStyle: 'white', textAlign: 'right', textBaseline: 'bottom', size: 36, measure: true}
+    );
     const iconRectangle = new Rectangle(crystalFrame).scale(2);
     drawImage(context, crystalFrame.image, crystalFrame,
-        iconRectangle.moveCenterTo(WIDTH - 10 - scoreWidth - 5 - iconRectangle.width / 2, HEIGHT - 10 - 20)
+        iconRectangle.moveCenterTo(WIDTH - 20 - scoreWidth - 5 - iconRectangle.width / 2, HEIGHT - 20 - 20)
     );
 
     // Draw FUEL indicator
-    if (!state.shop) {
+    if (!state.shop && !state.showAchievements) {
         context.fillStyle = 'black';
         context.fillRect(10, 10, 200, 20);
         context.fillStyle = '#080';
         const fuelWidth = Math.round(200 * state.fuel / state.saved.maxFuel);
+        const displayFuelWidth = Math.round(200 * state.displayFuel / state.saved.maxFuel);
         context.fillRect(10, 10, fuelWidth, 20);
+        if (state.displayFuel > state.fuel) {
+            const difference = displayFuelWidth - fuelWidth;
+            context.fillStyle = '#F00';
+            context.fillRect(10 + fuelWidth, 10, difference, 20);
+        } else if (state.displayFuel < state.fuel) {
+            const difference = fuelWidth - displayFuelWidth;
+            context.fillStyle = '#0F0';
+            context.fillRect(10 + fuelWidth - difference, 10, difference, 20);
+        }
         if (state.overButton && state.overButton.cell) {
             const {row, column} = state.overButton;
             if (canExploreCell(state, row, column) && getFlagValue(state, row, column) !== 2) {
@@ -241,11 +335,7 @@ function renderHUD(context, state) {
         button.render(context, state, button);
     }
 
-    context.textAlign = 'right';
-    context.textBaseline = 'top';
-    context.font = `20px sans-serif`;
-    context.fillStyle = 'black';
-    context.fillText(`DAY ${state.saved.day}`, WIDTH - 110, 10);
+    if (!state.shop && !state.showAchievements) drawText(context, `DAY ${state.saved.day}`, 23, 35, {fillStyle: 'white', size: 20, textBaseline: 'top'});
 }
 
 module.exports = {
@@ -256,4 +346,5 @@ module.exports = {
 const { nextDay } = require('state');
 const { canExploreCell, getFuelCost, getFlagValue, getDepth, getRangeAtDepth } = require('digging');
 const { crystalFrame } = require('sprites');
+const { goldMedalFrame } = require('achievements');
 

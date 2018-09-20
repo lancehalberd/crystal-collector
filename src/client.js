@@ -81,13 +81,14 @@ function onMouseUp(event) {
 const update = () => {
     if (!state) {
         state = getNewState();
+        state.context = context;
         if (savedState && !queryParams.reset) {
             // console.log(`Loading state from ${saveKey}`, savedState);
             state.saved = savedState;
             if (state.saved.playedToday) {
                 state = nextDay(state);
             } else {
-                state.shop = true;
+                state.shop = 1;
             }
         }
         savedState = state.saved;

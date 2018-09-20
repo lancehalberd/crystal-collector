@@ -33,7 +33,8 @@ function deleteSprite(state, sprite) {
     return {...state, spriteMap};
 }
 function updateSprite(state, sprite, props) {
-    return {...state, spriteMap: {...state.spriteMap, [sprite.id]: {...sprite, ...props}}};
+    if (!sprite || !sprite.id || !state.spriteMap[sprite.id]) return state;
+    return {...state, spriteMap: {...state.spriteMap, [sprite.id]: {...state.spriteMap[sprite.id], ...props}}};
 }
 const crystalSprite = {
     advance(state, sprite) {
@@ -72,6 +73,8 @@ const explosionSprite = {
 
 module.exports = {
     addSprite,
+    deleteSprite,
+    updateSprite,
     crystalFrame,
     crystalSprite,
     explosionSprite,

@@ -9,6 +9,7 @@ function getNewState() {
     return {
         actions: {},
         fuel: 100,
+        displayFuel: 0,
         camera: {
             left: -WIDTH / 2 + EDGE_LENGTH,
             top: -100,
@@ -20,6 +21,9 @@ function getNewState() {
         interacted: false,
         time: 0,
         spriteMap: {},
+        bombsDiffusedToday: 0,
+        bonusFuelToday: 0,
+        crystalsCollectedToday: 0,
         saved: {
             range: 1.2,
             maxFuel: 100,
@@ -28,6 +32,7 @@ function getNewState() {
             maxDepth: 1,
             score: 0,
             playedToday: false,
+            achievementStats: {},
         },
     };
 }
@@ -35,6 +40,9 @@ function getNewState() {
 function nextDay(state) {
     return {
         ...state,
+        bombsDiffusedToday: 0,
+        bonusFuelToday: 0,
+        crystalsCollectedToday: 0,
         saved: {
             ...state.saved,
             day: state.saved.day + 1,
@@ -49,7 +57,7 @@ function nextDay(state) {
         flags: {},
         fuel: state.saved.maxFuel,
         selected: null,
-        shop: true,
+        shop: state.time,
     };
 }
 
@@ -103,10 +111,11 @@ function advanceState(state) {
             state = hudButton.advance(state, hudButton);
         }
     }
+    state = advanceAchievements(state);
     if (state.clicked && state.overButton && state.overButton.onClick) {
         state = state.overButton.onClick(state, state.overButton);
     }
-    if (!state.shop) {
+    if (!state.showAchievements && !state.shop) {
         state = advanceDigging(state);
     }
     for (let spriteId in state.spriteMap) {
@@ -137,4 +146,7 @@ const { getHUDButtons } = require('hud');
 
 const { advanceDigging, getOverCell } = require('digging');
 
+const {
+    advanceAchievements,
+} = require('achievements');
 

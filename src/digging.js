@@ -182,6 +182,7 @@ function setOverCell(state) {
     return {...state, overCell: {column, row}};
 }*/
 function getOverCell(state, {x, y}) {
+    if (state.shop || state.showAchievements) return null;
     x += state.camera.left;
     y += state.camera.top;
     let column = Math.floor(x / COLUMN_WIDTH);
@@ -222,7 +223,11 @@ function blowUpCell(state, row, column, frameDelay = 0) {
     state = createCell(state, row, column);
     state = addSprite(state, newExplosion);
     state = updateCell(state, row, column, {destroyed: true, explored: true, spriteId: newExplosion.id});
-    return state;
+    return {
+        ...state,
+        // Lose 10% of max fuel for every explosion.
+        fuel: Math.max(0, Math.floor(state.fuel - state.saved.maxFuel / 10)),
+    };
 }
 
 function advanceDigging(state) {
@@ -230,8 +235,7 @@ function advanceDigging(state) {
         state = revealCell(state, 0, 0);
     }
     let camera = {...state.camera};
-    let { fuel } = state;
-    let { playedToday, score } = state.saved;
+    let playedToday = false;
     if (state.rightClicked && state.overButton && state.overButton.cell) {
         const {row, column} = state.overButton;
         if (canExploreCell(state, row, column)) {
@@ -250,7 +254,6 @@ function advanceDigging(state) {
         const fuelCost = getFuelCost(state, row, column);
         if (canExploreCell(state, row, column) && getFlagValue(state, row, column) !== 2 && fuelCost <= state.fuel) {
             state = revealCell(state, row, column);
-            fuel -= fuelCost;
             const cellColor = getCellColor(state, row, column);
             if (cellColor === 'red') {
                 const depth = getDepth(state, row, column);
@@ -259,16 +262,18 @@ function advanceDigging(state) {
                 const cellsInRange = getCellsInRange(state, row, column, explosionRange).sort(
                     (A, B) => A.distance - B.distance
                 );
+                let firstCell = true;
                 for (const cellCoords of cellsInRange) {
-                    state = blowUpCell(state, cellCoords.row, cellCoords.column, frameDelay += 2);
+                    if (firstCell || Math.random() >= 0) {
+
+                        state = blowUpCell(state, cellCoords.row, cellCoords.column, frameDelay += 2);
+                    }
                 }
-                score -= Math.floor(depth * Math.pow(1.05, depth));
-                fuel = Math.floor(fuel / 2 - fuelCost);
             }
             if (cellColor === 'green') {
                 const depth = getDepth(state, row, column);
-                score += Math.floor(depth * Math.pow(1.05, depth));
-                fuel += Math.floor( 1.1 * fuelCost);
+                state = gainCrystals(state, depth * Math.pow(1.05, depth));
+                state = gainBonusFuel(state, Math.floor(0.1 * fuelCost));
                 const {x, y} = getCellCenter(state, row, column);
                 state = addSprite(state, {...crystalSprite, x, y});
                 for (const coordsToUpdate of state.rows[row][column].cellsToUpdate) {
@@ -278,6 +283,8 @@ function advanceDigging(state) {
                     let explored = cellToUpdate.explored || (!crystals && !cellToUpdate.traps);
                     state = updateCell(state, coordsToUpdate.row, coordsToUpdate.column, {crystals, explored});
                 }
+            } else {
+                state = {...state, fuel: Math.max(0, state.fuel - fuelCost)};
             }
             playedToday = true;
         }
@@ -292,12 +299,31 @@ function advanceDigging(state) {
         camera.top = Math.round((camera.top * 10 + targetTop) / 11);
         camera.left = Math.round((camera.left * 10 + targetLeft) / 11);
     }
-    fuel = Math.min(state.saved.maxFuel, Math.max(0, fuel));
     let saved = state.saved;
-    if (playedToday !== saved.playedToday || score !== saved.score) {
-        saved = {...saved, playedToday, score};
+    if (playedToday && !saved.playedToday) {
+        saved = {...saved, playedToday};
     }
-    return {...state, camera, fuel, saved };
+    let displayFuel = state.displayFuel;
+    if (displayFuel < state.fuel) displayFuel = Math.ceil((displayFuel * 10 + state.fuel) / 11);
+    if (displayFuel > state.fuel) displayFuel = Math.floor((displayFuel * 10 + state.fuel) / 11);
+    return {...state, camera, displayFuel, saved };
+}
+
+function gainCrystals(state, amount) {
+    amount = Math.floor(amount);
+    state = {
+        ...state,
+        crystalsCollectedToday: state.crystalsCollectedToday + amount,
+        saved: {...state.saved, score: state.saved.score + amount},
+    };
+    return incrementAchievementStat(state, ACHIEVEMENT_COLLECT_X_CRYSTALS, amount);
+}
+function gainBonusFuel(state, amount) {
+    return {
+        ...state,
+        fuel: Math.min(state.saved.maxFuel, state.fuel + amount),
+        bonusFuelToday: state.bonusFuelToday + amount,
+    };
 }
 
 module.exports = {
@@ -314,4 +340,9 @@ module.exports = {
 };
 
 const { addSprite, crystalSprite, explosionSprite } = require('sprites');
+
+const {
+    incrementAchievementStat,
+    ACHIEVEMENT_COLLECT_X_CRYSTALS,
+} = require('achievements');
 

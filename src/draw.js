@@ -39,8 +39,46 @@ const embossText = (context, {left, top, text, color = 'white', backgroundColor 
     context.fillText(text, left, top);
 }
 
+function drawRectangle(context, rectangle, {fillStyle, strokeStyle, lineWidth = 1}) {
+    if (fillStyle) {
+        context.fillStyle = fillStyle;
+        context.fillRect(rectangle.left, rectangle.top, rectangle.width, rectangle.height);
+    }
+    if (strokeStyle) {
+        context.strokeStyle = strokeStyle;
+        context.lineWidth = lineWidth;
+        context.strokeRect(rectangle.left, rectangle.top, rectangle.width, rectangle.height);
+    }
+}
+
+function drawText(context, text, x, y,
+    {fillStyle = 'black', strokeStyle, lineWidth = 1, textAlign = 'left', textBaseline = 'bottom', size = 20, measure = false}
+) {
+    context.textAlign = textAlign;
+    context.textBaseline = textBaseline;
+    context.font = `${size}px sans-serif`;
+    if (fillStyle) {
+        context.fillStyle = fillStyle;
+        context.fillText(text, x, y);
+    }
+    if (strokeStyle) {
+        context.strokeStyle = strokeStyle;
+        context.lineWidth = lineWidth;
+        context.strokeText(text, x, y);
+    }
+    if (measure) {
+        return context.measureText(text).width;
+    }
+}
+function measureText(context, text, props) {
+    return drawText(context, text, 0, 0, {...props, fillStyle: false, strokeStyle: false, measure: true});
+}
+
 module.exports = {
     drawImage,
     drawTintedImage,
+    drawRectangle,
+    drawText,
     embossText,
+    measureText,
 };
