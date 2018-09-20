@@ -6,6 +6,13 @@ const {
     SHORT_EDGE, LONG_EDGE,
 } = require('gameConstants');
 
+const CRYSTAL_SIZES = [
+    1, 5, 20,
+    100, 500, 2000,
+    10000, 50000, 200000,
+    1E6, 50E6, 200E6,
+];
+
 function getCellColor(state, row, column) {
     if (row < 0 || (row === 0 && column === 0)) return 'black';
     let roll = random.nextSeed(state.saved.seed + Math.cos(row) + Math.sin(column));
@@ -273,10 +280,13 @@ function exploreCell(state, row, column) {
     }
     if (cellColor === 'green') {
         const depth = getDepth(state, row, column);
-        state = gainCrystals(state, depth * Math.pow(1.05, depth));
         state = gainBonusFuel(state, 0.1 * fuelCost);
         const {x, y} = getCellCenter(state, row, column);
-        state = addSprite(state, {...crystalSprite, x, y});
+
+        const multiplier = getAchievementBonus(state, ACHIEVEMENT_COLLECT_X_CRYSTALS) / 100;
+        const amount = Math.round(depth * Math.pow(1.05, depth) * (1 + multiplier));
+
+        state = spawnCrystals(state, x, y, amount);
         for (const coordsToUpdate of state.rows[row][column].cellsToUpdate) {
             const cellToUpdate = state.rows[coordsToUpdate.row][coordsToUpdate.column];
             const crystals = cellToUpdate.crystals - 1;
@@ -358,10 +368,28 @@ function advanceDigging(state) {
     if (displayFuel > state.fuel) displayFuel = Math.floor((displayFuel * 10 + state.fuel) / 11);
     return {...state, camera, displayFuel, saved };
 }
-
+function spawnCrystals(state, x, y, amount) {
+    const crystalValues = [];
+    for (let sizeIndex = CRYSTAL_SIZES.length - 1; sizeIndex >= 0; sizeIndex--) {
+        const crystalSize = CRYSTAL_SIZES[sizeIndex];
+        while (amount > crystalSize && crystalValues.length < 100) {
+            crystalValues.push(crystalSize);
+            amount -= crystalSize;
+        }
+    }
+    let frame = -10;
+    for (const crystalValue of crystalValues) {
+        state = addSprite(state, {
+            ...crystalSprite,
+            x: x + Math.random() * EDGE_LENGTH - EDGE_LENGTH / 2,
+            y: y + Math.random() * EDGE_LENGTH - EDGE_LENGTH / 2,
+            frame: frame -= 2,
+            crystals: crystalValue,
+        });
+    }
+    return state;
+}
 function gainCrystals(state, amount) {
-    const multiplier = getAchievementBonus(state, ACHIEVEMENT_COLLECT_X_CRYSTALS) / 100;
-    amount = Math.floor(amount * (1 + multiplier));
     state = {
         ...state,
         crystalsCollectedToday: state.crystalsCollectedToday + amount,
@@ -393,6 +421,7 @@ module.exports = {
     getOverCell,
     getExplosionProtectionAtDepth,
     gainBonusFuel,
+    CRYSTAL_SIZES,
     gainCrystals,
 };
 

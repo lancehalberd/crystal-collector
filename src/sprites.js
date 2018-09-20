@@ -6,27 +6,17 @@ const Rectangle = require('Rectangle');
 const { drawImage } = require('draw');
 const { requireImage, createAnimation, r } = require('animations');
 
-const bombFrame = {
+const militaryFrame = {
     image: requireImage('gfx/militaryIcons.png'),
-    left: 119,
-    top: 108,
     width: 16,
     height: 16,
-};
-const crystalFrame = {
-    image: requireImage('gfx/militaryIcons.png'),
-    left: 153,
-    top: 40,
-    width: 16,
-    height: 16,
-};
-const skullFrame = {
-    image: requireImage('gfx/militaryIcons.png'),
-    left: 119,
-    top: 23,
-    width: 16,
-    height: 16,
-};
+}
+const bombFrame = {...militaryFrame, left: 119, top: 108};
+const diffuserFrame = {...militaryFrame, left: 0, top: 91};
+const crystalFrame = {...militaryFrame, left: 153, top: 40};
+const greenCrystalFrame = {...crystalFrame, left: 170};
+const redCrystalFrame = {...crystalFrame, left: 187};
+const skullFrame = {...militaryFrame, left: 119, top: 23};
 const explosionAnimation = createAnimation('gfx/explosion.png', r(96, 96), {cols: 12, duration: 3});
 window.explosionAnimation = explosionAnimation;
 let spriteIdCounter = 0;
@@ -45,20 +35,30 @@ function updateSprite(state, sprite, props) {
 }
 const crystalSprite = {
     advance(state, sprite) {
-        if (sprite.x > state.camera.left + WIDTH || sprite.y > state.camera.top + HEIGHT) return deleteSprite(state, sprite);
+        if (sprite.y > state.camera.top + HEIGHT - 60) {
+            state = gainCrystals(state, sprite.crystals);
+            return deleteSprite(state, sprite);
+        }
         let {x = 0, y = 0, vx = 0, vy = 0, frame = 0} = sprite;
         x += vx;
         y += vy;
         frame++;
-        if (frame > 20) {
-            vx += (state.camera.left + WIDTH - x) / 300;
-            vy += (state.camera.top + HEIGHT - y) / 300;
+        if (frame > 0) {
+            // This assumes each character in the score is about 20 pixels wide.
+            const targetX = WIDTH - x - 80 - 20 * Math.floor(Math.log10(state.saved.score));
+            vx += (state.camera.left + targetX) / 300;
+            vy += (state.camera.top + HEIGHT - y - 50) / 300;
         }
         return updateSprite(state, sprite, {frame, x, y, vx, vy});
     },
     render(context, state, sprite) {
-        drawImage(context, crystalFrame.image, crystalFrame,
-            new Rectangle(crystalFrame).scale(2).moveCenterTo(sprite.x - state.camera.left, sprite.y - state.camera.top)
+        let scale = 1, frame = crystalFrame;
+        const index = CRYSTAL_SIZES.indexOf(sprite.crystals);
+        if (index % 3 === 1) frame = greenCrystalFrame;
+        else if (index % 3 === 2) frame = redCrystalFrame;
+        scale = 1.5 + Math.floor(scale / 3) * 0.5;
+        drawImage(context, frame.image, frame,
+            new Rectangle(frame).scale(scale).moveCenterTo(sprite.x - state.camera.left, sprite.y - state.camera.top)
         );
     }
 };
@@ -104,12 +104,12 @@ module.exports = {
     addSprite,
     deleteSprite,
     updateSprite,
+    bombSprite,
     crystalFrame,
     crystalSprite,
-    bombSprite,
+    diffuserFrame,
     explosionSprite,
     skullFrame,
-    explosionAnimation,
 };
 
-const { gainBonusFuel } = require('digging');
+const { gainBonusFuel, CRYSTAL_SIZES, gainCrystals } = require('digging');
