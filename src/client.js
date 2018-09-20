@@ -83,8 +83,10 @@ const update = () => {
         state = getNewState();
         state.context = context;
         if (savedState && !queryParams.reset) {
+
             // console.log(`Loading state from ${saveKey}`, savedState);
-            state.saved = savedState;
+            state.saved = {...state.saved, ...savedState};
+            console.log(state.saved.playedToday, state.shop);
             if (state.saved.playedToday) {
                 state = nextDay(state);
             } else {

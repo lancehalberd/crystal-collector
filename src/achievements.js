@@ -8,14 +8,14 @@ const FINAL_DEPTH_GOAL = 200;
 const ACHIEVEMENT_LEVELS = ['Bronze', 'Silver', 'Gold', 'Crystal'];
 
 
-const ACHIEVEMENT_EXPLORE_DEPTH_X = 'exploreDepthX';
-const ACHIEVEMENT_EXPLORED_DEEP_IN_X_DAYS = 'exploredDeepInXDays';
 const ACHIEVEMENT_COLLECT_X_CRYSTALS = 'collectXCrystals';
 const ACHIEVEMENT_COLLECT_X_CRYSTALS_IN_ONE_DAY = 'collectXCrystalsInOneDay';
+const ACHIEVEMENT_GAIN_X_BONUS_FUEL_IN_ONE_DAY ='gainXBonusFuelInOneDay';
 const ACHIEVEMENT_DIFFUSE_X_BOMBS = 'diffuseXBombs';
 const ACHIEVEMENT_DIFFUSE_X_BOMBS_IN_ONE_DAY = 'diffuseXBombsInOneDay';
 const ACHIEVEMENT_PREVENT_X_EXPLOSIONS = 'preventXExplosions';
-const ACHIEVEMENT_GAIN_X_BONUS_FUEL_IN_ONE_DAY ='gainXBonusFuelInOneDay';
+const ACHIEVEMENT_EXPLORE_DEPTH_X = 'exploreDepthX';
+const ACHIEVEMENT_EXPLORED_DEEP_IN_X_DAYS = 'exploredDeepInXDays';
 const achievementsData = {
     [ACHIEVEMENT_COLLECT_X_CRYSTALS]: {
         goals: [2 /* 500 */, 3 /* 20000 */, 100000, 10000000],
@@ -79,7 +79,7 @@ const achievementsData = {
         bonusValues: [50, 100, 150, 200],
         getAchievementLabel: goal => `Explore depth ${FINAL_DEPTH_GOAL} by day ${goal}`,
         getBonusLabel: bonusValue => `Gain ${bonusValue}% more bonus fuel`,
-        getValue: state => (state.saved.maxDepth >= FINAL_DEPTH_GOAL) && state.saved.days,
+        getValue: state => ((state.saved.maxDepth >= FINAL_DEPTH_GOAL) && state.saved.days),
         valueIsBetter: (value, goal) => value < goal,
     },
 };
@@ -90,7 +90,8 @@ function updateAchievement(state, key) {
     const value = getAchievementStat(state, key);
     // Update the bonus level for this achievement, if necessary.
     let bonusLevel = -1, goal = data.goals[bonusLevel + 1];
-    while (value && (value === goal || data.valueIsBetter(value, goal))) {
+     while (data.goals[bonusLevel + 1]) {
+    //while (data.goals[bonusLevel + 1] && value && (value === goal || data.valueIsBetter(value, goal))) {
         bonusLevel++;
         goal = data.goals[bonusLevel + 1];
     }
@@ -116,6 +117,10 @@ function setAchievementStat(state, key, value) {
 function getAchievementStat(state, key) {
     const achievementStats = state.saved.achievementStats || {};
     return achievementStats[key] || false;
+}
+function getAchievementBonus(state, key) {
+    const bonusValue = (state.achievements || {})[key];
+    return bonusValue >= 0 && achievementsData[key].bonusValues[bonusValue];
 }
 
 // Sets state.achievements and state.saved.achievementStats if necessary.
@@ -202,7 +207,11 @@ const achievementSprite = {
     width: 300,
 };
 
+let lastRendered = 0;
 function renderAchievements(context, state) {
+    // Hack, this scene doesn't currently change, so only render it once per viewing.
+    if (state.showAchievements <= lastRendered) return;
+    lastRendered = state.showAchievements;
     /*const time = Math.min(800, state.time - state.showAchievements) / 800;
     const gradient = context.createLinearGradient(800 - time * 200, 900, 300 + time * 200, -200);
     gradient.addColorStop(0, "#08F");
@@ -214,7 +223,7 @@ function renderAchievements(context, state) {
     context.fillStyle = '#08F';
     context.fillRect(0, 0, WIDTH, HEIGHT);
 
-    let top = 30, left = 150, rowHeight = 60;
+    let top = 30, left = 100, rowHeight = 60;
     for (let key in achievementsData) {
         const data = achievementsData[key];
         const bonusLevel = state.achievements[key];
@@ -228,7 +237,11 @@ function renderAchievements(context, state) {
             );
         }
         context.restore();
-        drawText(context, bonusLevel >= 0 ? data.getAchievementLabel(data.goals[bonusLevel]) : data.getAchievementLabel(data.goals[0]), left + 150, top + rowHeight / 4,
+        let goalValue = (data.getValue(state) || 0) + ' / ' + data.goals[Math.min(3, bonusLevel + 1)];
+        /*if (key === ACHIEVEMENT_EXPLORED_DEEP_IN_X_DAYS && bonusLevel < 0) {
+            goalValue = data.goals[bonusLevel + 1];
+        }*/
+        drawText(context, data.getAchievementLabel(goalValue), left + 150, top + rowHeight / 4,
             {fillStyle: 'white', textAlign: 'left', textBaseline: 'middle', size: 24}
         );
         if (bonusLevel >= 0) {
@@ -251,9 +264,17 @@ const goldMedalFrame = {
 module.exports = {
     advanceAchievements,
     renderAchievements,
+    getAchievementBonus,
     setAchievementStatIfBetter,
     incrementAchievementStat,
     ACHIEVEMENT_COLLECT_X_CRYSTALS,
+    ACHIEVEMENT_COLLECT_X_CRYSTALS_IN_ONE_DAY,
+    ACHIEVEMENT_GAIN_X_BONUS_FUEL_IN_ONE_DAY,
+    ACHIEVEMENT_DIFFUSE_X_BOMBS,
+    ACHIEVEMENT_DIFFUSE_X_BOMBS_IN_ONE_DAY,
+    ACHIEVEMENT_PREVENT_X_EXPLOSIONS,
+    ACHIEVEMENT_EXPLORE_DEPTH_X,
+    ACHIEVEMENT_EXPLORED_DEEP_IN_X_DAYS,
     goldMedalFrame,
 };
 

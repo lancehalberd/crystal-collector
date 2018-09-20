@@ -175,6 +175,46 @@ const rangeButton = {
     left: 430,
     top: 50,
 };
+const bombDiffuserButton = {
+    ...fuelButton,
+    getCost(state) {
+        return Math.round(25 * Math.pow(2, state.saved.bombDiffusers));
+    },
+    getLabel(state){
+        return 'Bomb Diffusers';
+    },
+    getCurrentValue(state) {
+        return state.saved.bombDiffusers;
+    },
+    getNextValue(state) {
+        return state.saved.bombDiffusers + 1;
+    },
+    onPurchase(state) {
+        return {...state, saved: {...state.saved, bombDiffusers: state.saved.bombDiffusers + 1}};
+    },
+    left: 50,
+    top: 310,
+};
+const explosionProtectionButton = {
+    ...fuelButton,
+    getCost(state) {
+        return Math.round(100 * Math.pow(1.5, 5 * state.saved.explosionProtection));
+    },
+    getLabel(state){
+        return 'Explosion Protection';
+    },
+    getCurrentValue(state) {
+        return (getExplosionProtectionAtDepth(state, state.saved.maxDepth) * 100).toFixed(0) +'%';
+    },
+    getNextValue(state) {
+        return (getExplosionProtectionAtDepth(state, state.saved.maxDepth, 0.2) * 100).toFixed(0) +'%';
+    },
+    onPurchase(state) {
+        return {...state, saved: {...state.saved, explosionProtection: state.saved.explosionProtection + 0.2}};
+    },
+    left: 430,
+    top: 310,
+};
 
 const scrollDownButton = {
     render(context, state, button) {
@@ -255,6 +295,8 @@ function getHUDButtons(state) {
             digButton,
             fuelButton,
             rangeButton,
+            bombDiffuserButton,
+            explosionProtectionButton,
         ];
     }
     return [
@@ -291,11 +333,14 @@ function renderHUD(context, state) {
 
     // Draw FUEL indicator
     if (!state.shop && !state.showAchievements) {
+        const fuelMultiplier = 1 + getAchievementBonus(state, ACHIEVEMENT_GAIN_X_BONUS_FUEL_IN_ONE_DAY) / 100;
+        const fuelBarWidth = 200 * fuelMultiplier;
+        const maxFuel = Math.round(state.saved.maxFuel * fuelMultiplier);
         context.fillStyle = 'black';
-        context.fillRect(10, 10, 200, 20);
+        context.fillRect(10, 10, fuelBarWidth, 20);
         context.fillStyle = '#080';
-        const fuelWidth = Math.round(200 * state.fuel / state.saved.maxFuel);
-        const displayFuelWidth = Math.round(200 * state.displayFuel / state.saved.maxFuel);
+        const fuelWidth = Math.round(fuelBarWidth * state.fuel / maxFuel);
+        const displayFuelWidth = Math.round(fuelBarWidth * state.displayFuel / maxFuel);
         context.fillRect(10, 10, fuelWidth, 20);
         if (state.displayFuel > state.fuel) {
             const difference = displayFuelWidth - fuelWidth;
@@ -310,13 +355,14 @@ function renderHUD(context, state) {
             const {row, column} = state.overButton;
             if (canExploreCell(state, row, column) && getFlagValue(state, row, column) !== 2) {
                 const fuelCost = getFuelCost(state, row, column);
-                const fuelLeft = 10 + Math.round(200 * Math.max(0, state.fuel - fuelCost) / state.saved.maxFuel);
+                const fuelLeft = 10 + Math.round(fuelBarWidth * Math.max(0, state.fuel - fuelCost) / maxFuel);
                 context.fillStyle = (fuelCost <= state.fuel) ? 'orange' : 'red';
                 context.fillRect(fuelLeft, 10, 10 + fuelWidth - fuelLeft, 20);
                 if (fuelCost <= state.fuel) {
-                    const fuelBonus = Math.min(state.saved.maxFuel, state.fuel + Math.floor(fuelCost * 0.1));
+                    const bonusFuelMultiplier = 1 + getAchievementBonus(state, ACHIEVEMENT_EXPLORED_DEEP_IN_X_DAYS) / 100;
+                    const fuelBonus = Math.min(maxFuel, state.fuel + Math.round(bonusFuelMultiplier * fuelCost * 0.1));
                     context.fillStyle = '#0F0';
-                    context.fillRect(10 + fuelWidth, 10, Math.round(200 * fuelBonus / state.saved.maxFuel) - fuelWidth, 20);
+                    context.fillRect(10 + fuelWidth, 10, Math.round(fuelBarWidth * fuelBonus / maxFuel) - fuelWidth, 20);
                 }
             }
         }
@@ -327,7 +373,7 @@ function renderHUD(context, state) {
         context.fillText('FUEL ' + state.fuel, 15, 9);
         context.strokeStyle = 'white';
         context.lineWidth = 2;
-        context.strokeRect(10, 10, 200, 20);
+        context.strokeRect(10, 10, fuelBarWidth, 20);
     }
 
     // Render buttons
@@ -335,7 +381,10 @@ function renderHUD(context, state) {
         button.render(context, state, button);
     }
 
-    if (!state.shop && !state.showAchievements) drawText(context, `DAY ${state.saved.day}`, 23, 35, {fillStyle: 'white', size: 20, textBaseline: 'top'});
+    if (!state.shop && !state.showAchievements) {
+        const dayTextWidth = drawText(context, `DAY ${state.saved.day}`, 23, 35, {fillStyle: 'white', size: 20, textBaseline: 'top', measure: true});
+        drawText(context, state.bombDiffusers, 30 + dayTextWidth + 5, 35, {fillStyle: '#A40', strokeStyle: '#FA4', size: 24, textBaseline: 'top'});
+    }
 }
 
 module.exports = {
@@ -344,7 +393,12 @@ module.exports = {
 };
 
 const { nextDay } = require('state');
-const { canExploreCell, getFuelCost, getFlagValue, getDepth, getRangeAtDepth } = require('digging');
+const { canExploreCell, getFuelCost, getFlagValue, getDepth, getRangeAtDepth, getExplosionProtectionAtDepth } = require('digging');
 const { crystalFrame } = require('sprites');
-const { goldMedalFrame } = require('achievements');
+const {
+    goldMedalFrame,
+    getAchievementBonus,
+    ACHIEVEMENT_GAIN_X_BONUS_FUEL_IN_ONE_DAY,
+    ACHIEVEMENT_EXPLORED_DEEP_IN_X_DAYS,
+} = require('achievements');
 

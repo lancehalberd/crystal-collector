@@ -9,6 +9,7 @@ function getNewState() {
     return {
         actions: {},
         fuel: 100,
+        bombDiffusers: 3,
         displayFuel: 0,
         camera: {
             left: -WIDTH / 2 + EDGE_LENGTH,
@@ -19,12 +20,14 @@ function getNewState() {
         sfx: {},
         bgm: 'bgm/title.mp3',
         interacted: false,
-        time: 0,
+        time: 20,
         spriteMap: {},
         bombsDiffusedToday: 0,
         bonusFuelToday: 0,
         crystalsCollectedToday: 0,
         saved: {
+            bombDiffusers: 3,
+            explosionProtection: 0.2,
             range: 1.2,
             maxFuel: 100,
             seed: random.nextSeed(),
@@ -56,6 +59,7 @@ function nextDay(state) {
         rows: {},
         flags: {},
         fuel: state.saved.maxFuel,
+        bombDiffusers: state.saved.bombDiffusers + getAchievementBonus(state, ACHIEVEMENT_DIFFUSE_X_BOMBS_IN_ONE_DAY),
         selected: null,
         shop: state.time,
     };
@@ -148,5 +152,7 @@ const { advanceDigging, getOverCell } = require('digging');
 
 const {
     advanceAchievements,
+    getAchievementBonus,
+    ACHIEVEMENT_DIFFUSE_X_BOMBS_IN_ONE_DAY,
 } = require('achievements');
 

@@ -6,6 +6,13 @@ const Rectangle = require('Rectangle');
 const { drawImage } = require('draw');
 const { requireImage, createAnimation, r } = require('animations');
 
+const bombFrame = {
+    image: requireImage('gfx/militaryIcons.png'),
+    left: 119,
+    top: 108,
+    width: 16,
+    height: 16,
+};
 const crystalFrame = {
     image: requireImage('gfx/militaryIcons.png'),
     left: 153,
@@ -55,6 +62,28 @@ const crystalSprite = {
         );
     }
 };
+const bombSprite = {
+    advance(state, sprite) {
+        if (sprite.y < state.camera.top + 20) {
+            state = gainBonusFuel(state, sprite.bonusFuel);
+            return deleteSprite(state, sprite);
+        }
+        let {x = 0, y = 0, vx = 0, vy = 0, frame = 0} = sprite;
+        x += vx;
+        y += vy;
+        frame++;
+        if (frame > 20) {
+            vx += (state.camera.left + 200 - x) / 300;
+            vy += (state.camera.top - y) / 300;
+        }
+        return updateSprite(state, sprite, {frame, x, y, vx, vy});
+    },
+    render(context, state, sprite) {
+        drawImage(context, bombFrame.image, bombFrame,
+            new Rectangle(bombFrame).scale(2).moveCenterTo(sprite.x - state.camera.left, sprite.y - state.camera.top)
+        );
+    }
+};
 const explosionSprite = {
     advance(state, sprite) {
         let {frame = 0} = sprite;
@@ -77,7 +106,10 @@ module.exports = {
     updateSprite,
     crystalFrame,
     crystalSprite,
+    bombSprite,
     explosionSprite,
     skullFrame,
     explosionAnimation,
 };
+
+const { gainBonusFuel } = require('digging');

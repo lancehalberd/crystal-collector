@@ -19,6 +19,11 @@ function getCellColor(state, row, column) {
 function getRangeAtDepth(state, depth, rangeOffset = 0) {
     return Math.max(1, Math.min(3, (state.saved.range + rangeOffset) - 0.02 * depth));
 }
+function getExplosionProtectionAtDepth(state, depth, offset = 0) {
+    let maxExplosionProtection = 0.5;
+    maxExplosionProtection += getAchievementBonus(state, ACHIEVEMENT_PREVENT_X_EXPLOSIONS) / 100;
+    return Math.max(0, Math.min(maxExplosionProtection, (state.saved.explosionProtection + offset) - 0.01 * depth));
+}
 function getDepth(state, row, column) {
     return 1 + row * 2 + Math.abs(column % 2);
 }
@@ -43,9 +48,18 @@ function createCellsInRange(state, row, column) {
             candidatesForReveal[cellCoords.distance].push(cellCoords);
         }
     }
-    for (let i = 1; i < range; i++) {
-        if (candidatesForReveal[i].length) {
-            const coords = random.element(candidatesForReveal[i]);
+    const bonusChance = getAchievementBonus(state, ACHIEVEMENT_COLLECT_X_CRYSTALS_IN_ONE_DAY) / 100;
+    for (let i = 1; i <= range; i++) {
+        // When your range exceeds 1, you get 1 extra bonus cell revealed in each ring that is
+        // not at your maximum range.
+        if (i < range && candidatesForReveal[i].length) {
+            const coords = random.removeElement(candidatesForReveal[i]);
+            state = revealCellNumbers(state, coords.row, coords.column);
+        }
+        // With bonus chance to reveal information, you have a % chance to reveal an extra cell
+        // in each ring within your range, including your maximum range.
+        if (Math.random() < bonusChance && candidatesForReveal[i].length) {
+            const coords = random.removeElement(candidatesForReveal[i]);
             state = revealCellNumbers(state, coords.row, coords.column);
         }
     }
@@ -116,17 +130,17 @@ function revealCellNumbers(state, row, column) {
         [column + 1, row + rowOffset - 1], [column + 1, row + rowOffset],
     ];
     for (const cell of cells) {
+        state = createCell(state, cell[1], cell[0]);
         const cellColor = getCellColor(state, cell[1], cell[0]);
-        if (!isCellRevealed(state, cell[1], cell[0]) && cellColor === 'green') {
-            state = createCell(state, cell[1], cell[0]);
+        if (!isCellRevealed(state, cell[1], cell[0]) && (cellColor === 'green' || cellColor === 'red')) {
             const updatedRow = {...state.rows[cell[1]]};
             updatedRow[cell[0]] = {...updatedRow[cell[0]], cellsToUpdate: [...updatedRow[cell[0]].cellsToUpdate, {row, column}]};
             state = {...state, rows: {...state.rows, [cell[1]]: updatedRow}};
             // console.log('added', {row, column}, 'to', cell);
             // console.log('after', updatedRow[cell[0]].cellsToUpdate);
-            crystals++;
+            if (cellColor === 'green') crystals++;
+            if (cellColor === 'red') traps++;
         }
-        if (cellColor === 'red') traps++;
     }
     let explored = state.rows[row][column].explored || (crystals === 0 && traps === 0);
     return updateCell(state, row, column, {crystals, traps, numbersRevealed, explored});
@@ -230,63 +244,102 @@ function blowUpCell(state, row, column, frameDelay = 0) {
     };
 }
 
+function exploreCell(state, row, column) {
+    state = revealCell(state, row, column);
+    const fuelCost = getFuelCost(state, row, column);
+    const cellColor = getCellColor(state, row, column);
+    if (cellColor === 'red') {
+        const depth = getDepth(state, row, column);
+        const explosionRange = Math.floor(Math.min(3, 1 + depth / 40));
+        let frameDelay = 0;
+        const cellsInRange = getCellsInRange(state, row, column, explosionRange).sort(
+            (A, B) => A.distance - B.distance
+        );
+        let firstCell = true;
+        for (const cellCoords of cellsInRange) {
+            const depth = getDepth(state, cellCoords.row, cellCoords.column);
+            if (firstCell || Math.random() >= getExplosionProtectionAtDepth(state, depth)) {
+                state = blowUpCell(state, cellCoords.row, cellCoords.column, frameDelay += 2);
+            }
+            firstCell = false;
+        }
+        for (const coordsToUpdate of state.rows[row][column].cellsToUpdate) {
+            const cellToUpdate = state.rows[coordsToUpdate.row][coordsToUpdate.column];
+            const traps = cellToUpdate.traps - 1;
+            // Mark cells with no nearby traps/crystals explored since numbers are already revealed.
+            let explored = cellToUpdate.explored || (!traps && !cellToUpdate.crystals);
+            state = updateCell(state, coordsToUpdate.row, coordsToUpdate.column, {traps, explored});
+        }
+    }
+    if (cellColor === 'green') {
+        const depth = getDepth(state, row, column);
+        state = gainCrystals(state, depth * Math.pow(1.05, depth));
+        state = gainBonusFuel(state, 0.1 * fuelCost);
+        const {x, y} = getCellCenter(state, row, column);
+        state = addSprite(state, {...crystalSprite, x, y});
+        for (const coordsToUpdate of state.rows[row][column].cellsToUpdate) {
+            const cellToUpdate = state.rows[coordsToUpdate.row][coordsToUpdate.column];
+            const crystals = cellToUpdate.crystals - 1;
+            // Mark cells with no nearby traps/crystals explored since numbers are already revealed.
+            let explored = cellToUpdate.explored || (!crystals && !cellToUpdate.traps);
+            state = updateCell(state, coordsToUpdate.row, coordsToUpdate.column, {crystals, explored});
+        }
+    } else {
+        state = {...state, fuel: Math.max(0, state.fuel - fuelCost)};
+    }
+    if (!state.saved.playedToday) {
+        state = {...state, saved: {...state.saved, playedToday: true}};
+    }
+    return state;
+}
+
 function advanceDigging(state) {
     if (!state.rows[0]) {
         state = revealCell(state, 0, 0);
     }
     let camera = {...state.camera};
-    let playedToday = false;
     if (state.rightClicked && state.overButton && state.overButton.cell) {
         const {row, column} = state.overButton;
         if (canExploreCell(state, row, column)) {
-            const selectedRow = {...state.flags[row]} || {};
-            let flagValue = getFlagValue(state, row, column) || 0;
-            if (flagValue === 2) {
-                delete selectedRow[column];
+            if (state.bombDiffusers > 0) {
+                state = {...state, bombDiffusers: state.bombDiffusers - 1};
+                const cellColor = getCellColor(state, row, column);
+                if (cellColor === 'red') {
+                    state = revealCell(state, row, column);
+                    state = {...state, bombsDiffusedToday: state.bombsDiffusedToday + 1};
+                    state = incrementAchievementStat(state, ACHIEVEMENT_DIFFUSE_X_BOMBS, 1);
+                    const bombDiffusionMultiplier = 1 + getAchievementBonus(state, ACHIEVEMENT_DIFFUSE_X_BOMBS) / 100;
+                    const bonusFuel = state.saved.maxFuel * 0.05 * bombDiffusionMultiplier;
+                    // Decrease the bomb count around the diffused bomb
+                    for (const coordsToUpdate of state.rows[row][column].cellsToUpdate) {
+                        const cellToUpdate = state.rows[coordsToUpdate.row][coordsToUpdate.column];
+                        const traps = cellToUpdate.traps - 1;
+                        // Mark cells with no nearby traps/crystals explored since numbers are already revealed.
+                        let explored = cellToUpdate.explored || (!traps && !cellToUpdate.crystals);
+                        state = updateCell(state, coordsToUpdate.row, coordsToUpdate.column, {traps, explored});
+                    }
+                    const {x, y} = getCellCenter(state, row, column);
+                    state = addSprite(state, {...bombSprite, x, y, bonusFuel});
+                } else {
+                    state = exploreCell(state, row, column);
+                }
             } else {
-                selectedRow[column] = 2;
+                const selectedRow = {...state.flags[row]} || {};
+                let flagValue = getFlagValue(state, row, column) || 0;
+                if (flagValue === 2) {
+                    delete selectedRow[column];
+                } else {
+                    selectedRow[column] = 2;
+                }
+                state = {...state, flags: {...state.flags, [row]: selectedRow}};
             }
-            state = {...state, flags: {...state.flags, [row]: selectedRow}};
         }
     }
     if (!state.rightClicked && state.clicked && state.overButton && state.overButton.cell) {
         const {row, column} = state.overButton;
         const fuelCost = getFuelCost(state, row, column);
         if (canExploreCell(state, row, column) && getFlagValue(state, row, column) !== 2 && fuelCost <= state.fuel) {
-            state = revealCell(state, row, column);
-            const cellColor = getCellColor(state, row, column);
-            if (cellColor === 'red') {
-                const depth = getDepth(state, row, column);
-                const explosionRange = Math.floor(Math.min(3, 1 + depth / 40));
-                let frameDelay = 0;
-                const cellsInRange = getCellsInRange(state, row, column, explosionRange).sort(
-                    (A, B) => A.distance - B.distance
-                );
-                let firstCell = true;
-                for (const cellCoords of cellsInRange) {
-                    if (firstCell || Math.random() >= 0) {
-
-                        state = blowUpCell(state, cellCoords.row, cellCoords.column, frameDelay += 2);
-                    }
-                }
-            }
-            if (cellColor === 'green') {
-                const depth = getDepth(state, row, column);
-                state = gainCrystals(state, depth * Math.pow(1.05, depth));
-                state = gainBonusFuel(state, Math.floor(0.1 * fuelCost));
-                const {x, y} = getCellCenter(state, row, column);
-                state = addSprite(state, {...crystalSprite, x, y});
-                for (const coordsToUpdate of state.rows[row][column].cellsToUpdate) {
-                    const cellToUpdate = state.rows[coordsToUpdate.row][coordsToUpdate.column];
-                    const crystals = cellToUpdate.crystals - 1;
-                    // Mark cells with no nearby traps/crystals explored since numbers are already revealed.
-                    let explored = cellToUpdate.explored || (!crystals && !cellToUpdate.traps);
-                    state = updateCell(state, coordsToUpdate.row, coordsToUpdate.column, {crystals, explored});
-                }
-            } else {
-                state = {...state, fuel: Math.max(0, state.fuel - fuelCost)};
-            }
-            playedToday = true;
+            state = exploreCell(state, row, column);
         }
         if (isCellRevealed(state, row, column) || getFlagValue(state, row, column)) {
             state.selected = state.overButton;
@@ -300,9 +353,6 @@ function advanceDigging(state) {
         camera.left = Math.round((camera.left * 10 + targetLeft) / 11);
     }
     let saved = state.saved;
-    if (playedToday && !saved.playedToday) {
-        saved = {...saved, playedToday};
-    }
     let displayFuel = state.displayFuel;
     if (displayFuel < state.fuel) displayFuel = Math.ceil((displayFuel * 10 + state.fuel) / 11);
     if (displayFuel > state.fuel) displayFuel = Math.floor((displayFuel * 10 + state.fuel) / 11);
@@ -310,7 +360,8 @@ function advanceDigging(state) {
 }
 
 function gainCrystals(state, amount) {
-    amount = Math.floor(amount);
+    const multiplier = getAchievementBonus(state, ACHIEVEMENT_COLLECT_X_CRYSTALS) / 100;
+    amount = Math.floor(amount * (1 + multiplier));
     state = {
         ...state,
         crystalsCollectedToday: state.crystalsCollectedToday + amount,
@@ -319,9 +370,12 @@ function gainCrystals(state, amount) {
     return incrementAchievementStat(state, ACHIEVEMENT_COLLECT_X_CRYSTALS, amount);
 }
 function gainBonusFuel(state, amount) {
+    const bonusFuelMultiplier = 1 + getAchievementBonus(state, ACHIEVEMENT_EXPLORED_DEEP_IN_X_DAYS) / 100;
+    amount = Math.round(amount * bonusFuelMultiplier);
+    const fuelMultiplier = 1 + getAchievementBonus(state, ACHIEVEMENT_GAIN_X_BONUS_FUEL_IN_ONE_DAY) / 100;
     return {
         ...state,
-        fuel: Math.min(state.saved.maxFuel, state.fuel + amount),
+        fuel: Math.min(Math.round(state.saved.maxFuel * fuelMultiplier), state.fuel + amount),
         bonusFuelToday: state.bonusFuelToday + amount,
     };
 }
@@ -337,12 +391,21 @@ module.exports = {
     getRangeAtDepth,
     getCellCenter,
     getOverCell,
+    getExplosionProtectionAtDepth,
+    gainBonusFuel,
+    gainCrystals,
 };
 
-const { addSprite, crystalSprite, explosionSprite } = require('sprites');
+const { addSprite, bombSprite, crystalSprite, explosionSprite } = require('sprites');
 
 const {
+    getAchievementBonus,
     incrementAchievementStat,
     ACHIEVEMENT_COLLECT_X_CRYSTALS,
+    ACHIEVEMENT_COLLECT_X_CRYSTALS_IN_ONE_DAY,
+    ACHIEVEMENT_GAIN_X_BONUS_FUEL_IN_ONE_DAY,
+    ACHIEVEMENT_EXPLORED_DEEP_IN_X_DAYS,
+    ACHIEVEMENT_PREVENT_X_EXPLOSIONS,
+    ACHIEVEMENT_DIFFUSE_X_BOMBS,
 } = require('achievements');
 
