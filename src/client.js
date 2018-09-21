@@ -77,6 +77,13 @@ function onMouseUp(event) {
     event.preventDefault();
     return false;
 }
+/*
+TODO:
+Fix bonus bomb diffusers not applying on loading.
+Remove debug achievement code.
+Fix scrolling buttons getting stuck on mouse out.
+Add button for toggling bomb diffusing on, move diffuser count near it.
+*/
 
 const update = () => {
     if (!state) {

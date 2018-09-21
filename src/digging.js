@@ -15,10 +15,12 @@ const CRYSTAL_SIZES = [
 
 function getCellColor(state, row, column) {
     if (row < 0 || (row === 0 && column === 0)) return 'black';
+    const startingCell = getStartingCell(state);
+    if (row === startingCell.row && column === startingCell.column) return 'black';
     let roll = random.nextSeed(state.saved.seed + Math.cos(row) + Math.sin(column));
     const depth = getDepth(state, row, column);
     if (roll < Math.max(0.1, 0.4 - depth / 400)) return 'green';
-    if (Math.abs(row) + Math.abs(column) <= 1) return 'black';
+    if (Math.abs(row - startingCell.row) + Math.abs(column - startingCell.column) <= 1) return 'black';
     roll = random.nextSeed(roll);
     if (roll < Math.min(0.5, 0.01 + depth / 400)) return 'red';
     return 'black';
@@ -32,7 +34,7 @@ function getExplosionProtectionAtDepth(state, depth, offset = 0) {
     return Math.max(0, Math.min(maxExplosionProtection, (state.saved.explosionProtection + offset) - 0.01 * depth));
 }
 function getDepth(state, row, column) {
-    return 1 + row * 2 + Math.abs(column % 2);
+    return row * 2 + Math.abs(column % 2);
 }
 function getFuelCost(state, row, column) {
     const depth = getDepth(state, row, column);
@@ -302,10 +304,15 @@ function exploreCell(state, row, column) {
     }
     return state;
 }
+function getStartingCell(state) {
+    return {row: Math.floor(state.startingDepth / 2), column: 0};
+}
 
 function advanceDigging(state) {
-    if (!state.rows[0]) {
-        state = revealCell(state, 0, 0);
+    const startingCell = getStartingCell(state);
+    if (!state.rows[startingCell.row]) {
+        state = revealCell(state, startingCell.row, startingCell.column);
+        state = {...state, selected: startingCell};
     }
     let camera = {...state.camera};
     if (state.rightClicked && state.overButton && state.overButton.cell) {

@@ -45,10 +45,44 @@ const digButton = {
     ...sleepButton,
     label: 'Dig',
     onClick(state) {
-        return {...state, shop: false, fuel: state.saved.maxFuel};
+        return {...state, shop: false, fuel: state.saved.maxFuel, startingDepth: 1};
     },
-    left: WIDTH / 2 - sleepButton.width / 2,
-    top: HEIGHT - 80,
+    left: 650,
+    width: 130,
+    top: 20,
+};
+const depthOffset = digButton.top + 60;
+const depth20Button = {
+    ...digButton,
+    label: 'Dig 20',
+    onClick(state) {
+        return {...state, shop: false, fuel: state.saved.maxFuel, startingDepth: 20};
+    },
+    top: depthOffset + (digButton.height + 20)
+};
+const depth50Button = {
+    ...digButton,
+    label: 'Dig 50',
+    onClick(state) {
+        return {...state, shop: false, fuel: state.saved.maxFuel, startingDepth: 50};
+    },
+    top: depthOffset + (digButton.height + 20) * 2
+};
+const depth100Button = {
+    ...digButton,
+    label: 'Dig 100',
+    onClick(state) {
+        return {...state, shop: false, fuel: state.saved.maxFuel, startingDepth: 100};
+    },
+    top: depthOffset + (digButton.height + 20) * 3
+};
+const depth200Button = {
+    ...digButton,
+    label: 'Dig 200',
+    onClick(state) {
+        return {...state, shop: false, fuel: state.saved.maxFuel, startingDepth: 200};
+    },
+    top: depthOffset + (digButton.height + 20) * 4
 };
 
 const closeButton = {
@@ -131,7 +165,7 @@ const shopButton = {
         }
         return state;
     },
-    width: 320,
+    width: 300,
     height: 200, // 3 60px lines 10px border
 };
 
@@ -152,8 +186,8 @@ const fuelButton = {
     onPurchase(state, button) {
         return {...state, saved: {...state.saved, maxFuel: this.getNextValue(state, button)}};
     },
-    left: 50,
-    top: 50,
+    left: 20,
+    top: 20,
 };
 const rangeButton = {
     ...fuelButton,
@@ -172,8 +206,8 @@ const rangeButton = {
     onPurchase(state) {
         return {...state, saved: {...state.saved, range: state.saved.range + 0.5}};
     },
-    left: 430,
-    top: 50,
+    left: 330,
+    top: 20,
 };
 const bombDiffuserButton = {
     ...fuelButton,
@@ -192,8 +226,8 @@ const bombDiffuserButton = {
     onPurchase(state) {
         return {...state, saved: {...state.saved, bombDiffusers: state.saved.bombDiffusers + 1}};
     },
-    left: 50,
-    top: 310,
+    left: 20,
+    top: 260,
 };
 const explosionProtectionButton = {
     ...fuelButton,
@@ -212,8 +246,8 @@ const explosionProtectionButton = {
     onPurchase(state) {
         return {...state, saved: {...state.saved, explosionProtection: state.saved.explosionProtection + 0.2}};
     },
-    left: 430,
-    top: 310,
+    left: 330,
+    top: 260,
 };
 
 const scrollDownButton = {
@@ -291,13 +325,19 @@ function getHUDButtons(state) {
         return [closeButton];
     }
     if (state.shop) {
-        return [
+        const maxStartingDepth = getAchievementBonus(state, ACHIEVEMENT_EXPLORE_DEPTH_X);
+        const buttons = [
             digButton,
             fuelButton,
             rangeButton,
             bombDiffuserButton,
             explosionProtectionButton,
         ];
+        if (maxStartingDepth >= 20) buttons.push(depth20Button);
+        if (maxStartingDepth >= 50) buttons.push(depth50Button);
+        if (maxStartingDepth >= 100) buttons.push(depth100Button);
+        if (maxStartingDepth >= 200) buttons.push(depth200Button);
+        return buttons;
     }
     return [
         sleepButton,
@@ -400,5 +440,6 @@ const {
     getAchievementBonus,
     ACHIEVEMENT_GAIN_X_BONUS_FUEL_IN_ONE_DAY,
     ACHIEVEMENT_EXPLORED_DEEP_IN_X_DAYS,
+    ACHIEVEMENT_EXPLORE_DEPTH_X,
 } = require('achievements');
 
