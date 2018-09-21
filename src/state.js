@@ -66,6 +66,25 @@ function nextDay(state) {
     };
 }
 
+function restart(state) {
+    state = nextDay({
+        ...state,
+        showAchievements: false,
+        displayFuel: 0,
+        saved: {
+            ...state.saved,
+            score: 0,
+            day: 0,
+            bombDiffusers: 3,
+            explosionProtection: 0.2,
+            range: 1.2,
+            maxFuel: 100,
+            maxDepth: 0,
+        }
+    });
+    return {...state, shop: false};
+}
+
 function getOverButton(state, coords = {}) {
     const {x, y} = coords;
     if (!(x >= 0 && x <= WIDTH && y >= 0 && y <= HEIGHT)) return null;
@@ -147,6 +166,7 @@ module.exports = {
     advanceState,
     applyActions,
     nextDay,
+    restart,
 };
 
 const { getHUDButtons } = require('hud');

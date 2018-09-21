@@ -10,7 +10,7 @@ const CRYSTAL_SIZES = [
     1, 5, 20,
     100, 500, 2000,
     10000, 50000, 200000,
-    1E6, 50E6, 200E6,
+    1E6, 5E6, 20E6,
 ];
 
 function getCellColor(state, row, column) {
@@ -267,6 +267,8 @@ function exploreCell(state, row, column) {
             const depth = getDepth(state, cellCoords.row, cellCoords.column);
             if (firstCell || Math.random() >= getExplosionProtectionAtDepth(state, depth)) {
                 state = blowUpCell(state, cellCoords.row, cellCoords.column, frameDelay += 2);
+            } else {
+                state = incrementAchievementStat(state, ACHIEVEMENT_PREVENT_X_EXPLOSIONS, 1);
             }
             firstCell = false;
         }

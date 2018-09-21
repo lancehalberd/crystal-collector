@@ -94,6 +94,15 @@ const closeButton = {
     left: WIDTH / 2 - digButton.width / 2,
     top: HEIGHT - 80,
 };
+const restartButton = {
+    ...closeButton,
+    label: 'Restart from Day 1',
+    onClick(state) {
+        return restart(state);
+    },
+    left: 20,
+    width: 300,
+}
 
 function renderButtonBackground(context, state, button) {
     const enabled = !button.isEnabled || button.isEnabled(state, button);
@@ -192,7 +201,7 @@ const fuelButton = {
 const rangeButton = {
     ...fuelButton,
     getCost(state) {
-        return Math.round(100 * Math.pow(1.5, 2 * (state.saved.range - 0.2) - 1));
+        return Math.round(100 * Math.pow(2, 2 * (state.saved.range - 0.2) - 1));
     },
     getLabel(state){
         return `Range At Depth ${state.saved.maxDepth}`;
@@ -238,7 +247,7 @@ const bombDiffuserButton = {
 const explosionProtectionButton = {
     ...fuelButton,
     getCost(state) {
-        return Math.round(100 * Math.pow(1.5, 5 * state.saved.explosionProtection));
+        return Math.round(100 * Math.pow(2, 5 * state.saved.explosionProtection));
     },
     getLabel(state){
         return 'Explosion Protection';
@@ -328,7 +337,11 @@ const scrollRightButton = {
 
 function getHUDButtons(state) {
     if (state.showAchievements) {
-        return [closeButton];
+        const buttons = [closeButton];
+        if (getAchievementStat(state, ACHIEVEMENT_EXPLORE_DEPTH_X) >= 200) {
+            buttons.push(restartButton);
+        }
+        return buttons;
     }
     if (state.shop) {
         const maxStartingDepth = getAchievementBonus(state, ACHIEVEMENT_EXPLORE_DEPTH_X);
@@ -443,12 +456,13 @@ module.exports = {
     getHUDButtons,
 };
 
-const { nextDay } = require('state');
+const { nextDay, restart } = require('state');
 const { canExploreCell, getFuelCost, getFlagValue, getDepth, getRangeAtDepth, getExplosionProtectionAtDepth } = require('digging');
 const { crystalFrame, diffuserFrame } = require('sprites');
 const {
     goldMedalFrame,
     getAchievementBonus,
+    getAchievementStat,
     ACHIEVEMENT_GAIN_X_BONUS_FUEL_IN_ONE_DAY,
     ACHIEVEMENT_EXPLORED_DEEP_IN_X_DAYS,
     ACHIEVEMENT_EXPLORE_DEPTH_X,

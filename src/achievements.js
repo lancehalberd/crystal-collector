@@ -26,7 +26,7 @@ const achievementsData = {
         valueIsBetter: (value, goal) => value > goal,
     },
     [ACHIEVEMENT_COLLECT_X_CRYSTALS_IN_ONE_DAY]: {
-        goals: [100, 1000, 10000, 100000],
+        goals: [100, 5000, 250000, 12500000],
         bonusValues: [10, 20, 30, 40],
         getAchievementLabel: goal => `Collect ${goal} crystals in 1 day`,
         // This may increase your effective range when it triggers in your outer ring.
@@ -43,7 +43,7 @@ const achievementsData = {
         valueIsBetter: (value, goal) => value > goal,
     },
     [ACHIEVEMENT_DIFFUSE_X_BOMBS]: {
-        goals: [1, 10, 100, 1000],
+        goals: [5, 20, 100, 200],
         bonusValues: [50, 100, 150, 200],
         getAchievementLabel: goal => `Diffuse ${goal} bombs`,
         getBonusLabel: bonusValue => `Gain ${bonusValue}% extra fuel from diffused bombs`,
@@ -51,15 +51,15 @@ const achievementsData = {
         valueIsBetter: (value, goal) => value > goal,
     },
     [ACHIEVEMENT_DIFFUSE_X_BOMBS_IN_ONE_DAY]: {
-        goals: [5, 10, 20, 30],
-        bonusValues: [1, 3, 6, 10],
+        goals: [5, 10, 15, 20],
+        bonusValues: [1, 2, 3, 5],
         getAchievementLabel: goal => `Diffuse ${goal} bombs in one day`,
         getBonusLabel: bonusValue => `${bonusValue} extra bomb diffusers`,
         getValue: state => state.bombsDiffusedToday,
         valueIsBetter: (value, goal) => value > goal,
     },
     [ACHIEVEMENT_PREVENT_X_EXPLOSIONS]: {
-        goals: [5, 10, 20, 30],
+        goals: [5, 20, 50, 100],
         bonusValues: [6, 12, 18, 25],
         getAchievementLabel: goal => `Prevent ${goal} bomb explosions`,
         getBonusLabel: bonusValue => `${bonusValue}% increased maximum explosion protection`,
@@ -67,19 +67,19 @@ const achievementsData = {
         valueIsBetter: (value, goal) => value > goal,
     },
     [ACHIEVEMENT_EXPLORE_DEPTH_X]: {
-        goals: [20, 50, 100, 200],
-        bonusValues: [20, 50, 100, 200],
+        goals: [20, 50, 100, 150],
+        bonusValues: [20, 50, 100, 150],
         getAchievementLabel: goal => `Explore depth ${goal}`,
         getBonusLabel: bonusValue => `Start from depth ${bonusValue}`,
         getValue: state => state.saved.maxDepth,
         valueIsBetter: (value, goal) => value > goal,
     },
     [ACHIEVEMENT_EXPLORED_DEEP_IN_X_DAYS]: {
-        goals: [100, 80, 60, 40],
+        goals: [100, 50, 25, 5],
         bonusValues: [50, 100, 150, 200],
         getAchievementLabel: goal => `Explore depth ${FINAL_DEPTH_GOAL} by day ${goal}`,
         getBonusLabel: bonusValue => `Gain ${bonusValue}% more bonus fuel`,
-        getValue: state => ((state.saved.maxDepth >= FINAL_DEPTH_GOAL) && state.saved.days),
+        getValue: state => ((state.saved.maxDepth >= FINAL_DEPTH_GOAL) && state.saved.day),
         valueIsBetter: (value, goal) => value < goal,
     },
 };
@@ -262,6 +262,7 @@ module.exports = {
     advanceAchievements,
     renderAchievements,
     getAchievementBonus,
+    getAchievementStat,
     setAchievementStatIfBetter,
     incrementAchievementStat,
     ACHIEVEMENT_COLLECT_X_CRYSTALS,
