@@ -38,7 +38,7 @@ function getDepth(state, row, column) {
 }
 function getFuelCost(state, row, column) {
     const depth = getDepth(state, row, column);
-    return Math.floor(depth * Math.pow(1.04, depth));
+    return Math.floor((depth + 1) * Math.pow(1.04, depth));
 }
 function isCellRevealed(state, row, column) {
     return state.rows[row] && state.rows[row][column] && state.rows[row][column].explored;
@@ -286,7 +286,7 @@ function exploreCell(state, row, column) {
         const {x, y} = getCellCenter(state, row, column);
 
         const multiplier = getAchievementBonus(state, ACHIEVEMENT_COLLECT_X_CRYSTALS) / 100;
-        const amount = Math.round(depth * Math.pow(1.05, depth) * (1 + multiplier));
+        const amount = Math.round((depth + 1) * Math.pow(1.05, depth) * (1 + multiplier));
 
         state = spawnCrystals(state, x, y, amount);
         for (const coordsToUpdate of state.rows[row][column].cellsToUpdate) {

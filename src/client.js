@@ -79,8 +79,6 @@ function onMouseUp(event) {
 }
 /*
 TODO:
-Fix bonus bomb diffusers not applying on loading.
-Remove debug achievement code.
 Fix scrolling buttons getting stuck on mouse out.
 Add button for toggling bomb diffusing on, move diffuser count near it.
 */
@@ -93,12 +91,13 @@ const update = () => {
 
             // console.log(`Loading state from ${saveKey}`, savedState);
             state.saved = {...state.saved, ...savedState};
-            console.log(state.saved.playedToday, state.shop);
-            if (state.saved.playedToday) {
-                state = nextDay(state);
-            } else {
-                state.shop = 1;
+            state = initializeAchievements(state);
+            // Decrement day by 1 if they haven't played yet today so that
+            // caling next day leaves them on the same day.
+            if (!state.saved.playedToday) {
+                state.saved.day--;
             }
+            state = nextDay(state);
         }
         savedState = state.saved;
         canvas.onmousedown = canvas.ontouchstart = onMouseDown;
@@ -158,3 +157,4 @@ const renderLoop = () => {
 };
 renderLoop();
 
+const { initializeAchievements } = require('achievements');

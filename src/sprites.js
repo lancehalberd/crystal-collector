@@ -45,7 +45,7 @@ const crystalSprite = {
         frame++;
         if (frame > 0) {
             // This assumes each character in the score is about 20 pixels wide.
-            const targetX = WIDTH - x - 80 - 20 * Math.floor(Math.log10(state.saved.score));
+            const targetX = WIDTH - x - 80 - 20 * Math.floor(Math.log10(state.saved.score + 1));
             vx += (state.camera.left + targetX) / 300;
             vy += (state.camera.top + HEIGHT - y - 50) / 300;
         }

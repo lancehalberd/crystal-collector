@@ -18,7 +18,7 @@ const ACHIEVEMENT_EXPLORE_DEPTH_X = 'exploreDepthX';
 const ACHIEVEMENT_EXPLORED_DEEP_IN_X_DAYS = 'exploredDeepInXDays';
 const achievementsData = {
     [ACHIEVEMENT_COLLECT_X_CRYSTALS]: {
-        goals: [2 /* 500 */, 3 /* 20000 */, 100000, 10000000],
+        goals: [500, 20000, 100000, 10000000],
         bonusValues: [25, 50, 75, 100],
         getAchievementLabel: goal => `Collect ${goal} crystals`,
         getBonusLabel: bonusValue => `Gain ${bonusValue}% more crystals`,
@@ -35,7 +35,7 @@ const achievementsData = {
         valueIsBetter: (value, goal) => value > goal,
     },
     [ACHIEVEMENT_GAIN_X_BONUS_FUEL_IN_ONE_DAY]: {
-        goals: [1, 500, 5000, 50000],
+        goals: [50, 500, 5000, 50000],
         bonusValues: [25, 50, 75, 100],
         getAchievementLabel: goal => `Gain ${goal} bonus fuel in one day`,
         getBonusLabel: bonusValue => `${bonusValue}% more fuel capacity`,
@@ -90,8 +90,8 @@ function updateAchievement(state, key) {
     const value = getAchievementStat(state, key);
     // Update the bonus level for this achievement, if necessary.
     let bonusLevel = -1, goal = data.goals[bonusLevel + 1];
-     while (data.goals[bonusLevel + 1]) {
-    //while (data.goals[bonusLevel + 1] && value && (value === goal || data.valueIsBetter(value, goal))) {
+    // while (data.goals[bonusLevel + 1]) {
+    while (data.goals[bonusLevel + 1] && value && (value === goal || data.valueIsBetter(value, goal))) {
         bonusLevel++;
         goal = data.goals[bonusLevel + 1];
     }
@@ -262,6 +262,7 @@ const goldMedalFrame = {
 };
 
 module.exports = {
+    initializeAchievements,
     advanceAchievements,
     renderAchievements,
     getAchievementBonus,
