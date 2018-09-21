@@ -79,7 +79,6 @@ function onMouseUp(event) {
 }
 /*
 TODO:
-Fix scrolling buttons getting stuck on mouse out.
 Add button for toggling bomb diffusing on, move diffuser count near it.
 */
 

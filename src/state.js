@@ -92,6 +92,8 @@ function setButtonState(state) {
     }
     if (state.lastMouseCoords) {
         state = {...state, overButton: getOverButton(state, state.lastMouseCoords)};
+    } else if (!state.clicked && !state.righClicked) {
+        state = {...state, overButton: null};
     }
     return state;
     /*let overButton = null;

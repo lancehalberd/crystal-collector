@@ -218,13 +218,19 @@ const bombDiffuserButton = {
         return 'Bomb Diffusers';
     },
     getCurrentValue(state) {
-        return state.saved.bombDiffusers;
+        const bonuses = getAchievementBonus(state, ACHIEVEMENT_DIFFUSE_X_BOMBS_IN_ONE_DAY);
+        return state.saved.bombDiffusers + (bonuses ? `(+${bonuses})` : '');
     },
     getNextValue(state) {
-        return state.saved.bombDiffusers + 1;
+        const bonuses = getAchievementBonus(state, ACHIEVEMENT_DIFFUSE_X_BOMBS_IN_ONE_DAY);
+        return state.saved.bombDiffusers + 1 + (bonuses ? `(+${bonuses})` : '');
     },
     onPurchase(state) {
-        return {...state, saved: {...state.saved, bombDiffusers: state.saved.bombDiffusers + 1}};
+        return {...state,
+            // Update current number of bomb diffusers since they have already been refilled.
+            bombDiffusers: state.bombDiffusers + 1,
+            saved: {...state.saved, bombDiffusers: state.saved.bombDiffusers + 1}
+        };
     },
     left: 20,
     top: 260,
@@ -366,9 +372,15 @@ function renderHUD(context, state) {
     const scoreWidth = drawText(context, state.saved.score,WIDTH - 20, HEIGHT - 20,
         {fillStyle: '#4AF', strokeStyle: 'white', textAlign: 'right', textBaseline: 'bottom', size: 36, measure: true}
     );
-    const iconRectangle = new Rectangle(crystalFrame).scale(2);
+    let iconRectangle = new Rectangle(crystalFrame).scale(2);
     drawImage(context, crystalFrame.image, crystalFrame,
         iconRectangle.moveCenterTo(WIDTH - 20 - scoreWidth - 5 - iconRectangle.width / 2, HEIGHT - 20 - 20)
+    );
+    const diffuserWidth = drawText(context, state.bombDiffusers, WIDTH - 20, HEIGHT - 65,
+        {fillStyle: '#A40', strokeStyle: '#FA4', size: 36, textBaseline: 'bottom', textAlign: 'right', measure: true});
+    iconRectangle = new Rectangle(diffuserFrame).scale(2);
+    drawImage(context, diffuserFrame.image, diffuserFrame,
+        iconRectangle.moveCenterTo(WIDTH - 20 - diffuserWidth - 10 - iconRectangle.width / 2, HEIGHT - 65 - 20)
     );
 
     // Draw FUEL indicator
@@ -423,7 +435,6 @@ function renderHUD(context, state) {
 
     if (!state.shop && !state.showAchievements) {
         const dayTextWidth = drawText(context, `DAY ${state.saved.day}`, 23, 35, {fillStyle: 'white', size: 20, textBaseline: 'top', measure: true});
-        drawText(context, state.bombDiffusers, 30 + dayTextWidth + 5, 35, {fillStyle: '#A40', strokeStyle: '#FA4', size: 24, textBaseline: 'top'});
     }
 }
 
@@ -434,12 +445,13 @@ module.exports = {
 
 const { nextDay } = require('state');
 const { canExploreCell, getFuelCost, getFlagValue, getDepth, getRangeAtDepth, getExplosionProtectionAtDepth } = require('digging');
-const { crystalFrame } = require('sprites');
+const { crystalFrame, diffuserFrame } = require('sprites');
 const {
     goldMedalFrame,
     getAchievementBonus,
     ACHIEVEMENT_GAIN_X_BONUS_FUEL_IN_ONE_DAY,
     ACHIEVEMENT_EXPLORED_DEEP_IN_X_DAYS,
     ACHIEVEMENT_EXPLORE_DEPTH_X,
+    ACHIEVEMENT_DIFFUSE_X_BOMBS_IN_ONE_DAY,
 } = require('achievements');
 

@@ -53,7 +53,7 @@ const achievementsData = {
     [ACHIEVEMENT_DIFFUSE_X_BOMBS_IN_ONE_DAY]: {
         goals: [5, 10, 20, 30],
         bonusValues: [1, 3, 6, 10],
-        getAchievementLabel: goal => `Diffuse ${goal} bombs`,
+        getAchievementLabel: goal => `Diffuse ${goal} bombs in one day`,
         getBonusLabel: bonusValue => `${bonusValue} extra bomb diffusers`,
         getValue: state => state.bombsDiffusedToday,
         valueIsBetter: (value, goal) => value > goal,
@@ -207,11 +207,7 @@ const achievementSprite = {
     width: 300,
 };
 
-let lastRendered = 0;
 function renderAchievements(context, state) {
-    // Hack, this scene doesn't currently change, so only render it once per viewing.
-    if (state.showAchievements <= lastRendered) return;
-    lastRendered = state.showAchievements;
     /*const time = Math.min(800, state.time - state.showAchievements) / 800;
     const gradient = context.createLinearGradient(800 - time * 200, 900, 300 + time * 200, -200);
     gradient.addColorStop(0, "#08F");
@@ -237,7 +233,7 @@ function renderAchievements(context, state) {
             );
         }
         context.restore();
-        let goalValue = (data.getValue(state) || 0) + ' / ' + data.goals[Math.min(3, bonusLevel + 1)];
+        let goalValue = (getAchievementStat(state, key) || 0) + ' / ' + data.goals[Math.min(3, bonusLevel + 1)];
         /*if (key === ACHIEVEMENT_EXPLORED_DEEP_IN_X_DAYS && bonusLevel < 0) {
             goalValue = data.goals[bonusLevel + 1];
         }*/

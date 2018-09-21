@@ -145,8 +145,6 @@ function revealCellNumbers(state, row, column) {
             const updatedRow = {...state.rows[cell[1]]};
             updatedRow[cell[0]] = {...updatedRow[cell[0]], cellsToUpdate: [...updatedRow[cell[0]].cellsToUpdate, {row, column}]};
             state = {...state, rows: {...state.rows, [cell[1]]: updatedRow}};
-            // console.log('added', {row, column}, 'to', cell);
-            // console.log('after', updatedRow[cell[0]].cellsToUpdate);
             if (cellColor === 'green') crystals++;
             if (cellColor === 'red') traps++;
         }
@@ -379,7 +377,7 @@ function spawnCrystals(state, x, y, amount) {
     const crystalValues = [];
     for (let sizeIndex = CRYSTAL_SIZES.length - 1; sizeIndex >= 0; sizeIndex--) {
         const crystalSize = CRYSTAL_SIZES[sizeIndex];
-        while (amount > crystalSize && crystalValues.length < 100) {
+        while (amount >= crystalSize && crystalValues.length < 100) {
             crystalValues.push(crystalSize);
             amount -= crystalSize;
         }
