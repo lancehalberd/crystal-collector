@@ -219,7 +219,7 @@ function renderAchievements(context, state) {
     context.fillStyle = '#08F';
     context.fillRect(0, 0, WIDTH, HEIGHT);
 
-    let top = 30, left = 100, rowHeight = 60;
+    let top = 30, left = 100, rowHeight = 55;
     for (let key in achievementsData) {
         const data = achievementsData[key];
         const bonusLevel = state.achievements[key];

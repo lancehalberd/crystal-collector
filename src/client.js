@@ -80,6 +80,22 @@ function onMouseUp(event) {
 /*
 TODO:
 Add button for toggling bomb diffusing on, move diffuser count near it.
+Remove depth indicator, move diffuser button to lower left corner.
+Add depth indicator as transparent text every 5, 10, 50 depths wither larger text for larger increments.
+
+Add click and drag scrolling.
+Remove scroll buttons.
+
+Add animated lava starting at depth 30.
+Lava lowers 10% for every crystal discovered within 10 depth of the current level, up to 100% for
+crystals found immediately above the current level of the lava. Lava gradually falls to the current target depth.
+Remove maximum depth indicator line (the lava will approximate this functionality).
+
+Research optimization for mobile browsers:
+    -Remove browser bars if possible/add full screen button.
+    -Scale the canvas to fill the screen, modify tile size based on canvas dimensions.
+    -Investigate better touch handlers.
+
 */
 
 const update = () => {

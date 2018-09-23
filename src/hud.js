@@ -92,7 +92,7 @@ const closeButton = {
         return {...state, showAchievements: false};
     },
     left: WIDTH / 2 - digButton.width / 2,
-    top: HEIGHT - 80,
+    top: HEIGHT - 70,
 };
 const restartButton = {
     ...closeButton,
@@ -382,18 +382,18 @@ function renderHUD(context, state) {
         context.strokeText(`DEPTH: ${depth}`, 10, HEIGHT - 10);
     }
     // Draw SCORE indicator
-    const scoreWidth = drawText(context, state.saved.score,WIDTH - 20, HEIGHT - 20,
+    const scoreWidth = drawText(context, state.saved.score,WIDTH - 10, HEIGHT - 10,
         {fillStyle: '#4AF', strokeStyle: 'white', textAlign: 'right', textBaseline: 'bottom', size: 36, measure: true}
     );
     let iconRectangle = new Rectangle(crystalFrame).scale(2);
     drawImage(context, crystalFrame.image, crystalFrame,
-        iconRectangle.moveCenterTo(WIDTH - 20 - scoreWidth - 5 - iconRectangle.width / 2, HEIGHT - 20 - 20)
+        iconRectangle.moveCenterTo(WIDTH - 20 - scoreWidth - 5 - iconRectangle.width / 2, HEIGHT - 10 - 20)
     );
-    const diffuserWidth = drawText(context, state.bombDiffusers, WIDTH - 20, HEIGHT - 65,
+    const diffuserWidth = drawText(context, state.bombDiffusers, WIDTH - 10, HEIGHT - 55,
         {fillStyle: '#A40', strokeStyle: '#FA4', size: 36, textBaseline: 'bottom', textAlign: 'right', measure: true});
     iconRectangle = new Rectangle(diffuserFrame).scale(2);
     drawImage(context, diffuserFrame.image, diffuserFrame,
-        iconRectangle.moveCenterTo(WIDTH - 20 - diffuserWidth - 10 - iconRectangle.width / 2, HEIGHT - 65 - 20)
+        iconRectangle.moveCenterTo(WIDTH - 20 - diffuserWidth - 10 - iconRectangle.width / 2, HEIGHT - 55 - 20)
     );
 
     // Draw FUEL indicator

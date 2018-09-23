@@ -1,0 +1,13 @@
+{
+  "short_name": "Crystolect",
+  "name": "Crystal Collector",
+  "icons": [
+    {
+      "src": "gfx/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ],
+  "display": "fullscreen",
+  "orientation": "landscape"
+}

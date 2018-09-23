@@ -5,7 +5,7 @@ const COLUMN_WIDTH = EDGE_LENGTH + SHORT_EDGE;
 const ROW_HEIGHT = LONG_EDGE * 2;
 module.exports = {
     WIDTH: 800,
-    HEIGHT: 600,
+    HEIGHT: 550,
     FRAME_LENGTH: 20,
     EDGE_LENGTH,
     COLUMN_WIDTH,
