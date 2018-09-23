@@ -63,12 +63,17 @@ function getEventCoords(event) {
 function onMouseDown(event) {
     state.interacted = true;
     state.mouseDown = state.time;
+    state.dragDistance = 0;
+    state.mouseDragged = false;
     state.mouseDownCoords = state.lastMouseCoords = getEventCoords(event);
     event.preventDefault();
     return false;
 }
 function onMouseMove(event) {
     state.lastMouseCoords = getEventCoords(event);
+    if (state.mouseDownCoords) {
+        state.mouseDragged = true;
+    }
     event.preventDefault();
     return false;
 }
@@ -82,9 +87,6 @@ TODO:
 Add button for toggling bomb diffusing on, move diffuser count near it.
 Remove depth indicator, move diffuser button to lower left corner.
 Add depth indicator as transparent text every 5, 10, 50 depths wither larger text for larger increments.
-
-Add click and drag scrolling.
-Remove scroll buttons.
 
 Add animated lava starting at depth 30.
 Lava lowers 10% for every crystal discovered within 10 depth of the current level, up to 100% for
@@ -123,15 +125,16 @@ const update = () => {
             event.preventDefault();
             return false;
         }
-        canvas.onmousemove = canvas.ontouchmove = onMouseMove;
-        canvas.onmouseup = canvas.ontouchend = onMouseUp;
-        canvas.onmouseout = function () {
+        document.onmousemove = document.ontouchmove = onMouseMove;
+        document.onmouseup = document.ontouchend = onMouseUp;
+        canvas.onmouseout = function (event) {
             state.mouseDownCoords = state.lastMouseCoords = null;
+            event.preventDefault();
             return false;
         };
-        canvas.addEventListener("touchstart", onMouseDown, false);
-        canvas.addEventListener("touchend", onMouseUp, false);
-        canvas.addEventListener("touchmove", onMouseMove, false);
+        canvas.addEventListener("touchstart", onMouseDown);
+        canvas.addEventListener("touchend", onMouseUp);
+        canvas.addEventListener("touchmove", onMouseMove);
     }
 
     if (!preloadedSounds && state.interacted) {

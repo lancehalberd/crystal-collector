@@ -97,41 +97,43 @@ function getOverButton(state, coords = {}) {
 }
 
 function setButtonState(state) {
-    if (state.mouseDown && state.time - state.mouseDown >= 500) {
-        state = {...state, mouseDown: false, rightClicked: true, mouseDownCoords: false};
+    const dragIsBlocking = state.mouseDragged && state.dragDistance >= 10;
+    if (!dragIsBlocking && state.mouseDown && state.mouseDownCoords && state.time - state.mouseDown >= 500) {
+        state = {...state, mouseDown: false, rightClicked: true, mouseDownCoords: false, lastMouseCoords: false};
     } else if (state.mouseDownCoords && !state.mouseDown) {
         const startButton = getOverButton(state, state.mouseDownCoords);
         const lastButton = getOverButton(state, state.lastMouseCoords);
-        if (lastButton === startButton ||
-            (lastButton.cell && lastButton.row === startButton.row && lastButton.column === startButton.column)
-        ) {
+        const buttonsMatch = startButton && lastButton && (lastButton === startButton ||
+            (lastButton.cell && lastButton.row === startButton.row && lastButton.column === startButton.column));
+        // Clicking on a cell fails during a drag operation.
+        // We check for drags longer than 2 frames so that moving the mouse slightly on click doesn't
+        // prevent clicking a cell.
+        if (buttonsMatch && !(dragIsBlocking && lastButton.cell)) {
             state = {...state, clicked: true};
         }
-        state = {...state, mouseDownCoords: false, lastMouseCoords: false};
+        state = {...state, mouseDragged: false, mouseDownCoords: false, lastMouseCoords: false};
+    }
+    if (!state.mouseDown && state.mouseDownCoords) {
+        state = {...state, mouseDownCoords: false};
     }
     if (state.lastMouseCoords) {
         state = {...state, overButton: getOverButton(state, state.lastMouseCoords)};
-    } else if (!state.clicked && !state.righClicked) {
+    } else if (!state.clicked && !state.rightClicked) {
         state = {...state, overButton: null};
     }
     return state;
-    /*let overButton = null;
-    if (!state.mouseCoords) {
-        return {...state, overButton};
-    }
-    let {x, y} = state.mouseCoords;
-    if (x < 0 || x > WIDTH || y < 0 || y > HEIGHT) {
-        return {...state, overButton};
-    }
-    for (const hudButton of getHUDButtons(state)) {
-        if (new Rectangle(hudButton).containsPoint(x, y)) {
-            return {...state, overButton: hudButton};
-        }
-    }
-    return {...state, overButton};*/
 }
 function advanceState(state) {
     state = setButtonState(state);
+    if (state.mouseDown && state.mouseDragged && state.lastProcessedMouseCoords) {
+        const camera = {...state.camera};
+        const dx = state.lastMouseCoords.x - state.lastProcessedMouseCoords.x;
+        const dy = state.lastMouseCoords.y - state.lastProcessedMouseCoords.y;
+        camera.left -= dx;
+        camera.top -= dy;
+        state = {...state, selected: false, camera, dragDistance: state.dragDistance + Math.abs(dx) + Math.abs(dy)};
+    }
+    state.lastProcessedMouseCoords = state.lastMouseCoords;
     for (const hudButton of getHUDButtons(state)) {
         if (hudButton.advance) {
             state = hudButton.advance(state, hudButton);

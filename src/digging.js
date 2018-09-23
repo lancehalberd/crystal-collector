@@ -31,12 +31,12 @@ function getCellColor(state, row, column) {
     return 'black';
 }
 function getRangeAtDepth(state, depth, rangeOffset = 0) {
-    return Math.max(1, Math.min(3, (state.saved.range + rangeOffset) - 0.02 * depth));
+    return Math.max(1, Math.min(3, (state.saved.range + rangeOffset) - 0.03 * depth));
 }
 function getExplosionProtectionAtDepth(state, depth, offset = 0) {
     let maxExplosionProtection = 0.5;
     maxExplosionProtection += getAchievementBonus(state, ACHIEVEMENT_PREVENT_X_EXPLOSIONS) / 100;
-    return Math.max(0, Math.min(maxExplosionProtection, (state.saved.explosionProtection + offset) - 0.01 * depth));
+    return Math.max(0, Math.min(maxExplosionProtection, (state.saved.explosionProtection + offset) - 0.015 * depth));
 }
 function getDepth(state, row, column) {
     return row * 2 + Math.abs(column % 2);
@@ -328,6 +328,7 @@ function advanceDigging(state) {
                 flags[row] = selectedRow;
                 state = {...state, flags};
             }
+            state.selected = state.overButton;
         }
     }
     if (!state.rightClicked && state.clicked && state.overButton && state.overButton.cell) {
