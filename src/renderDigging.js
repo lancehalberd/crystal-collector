@@ -11,7 +11,7 @@ const {
 // const Rectangle = require('Rectangle');
 // const { drawImage } = require('draw');
 
-const { canExploreCell, getFuelCost, isCellRevealed, getFlagValue } = require('digging');
+const { z, canExploreCell, getFuelCost, isCellRevealed, getFlagValue } = require('digging');
 
 function renderDigging(context, state) {
     if (state.camera.top < 500) {
@@ -67,81 +67,80 @@ function renderDigging(context, state) {
 
 function renderCell(context, state, row, column) {
     drawCellPath(context, state, row, column);
+    const columnz = z(column);
+    const cell = state.rows[row] && state.rows[row][columnz];
     context.lineWidth = 1;
-    if (state.rows[row] && state.rows[row][column]) {
-        if (state.rows[row][column].destroyed &&
-            (
-                !state.spriteMap[state.rows[row][column].spriteId] ||
-                state.spriteMap[state.rows[row][column].spriteId].ending
-            )
-        ) {
-            const points = getCellPoints(state, row, column);
-            context.beginPath();
-            context.moveTo(points[0][0], points[0][1]);
-            context.lineTo(points[2][0], points[2][1]);
-            context.moveTo((points[0][0] + points[5][0]) / 2, (points[0][1] + points[5][1]) / 2);
-            context.lineTo((points[2][0] + points[3][0]) / 2, (points[2][1] + points[3][1]) / 2);
-            context.moveTo(points[5][0], points[5][1]);
-            context.lineTo(points[3][0], points[3][1]);
-
-            context.moveTo(points[1][0], points[1][1]);
-            context.lineTo(points[5][0], points[5][1]);
-            context.moveTo((points[1][0] + points[2][0]) / 2, (points[1][1] + points[2][1]) / 2);
-            context.lineTo((points[5][0] + points[4][0]) / 2, (points[5][1] + points[4][1]) / 2);
-            context.moveTo(points[2][0], points[2][1]);
-            context.lineTo(points[4][0], points[4][1]);
-            context.lineWidth = 3;
-            context.strokeStyle = '#F40';
-            context.stroke();
-        } else if (isCellRevealed(state, row, column)) {
-            // Currently do nothing here.
-        } else {
-            context.fillStyle = '#AAA';
-            context.fill();
-            context.strokeStyle = '#666';
-            context.stroke();
-            const flagValue = getFlagValue(state, row, column);
-            if (flagValue) {
-                const points = getCellPoints(state, row, column);
-                context.beginPath();
-                context.moveTo(points[0][0], points[0][1]);
-                context.lineTo(points[3][0], points[3][1]);
-                context.moveTo(points[1][0], points[1][1]);
-                context.lineTo(points[4][0], points[4][1]);
-                context.moveTo(points[2][0], points[2][1]);
-                context.lineTo(points[5][0], points[5][1]);
-                context.strokeStyle = flagValue == 2 ? 'red' : 'green';
-                context.stroke();
-            }
-        }
-        context.textAlign = 'center';
-        context.textBaseline = 'middle';
-        context.font = `${EDGE_LENGTH / 2 + 12}px sans-serif`;
-        const centerX = column * COLUMN_WIDTH + SHORT_EDGE + Math.round(EDGE_LENGTH / 2) - Math.round(state.camera.left);
-        if (!state.rows[row][column].destroyed && state.rows[row][column].crystals > 0) {
-            const centerY = row * ROW_HEIGHT + ((column % 2) ? LONG_EDGE : 0)
-                + Math.round(LONG_EDGE / 2) - Math.round(state.camera.top);
-            context.fillStyle = '#0AF';
-            context.fillText(state.rows[row][column].crystals, centerX, centerY);
-            context.lineWidth = 2;
-            context.strokeStyle = '#048';
-            context.strokeText(state.rows[row][column].crystals, centerX, centerY);
-        }
-        if (!state.rows[row][column].destroyed && state.rows[row][column].traps > 0) {
-            //context.font = `${EDGE_LENGTH / 2 + 4}px sans-serif`;
-            const centerY = row * ROW_HEIGHT + ((column % 2) ? LONG_EDGE : 0) + LONG_EDGE
-                + Math.round(LONG_EDGE / 2) - Math.round(state.camera.top);
-            context.fillStyle = '#FCC';
-            context.fillText(state.rows[row][column].traps, centerX, centerY);
-            context.lineWidth = 2;
-            context.strokeStyle = '#400';
-            context.strokeText(state.rows[row][column].traps, centerX, centerY);
-        }
-    } else {
+    if (!cell) {
         context.fillStyle = '#444';
         context.fill();
         context.strokeStyle = '#666';
         context.stroke();
+        return;
+    }
+    if (cell.destroyed &&
+        (!state.spriteMap[cell.spriteId] || state.spriteMap[cell.spriteId].ending)
+    ) {
+        const points = getCellPoints(state, row, column);
+        context.beginPath();
+        context.moveTo(points[0][0], points[0][1]);
+        context.lineTo(points[2][0], points[2][1]);
+        context.moveTo((points[0][0] + points[5][0]) / 2, (points[0][1] + points[5][1]) / 2);
+        context.lineTo((points[2][0] + points[3][0]) / 2, (points[2][1] + points[3][1]) / 2);
+        context.moveTo(points[5][0], points[5][1]);
+        context.lineTo(points[3][0], points[3][1]);
+
+        context.moveTo(points[1][0], points[1][1]);
+        context.lineTo(points[5][0], points[5][1]);
+        context.moveTo((points[1][0] + points[2][0]) / 2, (points[1][1] + points[2][1]) / 2);
+        context.lineTo((points[5][0] + points[4][0]) / 2, (points[5][1] + points[4][1]) / 2);
+        context.moveTo(points[2][0], points[2][1]);
+        context.lineTo(points[4][0], points[4][1]);
+        context.lineWidth = 3;
+        context.strokeStyle = '#F40';
+        context.stroke();
+    } else if (isCellRevealed(state, row, column)) {
+        // Currently do nothing here.
+    } else {
+        context.fillStyle = '#AAA';
+        context.fill();
+        context.strokeStyle = '#666';
+        context.stroke();
+        const flagValue = getFlagValue(state, row, column);
+        if (flagValue) {
+            const points = getCellPoints(state, row, column);
+            context.beginPath();
+            context.moveTo(points[0][0], points[0][1]);
+            context.lineTo(points[3][0], points[3][1]);
+            context.moveTo(points[1][0], points[1][1]);
+            context.lineTo(points[4][0], points[4][1]);
+            context.moveTo(points[2][0], points[2][1]);
+            context.lineTo(points[5][0], points[5][1]);
+            context.strokeStyle = flagValue == 2 ? 'red' : 'green';
+            context.stroke();
+        }
+    }
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.font = `${EDGE_LENGTH / 2 + 12}px sans-serif`;
+    const centerX = column * COLUMN_WIDTH + SHORT_EDGE + Math.round(EDGE_LENGTH / 2) - Math.round(state.camera.left);
+    if (!cell.destroyed && cell.crystals > 0) {
+        const centerY = row * ROW_HEIGHT + ((column % 2) ? LONG_EDGE : 0)
+            + Math.round(LONG_EDGE / 2) - Math.round(state.camera.top);
+        context.fillStyle = '#0AF';
+        context.fillText(cell.crystals, centerX, centerY);
+        context.lineWidth = 2;
+        context.strokeStyle = '#048';
+        context.strokeText(cell.crystals, centerX, centerY);
+    }
+    if (!cell.destroyed && cell.traps > 0) {
+        //context.font = `${EDGE_LENGTH / 2 + 4}px sans-serif`;
+        const centerY = row * ROW_HEIGHT + ((column % 2) ? LONG_EDGE : 0) + LONG_EDGE
+            + Math.round(LONG_EDGE / 2) - Math.round(state.camera.top);
+        context.fillStyle = '#FCC';
+        context.fillText(cell.traps, centerX, centerY);
+        context.lineWidth = 2;
+        context.strokeStyle = '#400';
+        context.strokeText(cell.traps, centerX, centerY);
     }
 }
 function drawCellPath(context, state, row, column) {
