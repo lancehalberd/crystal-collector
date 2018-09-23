@@ -59,8 +59,8 @@ const achievementsData = {
         valueIsBetter: (value, goal) => value > goal,
     },
     [ACHIEVEMENT_PREVENT_X_EXPLOSIONS]: {
-        goals: [5, 20, 50, 100],
-        bonusValues: [6, 12, 18, 25],
+        goals: [10, 50, 100, 200],
+        bonusValues: [10, 20, 25, 30],
         getAchievementLabel: goal => `Prevent ${goal} bomb explosions`,
         getBonusLabel: bonusValue => `${bonusValue}% increased maximum explosion protection`,
         getValue: state => getAchievementStat(state, ACHIEVEMENT_PREVENT_X_EXPLOSIONS),
