@@ -89,14 +89,7 @@ function onMouseUp(event) {
 }
 /*
 TODO:
-Add animated lava starting at depth 30.
-Lava lowers 10% for every crystal discovered within 10 depth of the current level, up to 100% for
-crystals found immediately above the current level of the lava. Lava gradually falls to the current target depth.
-Remove maximum depth indicator line (the lava will approximate this functionality).
-
-Research optimization for mobile browsers:
     -Scale the canvas to fill the screen, modify tile size based on canvas dimensions.
-
 */
 
 const update = () => {

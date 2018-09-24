@@ -34,6 +34,7 @@ function getNewState() {
         bombsDiffusedToday: 0,
         bonusFuelToday: 0,
         crystalsCollectedToday: 0,
+        displayLavaDepth: 30,
         saved: {
             bombDiffusers: 3,
             explosionProtection: 0.2,
@@ -45,6 +46,7 @@ function getNewState() {
             score: 0,
             playedToday: false,
             achievementStats: {},
+            lavaDepth: 30,
         },
     };
 }
@@ -56,6 +58,7 @@ function nextDay(state) {
         bonusFuelToday: 0,
         crystalsCollectedToday: 0,
         usingBombDiffuser: false,
+        displayLavaDepth: state.saved.lavaDepth,
         saved: {
             ...state.saved,
             day: state.saved.day + 1,
@@ -77,6 +80,7 @@ function restart(state) {
         ...state,
         showAchievements: false,
         displayFuel: 0,
+        displayLavaDepth: 30,
         saved: {
             ...state.saved,
             score: 0,
@@ -86,6 +90,7 @@ function restart(state) {
             range: 1.2,
             maxFuel: 100,
             maxDepth: 0,
+            lavaDepth: 30,
         }
     });
     return {...state, shop: false};
@@ -128,8 +133,7 @@ function setButtonState(state) {
     return state;
 }
 function advanceState(state) {
-    state = setButtonState(state);
-    if (state.mouseDown && state.mouseDragged && state.lastProcessedMouseCoords) {
+    if (!state.shop && !state.showAchievements && state.mouseDown && state.mouseDragged && state.lastProcessedMouseCoords) {
         const camera = {...state.camera};
         const dx = state.lastMouseCoords.x - state.lastProcessedMouseCoords.x;
         const dy = state.lastMouseCoords.y - state.lastProcessedMouseCoords.y;
@@ -137,6 +141,7 @@ function advanceState(state) {
         camera.top = Math.min(Math.max(camera.top - dy, camera.minY - HEIGHT / 2), camera.maxY - HEIGHT / 2);
         state = {...state, selected: false, camera, dragDistance: state.dragDistance + Math.abs(dx) + Math.abs(dy)};
     }
+    state = setButtonState(state);
     state.lastProcessedMouseCoords = state.lastMouseCoords;
     for (const hudButton of getHUDButtons(state)) {
         if (hudButton.advance) {

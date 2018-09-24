@@ -134,7 +134,7 @@ function createCell(state, row, column) {
 }
 function canExploreCell(state, row, column) {
     const columnz = z(column);
-    return state.rows[row] && state.rows[row][columnz] && !state.rows[row][columnz].explored;
+    return (getDepth(state, row, column) <= state.saved.lavaDepth - 1) && state.rows[row] && state.rows[row][columnz] && !state.rows[row][columnz].explored;
 }
 
 function revealCell(state, row, column) {
@@ -282,6 +282,10 @@ function exploreCell(state, row, column) {
             let explored = cellToUpdate.explored || (!crystals && !cellToUpdate.traps);
             state = updateCell(state, coordsToUpdate.row, coordsToUpdate.column, {crystals, explored});
         }
+        if (depth > state.saved.lavaDepth - 11 && depth < Math.floor(state.saved.lavaDepth)) {
+            const delta = Math.floor(state.saved.lavaDepth) - depth;
+            state.saved.lavaDepth += 1 / delta;
+        }
     } else {
         state = {...state, fuel: Math.max(0, state.fuel - fuelCost)};
     }
@@ -365,7 +369,10 @@ function advanceDigging(state) {
     let displayFuel = state.displayFuel;
     if (displayFuel < state.fuel) displayFuel = Math.ceil((displayFuel * 10 + state.fuel) / 11);
     if (displayFuel > state.fuel) displayFuel = Math.floor((displayFuel * 10 + state.fuel) / 11);
-    return {...state, displayFuel, saved };
+    let displayLavaDepth = state.displayLavaDepth;
+    if (displayLavaDepth < state.saved.lavaDepth) displayLavaDepth = Math.min(displayLavaDepth + 0.01, state.saved.lavaDepth);
+    if (displayLavaDepth > state.saved.lavaDepth) displayLavaDepth = Math.max(displayLavaDepth - 0.01, state.saved.lavaDepth);
+    return {...state, displayFuel, displayLavaDepth, saved };
 }
 function spawnCrystals(state, x, y, amount) {
     const crystalValues = [];

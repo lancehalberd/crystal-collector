@@ -15,7 +15,7 @@ const { z, canExploreCell, getFuelCost, isCellRevealed, getFlagValue } = require
 
 function renderDigging(context, state) {
     if (state.camera.top < 500) {
-        var gradient = context.createLinearGradient(0, 200 - state.camera.top, 0, 500 - state.camera.top);
+        let gradient = context.createLinearGradient(0, 200 - state.camera.top, 0, 500 - state.camera.top);
         gradient.addColorStop(0, "#840");
         gradient.addColorStop(1, "black");
         context.fillStyle = gradient;
@@ -54,6 +54,38 @@ function renderDigging(context, state) {
         context.stroke();
     }
     context.save();
+    // Draw lava.
+    const lavaDepthY = state.displayLavaDepth * ROW_HEIGHT / 2 + ROW_HEIGHT / 2 - state.camera.top;
+    const waveHeight = ROW_HEIGHT / 3;
+    if (lavaDepthY < HEIGHT + 200) {
+        let gradient = context.createLinearGradient(0, lavaDepthY - 150, 0, lavaDepthY + ROW_HEIGHT / 2);
+        gradient.addColorStop(0.05 + Math.sin(state.time / 500) * 0.05, "rgba(255, 255, 0, 0.0)");
+        gradient.addColorStop(.90, "rgba(255, 255, 0, 0.8)");
+        context.fillStyle = gradient;
+        context.fillRect(0, lavaDepthY + waveHeight - 200, WIDTH, HEIGHT);
+    }
+    if (lavaDepthY < HEIGHT + ROW_HEIGHT / 2) {
+        context.globalAlpha = 0.8;
+        context.fillStyle = 'red';
+        context.beginPath();
+        const numPoints = 30;
+        context.moveTo(0, HEIGHT);
+        for (let i = 0; i <= numPoints; i++) {
+            const x = WIDTH * i / numPoints;
+            const y = lavaDepthY - 7
+                + waveHeight * Math.sin((x + state.time) / 100) / 20
+                + waveHeight * Math.sin((x + state.time) / 200) / 10
+                + waveHeight * Math.sin((x + state.time) / 500) / 5;
+            context.lineTo(x, y);
+        }
+        context.lineTo(WIDTH, HEIGHT);
+        context.closePath();
+        context.fill();
+        context.strokeStyle = '#FF0';
+        context.lineWidth = 2;
+        context.stroke();
+    }
+    // Draw Depth indicator.
     context.globalAlpha = 0.5;
     let depth = 5 * Math.max(1, Math.floor( (state.camera.top / (ROW_HEIGHT / 2) - 1) / 5));
     let y = (depth + 1) * ROW_HEIGHT / 2 - state.camera.top;
@@ -65,15 +97,6 @@ function renderDigging(context, state) {
         y += 5 * ROW_HEIGHT / 2;
         depth += 5;
     }
-    context.globalAlpha = 0.2;
-    state.saved.maxDepth * ROW_HEIGHT / 2 + ROW_HEIGHT / 2 - state.camera.top;
-    const maxDepthY = state.saved.maxDepth * ROW_HEIGHT / 2 + ROW_HEIGHT / 2 - state.camera.top;
-    context.strokeStyle = 'yellow';
-    context.lineWidth = 10;
-    context.beginPath();
-    context.moveTo(0, maxDepthY);
-    context.lineTo(WIDTH, maxDepthY);
-    context.stroke();
     context.restore();
 }
 

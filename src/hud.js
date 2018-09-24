@@ -298,7 +298,10 @@ function getHUDButtons(state) {
         return buttons;
     }
     if (state.shop) {
-        const maxStartingDepth = getAchievementBonus(state, ACHIEVEMENT_EXPLORE_DEPTH_X);
+        const maxStartingDepth = Math.min(
+            Math.floor(state.saved.lavaDepth - 1),
+            getAchievementBonus(state, ACHIEVEMENT_EXPLORE_DEPTH_X),
+        );
         const buttons = [
             digButton,
             fuelButton,
