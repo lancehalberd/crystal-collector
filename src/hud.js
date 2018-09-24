@@ -99,11 +99,11 @@ const depth100Button = {
     },
     top: depthOffset + (digButton.height + 20) * 3
 };
-const depth200Button = {
+const depth150Button = {
     ...digButton,
-    label: 'Dig 200',
+    label: 'Dig 150',
     onClick(state) {
-        return {...state, shop: false, fuel: state.saved.maxFuel, startingDepth: 200};
+        return {...state, shop: false, fuel: state.saved.maxFuel, startingDepth: 150};
     },
     top: depthOffset + (digButton.height + 20) * 4
 };
@@ -309,7 +309,7 @@ function getHUDButtons(state) {
         if (maxStartingDepth >= 20) buttons.push(depth20Button);
         if (maxStartingDepth >= 50) buttons.push(depth50Button);
         if (maxStartingDepth >= 100) buttons.push(depth100Button);
-        if (maxStartingDepth >= 200) buttons.push(depth200Button);
+        if (maxStartingDepth >= 150) buttons.push(depth150Button);
         return buttons;
     }
     return [
