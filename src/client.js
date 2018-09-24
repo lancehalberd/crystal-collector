@@ -89,9 +89,6 @@ function onMouseUp(event) {
 }
 /*
 TODO:
-Constrain scrolling to max rectangle that has been played in:
-    -Set left/top/right/bottom bounds and constrain within this.
-
 Add animated lava starting at depth 30.
 Lava lowers 10% for every crystal discovered within 10 depth of the current level, up to 100% for
 crystals found immediately above the current level of the lava. Lava gradually falls to the current target depth.

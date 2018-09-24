@@ -116,6 +116,16 @@ function createCell(state, row, column) {
     if (row < 0) return state;
     const columnz = z(column);
     if (state.rows[row] && state.rows[row][columnz]) return state;
+    // Update the bounds we allow the user to drag and scroll to.
+    const {x, y} = getCellCenter(state, row, column);
+    state = {...state, camera: {
+            ...state.camera,
+            minX: Math.min(state.camera.minX, x),
+            maxX: Math.max(state.camera.maxX, x),
+            minY: Math.min(state.camera.minY, y),
+            maxY: Math.max(state.camera.maxY, y),
+        }
+    };
     const selectedRow = [...(state.rows[row] || [])];
     selectedRow[columnz] = {cellsToUpdate: []};
     const rows = [...state.rows];
@@ -290,7 +300,6 @@ function advanceDigging(state) {
         state = revealCell(state, startingCell.row, startingCell.column);
         state = {...state, selected: startingCell};
     }
-    let camera = {...state.camera};
     if ((state.rightClicked || (state.clicked && state.usingBombDiffuser)) && state.overButton && state.overButton.cell) {
         const {row, column} = state.overButton;
         if (canExploreCell(state, row, column)) {
@@ -347,14 +356,16 @@ function advanceDigging(state) {
         const targetLeft = state.selected.column * COLUMN_WIDTH + SHORT_EDGE + EDGE_LENGTH / 2 - WIDTH / 2;
         const rowOffset = (state.selected.column % 2) ? ROW_HEIGHT / 2 : 0;
         const targetTop = Math.max(-100, (state.selected.row + 0.5) * ROW_HEIGHT + rowOffset - HEIGHT / 2);
-        camera.top = Math.round((camera.top * 10 + targetTop) / 11);
-        camera.left = Math.round((camera.left * 10 + targetLeft) / 11);
+        state = {...state, camera: {...state.camera,
+            top: Math.round((state.camera.top * 10 + targetTop) / 11),
+            left: Math.round((state.camera.left * 10 + targetLeft) / 11)
+        }}
     }
     let saved = state.saved;
     let displayFuel = state.displayFuel;
     if (displayFuel < state.fuel) displayFuel = Math.ceil((displayFuel * 10 + state.fuel) / 11);
     if (displayFuel > state.fuel) displayFuel = Math.floor((displayFuel * 10 + state.fuel) / 11);
-    return {...state, camera, displayFuel, saved };
+    return {...state, displayFuel, saved };
 }
 function spawnCrystals(state, x, y, amount) {
     const crystalValues = [];

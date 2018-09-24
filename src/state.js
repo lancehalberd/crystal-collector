@@ -5,16 +5,24 @@ const {
     FRAME_LENGTH, WIDTH, HEIGHT, EDGE_LENGTH,
 } = require('gameConstants');
 
+function getNewCamera() {
+    return {
+        left: -WIDTH / 2 + EDGE_LENGTH,
+        top: -100,
+        minX: 1E9,
+        maxX: -1E9,
+        minY: 1E9,
+        maxY: -1E9,
+    };
+}
+
 function getNewState() {
     return {
         actions: {},
         fuel: 100,
         bombDiffusers: 3,
         displayFuel: 0,
-        camera: {
-            left: -WIDTH / 2 + EDGE_LENGTH,
-            top: -100,
-        },
+        camera: getNewCamera(),
         rows: [],
         flags: [],
         sfx: {},
@@ -54,10 +62,7 @@ function nextDay(state) {
             seed: random.nextSeed(state.saved.seed),
             playedToday: false,
         },
-        camera: {
-            left: -WIDTH / 2 + EDGE_LENGTH,
-            top: -100,
-        },
+        camera: getNewCamera(),
         rows: [],
         flags: [],
         fuel: state.saved.maxFuel,
@@ -128,8 +133,8 @@ function advanceState(state) {
         const camera = {...state.camera};
         const dx = state.lastMouseCoords.x - state.lastProcessedMouseCoords.x;
         const dy = state.lastMouseCoords.y - state.lastProcessedMouseCoords.y;
-        camera.left -= dx;
-        camera.top -= dy;
+        camera.left = Math.min(Math.max(camera.left - dx, camera.minX - WIDTH / 2), camera.maxX - WIDTH / 2);
+        camera.top = Math.min(Math.max(camera.top - dy, camera.minY - HEIGHT / 2), camera.maxY - HEIGHT / 2);
         state = {...state, selected: false, camera, dragDistance: state.dragDistance + Math.abs(dx) + Math.abs(dy)};
     }
     state.lastProcessedMouseCoords = state.lastMouseCoords;
