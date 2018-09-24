@@ -1,6 +1,7 @@
 const {
     WIDTH,
     HEIGHT,
+    ROW_HEIGHT,
 } = require('gameConstants');
 const Rectangle = require('Rectangle');
 const { drawImage, drawText } = require('draw');
@@ -22,6 +23,28 @@ const sleepButton = {
     },
     left: WIDTH - 130,
     top: 10,
+    width: 120,
+    height: 60,
+};
+
+const diffuserButton = {
+    render(context, state, button) {
+        renderButtonBackground(context, state, button);
+        drawText(context, state.bombDiffusers, button.left + button.width - 15, button.top + button.height / 2,
+            {fillStyle: '#A40', strokeStyle: '#FA4', size: 36, textBaseline: 'middle', textAlign: 'right'});
+        const iconRectangle = new Rectangle(diffuserFrame).scale(2);
+        drawImage(context, diffuserFrame.image, diffuserFrame,
+            iconRectangle.moveCenterTo(button.left + 15 + iconRectangle.width / 2, button.top + button.height / 2)
+        );
+    },
+    isActive(state) {
+        return state.usingBombDiffuser;
+    },
+    onClick(state) {
+        return {...state, usingBombDiffuser: !state.usingBombDiffuser};
+    },
+    left: 20,
+    top: HEIGHT - 70,
     width: 120,
     height: 60,
 };
@@ -106,7 +129,8 @@ const restartButton = {
 
 function renderButtonBackground(context, state, button) {
     const enabled = !button.isEnabled || button.isEnabled(state, button);
-    context.fillStyle = state.overButton === button ? (enabled ? '#0A4' : '#A00') : '#00A';
+    const active = button.isActive && button.isActive(state, button);
+    context.fillStyle = (state.overButton === button || active) ? (enabled ? '#0A4' : '#A00') : '#00A';
     context.fillRect(button.left, button.top, button.width, button.height);
 
     context.strokeStyle = 'black';
@@ -290,23 +314,12 @@ function getHUDButtons(state) {
     }
     return [
         sleepButton,
+        diffuserButton,
         achievementButton,
     ];
 }
 
 function renderHUD(context, state) {
-    // Draw DEPTH indicator
-    if (!state.shop && state.overButton && state.overButton.cell) {
-        context.textAlign = 'left';
-        context.textBaseline = 'bottom';
-        context.font = `36px sans-serif`;
-        context.fillStyle = 'black';
-        context.lineWidth = 1;
-        context.strokeStyle = 'white';
-        const depth = getDepth(state, state.overButton.row, state.overButton.column);
-        context.fillText(`DEPTH: ${depth}`, 10, HEIGHT - 10);
-        context.strokeText(`DEPTH: ${depth}`, 10, HEIGHT - 10);
-    }
     // Draw SCORE indicator
     const scoreWidth = drawText(context, state.saved.score,WIDTH - 10, HEIGHT - 10,
         {fillStyle: '#4AF', strokeStyle: 'white', textAlign: 'right', textBaseline: 'bottom', size: 36, measure: true}
@@ -314,12 +327,6 @@ function renderHUD(context, state) {
     let iconRectangle = new Rectangle(crystalFrame).scale(2);
     drawImage(context, crystalFrame.image, crystalFrame,
         iconRectangle.moveCenterTo(WIDTH - 20 - scoreWidth - 5 - iconRectangle.width / 2, HEIGHT - 10 - 20)
-    );
-    const diffuserWidth = drawText(context, state.bombDiffusers, WIDTH - 10, HEIGHT - 55,
-        {fillStyle: '#A40', strokeStyle: '#FA4', size: 36, textBaseline: 'bottom', textAlign: 'right', measure: true});
-    iconRectangle = new Rectangle(diffuserFrame).scale(2);
-    drawImage(context, diffuserFrame.image, diffuserFrame,
-        iconRectangle.moveCenterTo(WIDTH - 20 - diffuserWidth - 10 - iconRectangle.width / 2, HEIGHT - 55 - 20)
     );
 
     // Draw FUEL indicator
@@ -357,14 +364,13 @@ function renderHUD(context, state) {
                 }
             }
         }
-        context.textAlign = 'left';
-        context.textBaseline = 'top';
-        context.font = `19px sans-serif`;
-        context.fillStyle = 'white';
-        context.fillText('FUEL ' + state.fuel, 15, 9);
+        drawText(context, 'FUEL ' + state.fuel, 15, 9, {fillStyle: 'white', size: 19, textBaseline: 'top'});
         context.strokeStyle = 'white';
         context.lineWidth = 2;
         context.strokeRect(10, 10, fuelBarWidth, 20);
+
+        // Render DAY #
+        drawText(context, `DAY ${state.saved.day}`, 20 + fuelBarWidth, 10, {fillStyle: 'white', size: 20, textBaseline: 'top'});
     }
 
     // Render buttons
@@ -372,9 +378,6 @@ function renderHUD(context, state) {
         button.render(context, state, button);
     }
 
-    if (!state.shop && !state.showAchievements) {
-        const dayTextWidth = drawText(context, `DAY ${state.saved.day}`, 23, 35, {fillStyle: 'white', size: 20, textBaseline: 'top', measure: true});
-    }
 }
 
 module.exports = {
@@ -383,7 +386,7 @@ module.exports = {
 };
 
 const { nextDay, restart } = require('state');
-const { canExploreCell, getFuelCost, getFlagValue, getDepth, getRangeAtDepth, getExplosionProtectionAtDepth } = require('digging');
+const { canExploreCell, getFuelCost, getFlagValue, getRangeAtDepth, getExplosionProtectionAtDepth } = require('digging');
 const { crystalFrame, diffuserFrame } = require('sprites');
 const {
     goldMedalFrame,

@@ -47,6 +47,7 @@ function nextDay(state) {
         bombsDiffusedToday: 0,
         bonusFuelToday: 0,
         crystalsCollectedToday: 0,
+        usingBombDiffuser: false,
         saved: {
             ...state.saved,
             day: state.saved.day + 1,
@@ -97,17 +98,15 @@ function getOverButton(state, coords = {}) {
 }
 
 function setButtonState(state) {
-    const dragIsBlocking = state.mouseDragged && state.dragDistance >= 10;
-    if (!dragIsBlocking && state.mouseDown && state.mouseDownCoords && state.time - state.mouseDown >= 500) {
-        state = {...state, mouseDown: false, rightClicked: true, mouseDownCoords: false, lastMouseCoords: false};
-    } else if (state.mouseDownCoords && !state.mouseDown) {
+    if (state.mouseDownCoords && !state.mouseDown) {
         const startButton = getOverButton(state, state.mouseDownCoords);
         const lastButton = getOverButton(state, state.lastMouseCoords);
         const buttonsMatch = startButton && lastButton && (lastButton === startButton ||
             (lastButton.cell && lastButton.row === startButton.row && lastButton.column === startButton.column));
         // Clicking on a cell fails during a drag operation.
-        // We check for drags longer than 2 frames so that moving the mouse slightly on click doesn't
+        // We check for drags longer than a short distance so that moving the mouse slightly on click doesn't
         // prevent clicking a cell.
+        const dragIsBlocking = state.mouseDragged && state.dragDistance >= 10;
         if (buttonsMatch && !(dragIsBlocking && lastButton.cell)) {
             state = {...state, clicked: true};
         }

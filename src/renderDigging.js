@@ -9,7 +9,7 @@ const {
 } = require('gameConstants');
 
 // const Rectangle = require('Rectangle');
-// const { drawImage } = require('draw');
+const { drawText } = require('draw');
 
 const { z, canExploreCell, getFuelCost, isCellRevealed, getFlagValue } = require('digging');
 
@@ -53,10 +53,22 @@ function renderDigging(context, state) {
         drawCellPath(context, state, row, column);
         context.stroke();
     }
-    const maxDepthY = state.saved.maxDepth * ROW_HEIGHT / 2 + ROW_HEIGHT / 2 - state.camera.top;
     context.save();
-    context.strokeStyle = 'yellow';
+    context.globalAlpha = 0.5;
+    let depth = 5 * Math.max(1, Math.floor( (state.camera.top / (ROW_HEIGHT / 2) - 1) / 5));
+    let y = (depth + 1) * ROW_HEIGHT / 2 - state.camera.top;
+    while (y < HEIGHT) {
+        let size = 15;
+        if (!(depth % 50)) size = 30;
+        else if (!(depth % 10)) size = 20;
+        drawText(context, `${depth} -`, 10, y, {fillStyle: '#FFF', textAlign: 'left', textBaseline: 'middle', size});
+        y += 5 * ROW_HEIGHT / 2;
+        depth += 5;
+    }
     context.globalAlpha = 0.2;
+    state.saved.maxDepth * ROW_HEIGHT / 2 + ROW_HEIGHT / 2 - state.camera.top;
+    const maxDepthY = state.saved.maxDepth * ROW_HEIGHT / 2 + ROW_HEIGHT / 2 - state.camera.top;
+    context.strokeStyle = 'yellow';
     context.lineWidth = 10;
     context.beginPath();
     context.moveTo(0, maxDepthY);

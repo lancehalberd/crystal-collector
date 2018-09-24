@@ -46,7 +46,11 @@ document.body.appendChild(canvas);
 function getEventCoords(event) {
     let x = 0, y = 0;
     if (event.changedTouches && event.changedTouches.length) {
-        for (const changedTouch of event.changedTouches) {
+        // In some IOS safari browsers, using for (const changedTouch of event.changedTouches)
+        // throws an error, so use a regular for loop here. This is technically a TouchList so
+        // maybe they didn't implement the interface needed to iterate in this fashion.
+        for (let i = 0; i < event.changedTouches.length; i++) {
+            const changedTouch = event.changedTouches[i];
             x += changedTouch.pageX;
             y += changedTouch.pageY;
         }
@@ -56,6 +60,7 @@ function getEventCoords(event) {
         x = event.pageX;
         y = event.pageY;
     }
+
     x -= canvas.offsetLeft;
     y -= canvas.offsetTop;
     return {x, y};
@@ -84,9 +89,8 @@ function onMouseUp(event) {
 }
 /*
 TODO:
-Add button for toggling bomb diffusing on, move diffuser count near it.
-Remove depth indicator, move diffuser button to lower left corner.
-Add depth indicator as transparent text every 5, 10, 50 depths wither larger text for larger increments.
+Constrain scrolling to max rectangle that has been played in:
+    -Set left/top/right/bottom bounds and constrain within this.
 
 Add animated lava starting at depth 30.
 Lava lowers 10% for every crystal discovered within 10 depth of the current level, up to 100% for
@@ -94,9 +98,7 @@ crystals found immediately above the current level of the lava. Lava gradually f
 Remove maximum depth indicator line (the lava will approximate this functionality).
 
 Research optimization for mobile browsers:
-    -Remove browser bars if possible/add full screen button.
     -Scale the canvas to fill the screen, modify tile size based on canvas dimensions.
-    -Investigate better touch handlers.
 
 */
 
@@ -117,7 +119,7 @@ const update = () => {
             state = nextDay(state);
         }
         savedState = state.saved;
-        canvas.onmousedown = canvas.ontouchstart = onMouseDown;
+        canvas.onmousedown =  onMouseDown;
         canvas.oncontextmenu = function (event) {
             state.rightClicked = true;
             state.mouseDownCoords = false;
@@ -125,8 +127,8 @@ const update = () => {
             event.preventDefault();
             return false;
         }
-        document.onmousemove = document.ontouchmove = onMouseMove;
-        document.onmouseup = document.ontouchend = onMouseUp;
+        document.onmousemove = onMouseMove;
+        document.onmouseup = onMouseUp;
         canvas.onmouseout = function (event) {
             state.mouseDownCoords = state.lastMouseCoords = null;
             event.preventDefault();

@@ -233,7 +233,10 @@ function renderAchievements(context, state) {
             );
         }
         context.restore();
-        let goalValue = (getAchievementStat(state, key) || 0) + ' / ' + data.goals[Math.min(3, bonusLevel + 1)];
+        let goalValue = (getAchievementStat(state, key) || 0)
+        if (bonusLevel + 1 < data.goals.length) {
+            goalValue += ' / ' + data.goals[bonusLevel + 1];
+        }
         /*if (key === ACHIEVEMENT_EXPLORED_DEEP_IN_X_DAYS && bonusLevel < 0) {
             goalValue = data.goals[bonusLevel + 1];
         }*/

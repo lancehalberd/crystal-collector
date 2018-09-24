@@ -291,12 +291,13 @@ function advanceDigging(state) {
         state = {...state, selected: startingCell};
     }
     let camera = {...state.camera};
-    if (state.rightClicked && state.overButton && state.overButton.cell) {
+    if ((state.rightClicked || (state.clicked && state.usingBombDiffuser)) && state.overButton && state.overButton.cell) {
         const {row, column} = state.overButton;
         if (canExploreCell(state, row, column)) {
             if (state.bombDiffusers > 0) {
                 state = {...state, bombDiffusers: state.bombDiffusers - 1};
                 const cellColor = getCellColor(state, row, column);
+                const {x, y} = getCellCenter(state, row, column);
                 if (cellColor === 'red') {
                     state = revealCell(state, row, column);
                     state = {...state, bombsDiffusedToday: state.bombsDiffusedToday + 1};
@@ -311,10 +312,10 @@ function advanceDigging(state) {
                         let explored = cellToUpdate.explored || (!traps && !cellToUpdate.crystals);
                         state = updateCell(state, coordsToUpdate.row, coordsToUpdate.column, {traps, explored});
                     }
-                    const {x, y} = getCellCenter(state, row, column);
-                    state = addSprite(state, {...bombSprite, x, y, bonusFuel});
+                    state = addSprite(state, {...bombSprite, x, y, bonusFuel, frame: -30});
                 } else {
                     state = exploreCell(state, row, column);
+                    state = addSprite(state, {...diffuserSprite, x, y, frame: -20});
                 }
             } else {
                 const selectedRow = [...(state.flags[row] || [])];
@@ -328,8 +329,9 @@ function advanceDigging(state) {
                 flags[row] = selectedRow;
                 state = {...state, flags};
             }
-            state.selected = state.overButton;
+            state = {...state, selected: state.overButton};
         }
+        state = {...state, usingBombDiffuser: false, clicked: false, rightClicked: false};
     }
     if (!state.rightClicked && state.clicked && state.overButton && state.overButton.cell) {
         const {row, column} = state.overButton;
@@ -412,7 +414,7 @@ module.exports = {
     gainCrystals,
 };
 
-const { addSprite, bombSprite, crystalSprite, explosionSprite } = require('sprites');
+const { addSprite, bombSprite, crystalSprite, diffuserSprite, explosionSprite } = require('sprites');
 
 const {
     getAchievementBonus,

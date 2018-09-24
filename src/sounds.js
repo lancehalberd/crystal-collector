@@ -93,19 +93,25 @@ const playTrack = (source, timeOffset) => {
     function startTrack(offset) {
         // console.log({source, offset, actual: startOffset + offset, customDuration});
         sound.currentTime = startOffset + offset;
-        sound.play().then(() => {
-            // If a custom duration is set, restart the song at that point.
-            if (customDuration) {
-                sound.timeoutId = setTimeout(() => {
-                    sound.pause();
+        try {
+            sound.play().then(() => {
+                // If a custom duration is set, restart the song at that point.
+                if (customDuration) {
+                    sound.timeoutId = setTimeout(() => {
+                        sound.pause();
+                        startTrack(0);
+                    }, (customDuration - offset) * 1000);
+                }
+                sound.onended = () => {
+                    if (sound.timeoutId) clearTimeout(sound.timeoutId);
                     startTrack(0);
-                }, (customDuration - offset) * 1000);
-            }
-            sound.onended = () => {
-                if (sound.timeoutId) clearTimeout(sound.timeoutId);
-                startTrack(0);
-            }
-        });
+                }
+            }).catch(error => {
+                console.log("Failed to play track.");
+            });
+        } catch (error) {
+            console.log("Failed to play track.");
+        }
     }
     startTrack((timeOffset / 1000) % (customDuration || sound.duration || 10000000));
     previousTrack = sound;

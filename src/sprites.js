@@ -79,8 +79,31 @@ const bombSprite = {
         return updateSprite(state, sprite, {frame, x, y, vx, vy});
     },
     render(context, state, sprite) {
-        drawImage(context, bombFrame.image, bombFrame,
-            new Rectangle(bombFrame).scale(2).moveCenterTo(sprite.x - state.camera.left, sprite.y - state.camera.top)
+        let frame = bombFrame;
+        if (sprite.frame < 0) {
+            frame = diffuserFrame;
+        }
+        drawImage(context, frame.image, frame,
+            new Rectangle(frame).scale(2).moveCenterTo(sprite.x - state.camera.left, sprite.y - state.camera.top)
+        );
+    }
+};
+const diffuserSprite = {
+    advance(state, sprite) {
+        if (vy > 0 && sprite.y > state.camera.top + HEIGHT + 32) {
+            return deleteSprite(state, sprite);
+        }
+        let {y = 0, vy = 0, frame = 0} = sprite;
+        frame++;
+        if (frame > 0) {
+            vy++;
+            y += vy;
+        }
+        return updateSprite(state, sprite, {frame, y, vy});
+    },
+    render(context, state, sprite) {
+        drawImage(context, diffuserFrame.image, diffuserFrame,
+            new Rectangle(diffuserFrame).scale(2).moveCenterTo(sprite.x - state.camera.left, sprite.y - state.camera.top)
         );
     }
 };
@@ -105,6 +128,7 @@ module.exports = {
     deleteSprite,
     updateSprite,
     bombSprite,
+    diffuserSprite,
     crystalFrame,
     crystalSprite,
     diffuserFrame,
