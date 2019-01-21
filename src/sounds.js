@@ -107,10 +107,10 @@ const playTrack = (source, timeOffset) => {
                     startTrack(0);
                 }
             }).catch(error => {
-                console.log("Failed to play track.");
+                console.log("Failed to play track.", error);
             });
         } catch (error) {
-            console.log("Failed to play track.");
+            console.log("Failed to play track.", error);
         }
     }
     startTrack((timeOffset / 1000) % (customDuration || sound.duration || 10000000));

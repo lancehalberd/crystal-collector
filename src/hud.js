@@ -1,7 +1,6 @@
 const {
     WIDTH,
     HEIGHT,
-    ROW_HEIGHT,
 } = require('gameConstants');
 const Rectangle = require('Rectangle');
 const { drawImage, drawText } = require('draw');
@@ -247,7 +246,7 @@ const bombDiffuserButton = {
     getCost(state) {
         return Math.round(25 * Math.pow(2, state.saved.bombDiffusers));
     },
-    getLabel(state){
+    getLabel(){
         return 'Bomb Diffusers';
     },
     getCurrentValue(state) {
@@ -273,7 +272,7 @@ const explosionProtectionButton = {
     getCost(state) {
         return Math.round(100 * Math.pow(2, 5 * state.saved.explosionProtection));
     },
-    getLabel(state){
+    getLabel(){
         return 'Explosion Protection';
     },
     getCurrentValue(state) {

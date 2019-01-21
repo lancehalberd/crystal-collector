@@ -1,12 +1,27 @@
-
+const MAX_INT = 2 ** 32;
 window.random = {
     chance(percent = 0.5) {
         return Math.random() < percent;
     },
 
+    // Decent pseudo random number generator based on:
+    // https://en.wikipedia.org/wiki/Xorshift
+    // Values seem fairly evenly distributed on [0, 1)
+    nextSeed(seed = 2 ** 32 * Math.random()) {
+        let x = Math.floor(MAX_INT * seed);
+        x ^= x << 13;
+        x ^= x >> 17;
+        x ^= x << 5;
+        return (x / MAX_INT) + 0.5;
+    },
+
+    /*
+      Example of a bad pseudo random number generator, values close to 1
+      and 0 are more than twice as likely as values close to 0.5.
     nextSeed(seed = Math.random()) {
         return (Math.cos(seed * 1000000 * Math.log(seed)) + 1) / 2;
     },
+    */
 
     /**
      * @param {Number} min  The smallest returned value

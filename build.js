@@ -14,16 +14,17 @@ const bundler = browserify({
   .transform("babelify");
 
 bundler.on('update', updateBundle);
-bundler.on('bundle', function(err) {
-    console.log('   ...Updated public/client.js!');
-});
 
 function updateBundle() {
+    writeStream = fs.createWriteStream("public/client.js");
     console.log('Updating public/client.js...');
+    writeStream.on('finish',  () => {
+        console.log('...Finished!');
+    });
     bundler.bundle().on("error", function(err) {
         console.log("Browserify error:", err.message);
         console.log(err);
-    }).pipe(fs.createWriteStream("public/client.js"));
+    }).pipe(writeStream);
 }
 
 updateBundle();

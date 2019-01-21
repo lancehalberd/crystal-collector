@@ -5,7 +5,7 @@ const { requireImage } = require('animations');
 
 const FINAL_DEPTH_GOAL = 200;
 
-const ACHIEVEMENT_LEVELS = ['Bronze', 'Silver', 'Gold', 'Crystal'];
+// const ACHIEVEMENT_LEVELS = ['Bronze', 'Silver', 'Gold', 'Crystal'];
 
 
 const ACHIEVEMENT_COLLECT_X_CRYSTALS = 'collectXCrystals';
