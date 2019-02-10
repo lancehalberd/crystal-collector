@@ -36,6 +36,7 @@ function renderDigging(context, state) {
             renderCell(context,state, row, column, state.camera.top, state.camera.left);
         }
     }
+    renderSurfaceTiles(context, state);
     for (let row = topRow; row < topRow + rows; row++) {
         for (let column = leftColumn; column < leftColumn + columns; column++) {
             renderCellShading(context,state, row, column, state.camera.top, state.camera.left);
@@ -169,7 +170,6 @@ const decorationFrames = [
     createAnimation('gfx/grasstiles.png', r(50, 50), {x: 7}).frames[0],
 ];
 function renderSurface(context, state) {
-    renderSurfaceTiles(context, state);
     const width = 50;
     const leftColumn = Math.floor(state.camera.left / width) - 1;
     const columns = Math.ceil(WIDTH / width) + 2;
@@ -193,11 +193,11 @@ function renderSurfaceTiles(context, state) {
     const leftColumn = Math.floor(state.camera.left / COLUMN_WIDTH) - 1;
     const columns = Math.ceil(WIDTH / COLUMN_WIDTH) + 2;
     // This is bottom half of the top type of cell.
-    const frame = {...cellFrames[0].frames[0], top: LONG_EDGE, height:LONG_EDGE};
+    const frame = {...cellFrames[0].frames[0], top: 45, height:46};
     if (state.camera.top < LONG_EDGE) {
         for (let column = leftColumn + (leftColumn % 2) ^ 1; column < leftColumn + columns; column+=2) {
             const x = COLUMN_WIDTH * column - state.camera.left;
-            const y = - state.camera.top + 2;
+            const y = - state.camera.top+2;
             drawImage(context, frame.image, frame, new Rectangle(frame).moveTo(x, y));
         }
     }
