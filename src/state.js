@@ -34,7 +34,7 @@ function getNewState() {
         bombsDiffusedToday: 0,
         bonusFuelToday: 0,
         crystalsCollectedToday: 0,
-        displayLavaDepth: 30,
+        displayLavaDepth: 100,
         saved: {
             bombDiffusers: 3,
             explosionProtection: 0.2,
@@ -46,7 +46,7 @@ function getNewState() {
             score: 0,
             playedToday: false,
             achievementStats: {},
-            lavaDepth: 30,
+            lavaDepth: 100,
         },
     };
 }
