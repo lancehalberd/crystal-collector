@@ -366,7 +366,7 @@ function renderHUD(context, state) {
                 }
             }
         }
-        drawText(context, 'FUEL ' + state.fuel, 15, 9, {fillStyle: 'white', size: 19, textBaseline: 'top'});
+        drawText(context, 'FUEL ' + state.fuel, 15, 12, {fillStyle: 'white', size: 19, textBaseline: 'top'});
         context.strokeStyle = 'white';
         context.lineWidth = 2;
         context.strokeRect(10, 10, fuelBarWidth, 20);

@@ -62,6 +62,39 @@ const crystalSprite = {
         );
     }
 };
+
+const pAnimation = x => createAnimation('gfx/particles.png', r(10, 10), {x});
+const particleAnimations = [
+    [pAnimation(6),pAnimation(7),pAnimation(8),pAnimation(9)],
+    [pAnimation(6),pAnimation(7),pAnimation(8),pAnimation(9)],
+    [pAnimation(7),pAnimation(7),pAnimation(8),pAnimation(9)],
+    [pAnimation(8),pAnimation(9),pAnimation(10),pAnimation(11)],
+    [pAnimation(8),pAnimation(9),pAnimation(12),pAnimation(13)],
+    [pAnimation(8),pAnimation(9),pAnimation(12),pAnimation(13)],
+    [pAnimation(10),pAnimation(11),pAnimation(14),pAnimation(15)],
+    [pAnimation(10),pAnimation(11),pAnimation(14),pAnimation(15)],
+    [pAnimation(10),pAnimation(11),pAnimation(15),pAnimation(16)],
+    [pAnimation(10),pAnimation(11),pAnimation(15),pAnimation(16)],
+];
+const debrisSprite = {
+    advance(state, sprite) {
+        if (sprite.y > state.camera.top + HEIGHT) {
+            return deleteSprite(state, sprite);
+        }
+        let {x = 0, y = 0, vx = 0, vy = 0} = sprite;
+        x += vx;
+        y += vy;
+        vy+=0.5;
+        return updateSprite(state, sprite, {x, y, vx, vy});
+    },
+    render(context, state, sprite) {
+        const frame = sprite.animation.frames[0];
+        const x = sprite.x - state.camera.left;
+        const y = sprite.y - state.camera.top;
+        const target = new Rectangle(frame).scale(2).moveCenterTo(x, y);
+        drawImage(context, frame.image, frame, target);
+    }
+};
 const bombSprite = {
     advance(state, sprite) {
         if (sprite.y < state.camera.top + 20) {
@@ -131,8 +164,10 @@ module.exports = {
     diffuserSprite,
     crystalFrame,
     crystalSprite,
+    debrisSprite,
     diffuserFrame,
     explosionSprite,
+    particleAnimations,
     skullFrame,
 };
 

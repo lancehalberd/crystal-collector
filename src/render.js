@@ -6,10 +6,10 @@ const {
 const { renderHUD } = require('hud');
 
 function render(context, state) {
-    if (state.interacted && state.bgm) {
+    /*if (state.interacted && state.bgm) {
         playTrack(state.bgm, 0);
         state.bgm = false;
-    }
+    }*/
     if (state.showAchievements) {
         renderAchievements(context, state);
     } else if (!state.shop) {

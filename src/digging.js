@@ -13,6 +13,45 @@ const CRYSTAL_SIZES = [
     1E6, 5E6, 20E6,
 ];
 
+module.exports = {
+    z,
+    getCellColor,
+    canExploreCell,
+    isCellRevealed,
+    getFlagValue,
+    advanceDigging,
+    getFuelCost,
+    getDepth,
+    getRangeAtDepth,
+    getCellCenter,
+    getOverCell,
+    getExplosionProtectionAtDepth,
+    gainBonusFuel,
+    CRYSTAL_SIZES,
+    gainCrystals,
+};
+
+const {
+    addSprite,
+    bombSprite,
+    crystalSprite,
+    debrisSprite,
+    diffuserSprite,
+    explosionSprite,
+    particleAnimations,
+} = require('sprites');
+
+const {
+    getAchievementBonus,
+    incrementAchievementStat,
+    ACHIEVEMENT_COLLECT_X_CRYSTALS,
+    ACHIEVEMENT_COLLECT_X_CRYSTALS_IN_ONE_DAY,
+    ACHIEVEMENT_GAIN_X_BONUS_FUEL_IN_ONE_DAY,
+    ACHIEVEMENT_EXPLORED_DEEP_IN_X_DAYS,
+    ACHIEVEMENT_PREVENT_X_EXPLOSIONS,
+    ACHIEVEMENT_DIFFUSE_X_BOMBS,
+} = require('achievements');
+
 // Injects indexes from the integers into non-negative integers.
 function z(i) {
     return (i >= 0) ? 2 * i : -2 * i - 1;
@@ -22,11 +61,11 @@ function getCellColor(state, row, column) {
     if (row < 0 || (row === 0 && column === 0)) return 'black';
     const startingCell = getStartingCell(state);
     if (row === startingCell.row && column === startingCell.column) return 'black';
-    let roll = random.nextSeed(state.saved.seed + Math.cos(row) + Math.sin(column));
+    let roll = random.normSeed(state.saved.seed + Math.cos(row) + Math.sin(column));
     const depth = getDepth(state, row, column);
     if (roll < Math.max(0.1, 0.4 - depth / 400)) return 'green';
     if (Math.abs(row - startingCell.row) + Math.abs(column - startingCell.column) <= 1) return 'black';
-    roll = random.nextSeed(roll);
+    roll = random.normSeed(roll);
     if (roll < Math.min(0.5, 0.01 + depth / 400)) return 'red';
     return 'black';
 }
@@ -266,10 +305,11 @@ function exploreCell(state, row, column) {
             state = updateCell(state, coordsToUpdate.row, coordsToUpdate.column, {traps, explored});
         }
     }
+    const {x, y} = getCellCenter(state, row, column);
+    state = spawnDebris(state, x, y, row, column);
     if (cellColor === 'green') {
         const depth = getDepth(state, row, column);
         state = gainBonusFuel(state, 0.1 * fuelCost);
-        const {x, y} = getCellCenter(state, row, column);
 
         const multiplier = getAchievementBonus(state, ACHIEVEMENT_COLLECT_X_CRYSTALS) / 100;
         const amount = Math.round((depth + 1) * Math.pow(1.05, depth) * (1 + multiplier));
@@ -395,6 +435,25 @@ function spawnCrystals(state, x, y, amount) {
     }
     return state;
 }
+function spawnDebris(state, x, y, row, column) {
+    let index = row - 3 + 6 * random.normSeed(Math.cos(row) + Math.sin(z(column)));
+    index = Math.min(Math.max(0, Math.floor(index / 10)), particleAnimations.length - 1);
+    let dx = -SHORT_EDGE;
+    while (dx < SHORT_EDGE) {
+        const animation = random.element(particleAnimations[index]);
+        console.log(animation);
+        state = addSprite(state, {
+            ...debrisSprite,
+            x: x + dx,
+            y: y + Math.random() * EDGE_LENGTH - EDGE_LENGTH / 2,
+            vx: 5 * dx / SHORT_EDGE,
+            vy: -2 - 2*Math.random(),
+            animation,
+        });
+        dx += SHORT_EDGE / 4 + SHORT_EDGE * Math.random() / 8;
+    }
+    return state;
+}
 function gainCrystals(state, amount) {
     state = {
         ...state,
@@ -413,35 +472,4 @@ function gainBonusFuel(state, amount) {
         bonusFuelToday: state.bonusFuelToday + amount,
     };
 }
-
-module.exports = {
-    z,
-    getCellColor,
-    canExploreCell,
-    isCellRevealed,
-    getFlagValue,
-    advanceDigging,
-    getFuelCost,
-    getDepth,
-    getRangeAtDepth,
-    getCellCenter,
-    getOverCell,
-    getExplosionProtectionAtDepth,
-    gainBonusFuel,
-    CRYSTAL_SIZES,
-    gainCrystals,
-};
-
-const { addSprite, bombSprite, crystalSprite, diffuserSprite, explosionSprite } = require('sprites');
-
-const {
-    getAchievementBonus,
-    incrementAchievementStat,
-    ACHIEVEMENT_COLLECT_X_CRYSTALS,
-    ACHIEVEMENT_COLLECT_X_CRYSTALS_IN_ONE_DAY,
-    ACHIEVEMENT_GAIN_X_BONUS_FUEL_IN_ONE_DAY,
-    ACHIEVEMENT_EXPLORED_DEEP_IN_X_DAYS,
-    ACHIEVEMENT_PREVENT_X_EXPLOSIONS,
-    ACHIEVEMENT_DIFFUSE_X_BOMBS,
-} = require('achievements');
 

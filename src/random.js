@@ -7,12 +7,16 @@ window.random = {
     // Decent pseudo random number generator based on:
     // https://en.wikipedia.org/wiki/Xorshift
     // Values seem fairly evenly distributed on [0, 1)
-    nextSeed(seed = 2 ** 32 * Math.random()) {
+    nextSeed(seed = Math.random()) {
         let x = Math.floor(MAX_INT * seed);
         x ^= x << 13;
         x ^= x >> 17;
         x ^= x << 5;
         return (x / MAX_INT) + 0.5;
+    },
+
+    normSeed(seed) {
+        return this.nextSeed((Math.cos(seed) + 1 ) / 2);
     },
 
     /*

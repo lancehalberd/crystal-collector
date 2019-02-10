@@ -1,6 +1,6 @@
 const EDGE_LENGTH = 50;
-const LONG_EDGE = EDGE_LENGTH * Math.cos(Math.PI / 6);
-const SHORT_EDGE = EDGE_LENGTH * Math.sin(Math.PI / 6);
+const LONG_EDGE = 43.5;
+const SHORT_EDGE = EDGE_LENGTH / 2;
 const COLUMN_WIDTH = EDGE_LENGTH + SHORT_EDGE;
 const ROW_HEIGHT = LONG_EDGE * 2;
 module.exports = {

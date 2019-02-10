@@ -16,7 +16,10 @@ let numberOfImagesLeftToLoad = 0;
 function requireImage(imageFile) {
     if (images[imageFile]) return images[imageFile];
     numberOfImagesLeftToLoad++;
-    return loadImage(imageFile, () => numberOfImagesLeftToLoad--);
+    return loadImage(imageFile, () => {
+        images[imageFile].imageIsLoaded = true;
+        numberOfImagesLeftToLoad--
+    });
 }
 const initialImagesToLoad = [
 
