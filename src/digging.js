@@ -441,7 +441,6 @@ function spawnDebris(state, x, y, row, column) {
     let dx = -SHORT_EDGE;
     while (dx < SHORT_EDGE) {
         const animation = random.element(particleAnimations[index]);
-        console.log(animation);
         state = addSprite(state, {
             ...debrisSprite,
             x: x + dx,
