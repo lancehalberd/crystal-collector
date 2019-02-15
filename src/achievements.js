@@ -1,4 +1,4 @@
-const { WIDTH, HEIGHT } = require('gameConstants');
+const { canvas } = require('gameConstants');
 const Rectangle = require('Rectangle');
 const { drawRectangle, drawText, drawImage, measureText } = require('draw');
 const { requireImage } = require('animations');
@@ -144,11 +144,11 @@ function advanceAchievements(state) {
                 color: '#C84',
                 bonusLevel,
                 label: data.getAchievementLabel(data.goals[bonusLevel]),
-                y: lastAchievement ? Math.max(lastAchievement.y + lastAchievement.height + 10, HEIGHT + 10) : HEIGHT + 10,
+                y: lastAchievement ? Math.max(lastAchievement.y + lastAchievement.height + 10, canvas.height + 10) : canvas.height + 10,
             };
             achievement.textWidth = measureText(state.context, achievement.label, achievement.textProperties);
             achievement.width = achievement.textWidth + 72;
-            achievement.x = WIDTH - 10 - achievement.width;
+            achievement.x = canvas.width - 10 - achievement.width;
             state = addSprite(state, achievement);
             // This is a null op if lastAchievement is not set or is no longer present.
             state = updateSprite(state, {id: state.lastAchievementId}, {nextAchievementId: achievement.id});
@@ -170,14 +170,14 @@ const achievementSprite = {
     type: 'achievement',
     textProperties: {fillStyle: 'white', textAlign: 'left', textBaseline: 'middle', size: 24},
     advance(state, sprite) {
-        let {frame = 0, x = WIDTH - sprite.width - 10, y = HEIGHT + 10, nextAchievementId} = sprite;
+        let {frame = 0, x = canvas.width - sprite.width - 10, y = canvas.height + 10, nextAchievementId} = sprite;
         if (frame > 150) return deleteSprite(state, sprite);
         const nextAchievement = state.spriteMap[nextAchievementId];
         //console.log({nextAchievementId, nextAchievement});
         if (nextAchievement) {
             // If the next achievement is coming up move this achievement up out of the way.
             y = Math.min(y, nextAchievement.y - 15 - sprite.height);
-        } else if (y > HEIGHT - sprite.height - 10) {
+        } else if (y > canvas.height - sprite.height - 10) {
             // Move the achievement sprite up until it is fully on screen.
             y -= 6;
         }
@@ -208,28 +208,28 @@ const achievementSprite = {
 };
 
 function renderAchievements(context, state) {
-    /*const time = Math.min(800, state.time - state.showAchievements) / 800;
-    const gradient = context.createLinearGradient(800 - time * 200, 900, 300 + time * 200, -200);
-    gradient.addColorStop(0, "#08F");
-    gradient.addColorStop(0.9 - 0.87 * time, "#08F");
-    gradient.addColorStop(0.99 - time / 2, "#008");
-    gradient.addColorStop(0.99 - time / 4, "#004");
-    gradient.addColorStop(1, "#000");
-    context.fillStyle = gradient;*/
     context.fillStyle = '#08F';
-    context.fillRect(0, 0, WIDTH, HEIGHT);
-
-    let top = 30, left = 100, rowHeight = 55;
-    for (let key in achievementsData) {
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    const achievementKeys = Object.keys(achievementsData);
+    const padding = Math.round(Math.min(canvas.width, canvas.height) / 40);
+    const rowHeight = Math.round((canvas.height - 40 - 4 * padding) / achievementKeys.length);
+    const size = Math.round(Math.min(rowHeight * 0.5, canvas.width / 25));
+    const smallSize = Math.round(size * 0.8);
+    let iconScale = 1;
+    if (rowHeight >= 30) iconScale += 0.5;
+    if (rowHeight >= 36) iconScale += 0.5;
+    const middle = Math.round(80 * iconScale);
+    let top = padding;
+    for (const key of achievementKeys) {
         const data = achievementsData[key];
         const bonusLevel = state.achievements[key];
         context.save();
         for (let i = 0; i < data.bonusValues.length; i++) {
             const iconFrame = ACHIEVEMENT_ICON_FRAMES[i];
             context.globalAlpha = (i <= bonusLevel) ? 1 : 0.5 - 0.1 * i;
-            const target = new Rectangle(iconFrame).scale(2);
+            const target = new Rectangle(iconFrame).scale(iconScale);
             drawImage(context, iconFrame.image, iconFrame,
-                target.moveCenterTo(left + i * 36 + target.width / 2, top + rowHeight / 4)
+                target.moveCenterTo(middle - (4-i) * (target.width + 2) + target.width / 2, top + rowHeight / 4)
             );
         }
         context.restore();
@@ -240,12 +240,12 @@ function renderAchievements(context, state) {
         /*if (key === ACHIEVEMENT_EXPLORED_DEEP_IN_X_DAYS && bonusLevel < 0) {
             goalValue = data.goals[bonusLevel + 1];
         }*/
-        drawText(context, data.getAchievementLabel(goalValue), left + 150, top + rowHeight / 4,
-            {fillStyle: 'white', textAlign: 'left', textBaseline: 'middle', size: 24}
+        drawText(context, data.getAchievementLabel(goalValue), middle + 10, top + rowHeight / 4,
+            {fillStyle: 'white', textAlign: 'left', textBaseline: 'middle', size}
         );
         if (bonusLevel >= 0) {
-            drawText(context, data.getBonusLabel(data.bonusValues[bonusLevel]), left + 150, top + 3 * rowHeight / 4 - 3,
-                {fillStyle: '#F84', textAlign: 'left', textBaseline: 'middle', size: 20}
+            drawText(context, data.getBonusLabel(data.bonusValues[bonusLevel]), middle + 10, top + 3 * rowHeight / 4 - 3,
+                {fillStyle: '#F84', textAlign: 'left', textBaseline: 'middle', size: smallSize}
             );
         }
         top += rowHeight;

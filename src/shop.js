@@ -1,7 +1,4 @@
-const {
-    WIDTH,
-    HEIGHT,
-} = require('gameConstants');
+const { canvas } = require('gameConstants');
 
 function renderShop(context, state) {
     const time = Math.min(800, state.time - state.shop) / 800;
@@ -12,7 +9,7 @@ function renderShop(context, state) {
     gradient.addColorStop(0.99 - time / 4, "#004");
     gradient.addColorStop(1, "#000");
     context.fillStyle = gradient;
-    context.fillRect(0, 0, WIDTH, HEIGHT);
+    context.fillRect(0, 0, canvas.width, canvas.height);
 }
 
 module.exports = {

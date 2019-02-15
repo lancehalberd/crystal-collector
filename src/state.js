@@ -2,17 +2,17 @@ const Rectangle = require('Rectangle');
 const random = require('random');
 
 const {
-    FRAME_LENGTH, WIDTH, HEIGHT, EDGE_LENGTH,
+    FRAME_LENGTH, canvas, EDGE_LENGTH, ROW_HEIGHT,
 } = require('gameConstants');
 
-function getNewCamera() {
+function getNewCamera(lavaDepth = 100) {
     return {
-        left: -WIDTH / 2 + EDGE_LENGTH,
+        left: -canvas.width / 2 + EDGE_LENGTH,
         top: -100,
         minX: 1E9,
         maxX: -1E9,
         minY: 1E9,
-        maxY: -1E9,
+        maxY: lavaDepth * ROW_HEIGHT / 2 + ROW_HEIGHT / 2,//-1E9,
     };
 }
 
@@ -65,7 +65,7 @@ function nextDay(state) {
             seed: random.nextSeed(state.saved.seed),
             playedToday: false,
         },
-        camera: getNewCamera(),
+        camera: getNewCamera(state.saved.lavaDepth || 100),
         rows: [],
         flags: [],
         fuel: state.saved.maxFuel,
@@ -98,7 +98,7 @@ function restart(state) {
 
 function getOverButton(state, coords = {}) {
     const {x, y} = coords;
-    if (!(x >= 0 && x <= WIDTH && y >= 0 && y <= HEIGHT)) return null;
+    if (!(x >= 0 && x <= canvas.width && y >= 0 && y <= canvas.height)) return null;
     for (const hudButton of getHUDButtons(state)) {
         if (new Rectangle(hudButton).containsPoint(x, y)) {
             return hudButton;
@@ -133,13 +133,14 @@ function setButtonState(state) {
     return state;
 }
 function advanceState(state) {
+    state = {...state, time: state.time + FRAME_LENGTH}
     if (!state.shop && !state.showAchievements && state.mouseDown && state.mouseDragged && state.lastProcessedMouseCoords) {
         const camera = {...state.camera};
         const dx = state.lastMouseCoords.x - state.lastProcessedMouseCoords.x;
         const dy = state.lastMouseCoords.y - state.lastProcessedMouseCoords.y;
-        camera.left = Math.min(Math.max(camera.left - dx, camera.minX - WIDTH / 2), camera.maxX - WIDTH / 2);
-        camera.top = Math.min(Math.max(camera.top - dy, camera.minY - HEIGHT / 2), camera.maxY - HEIGHT / 2);
-        state = {...state, selected: false, camera, dragDistance: state.dragDistance + Math.abs(dx) + Math.abs(dy)};
+        camera.left = Math.min(Math.max(camera.left - dx, camera.minX - canvas.width / 2), camera.maxX - canvas.width / 2);
+        camera.top = Math.min(Math.max(camera.top - dy, camera.minY - canvas.height / 2), camera.maxY - canvas.height / 2);
+        state = {...state, selected: false, targetCell: false, camera, dragDistance: state.dragDistance + Math.abs(dx) + Math.abs(dy)};
     }
     state = setButtonState(state);
     state.lastProcessedMouseCoords = state.lastMouseCoords;
@@ -159,7 +160,7 @@ function advanceState(state) {
         state = state.spriteMap[spriteId].advance(state, state.spriteMap[spriteId]);
     }
     //camera.top += 1;
-    return {...state, time: state.time + FRAME_LENGTH, clicked: false, rightClicked: false};
+    return {...state, clicked: false, rightClicked: false};
 }
 
 function applyActions(state, actions) {

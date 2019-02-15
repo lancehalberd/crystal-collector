@@ -58,7 +58,7 @@ const createAnimation = (source, rectangle, {x = 0, y = 0, rows = 1, cols = 1, t
     if (frameMap) {
        frames = frameMap.map(originalIndex => frames[originalIndex]);
     }
-    return {frames, frameDuration: duration, ...props};
+    return {frames, frameDuration: duration, ...props, duration: FRAME_LENGTH * frames.length * duration};
 };
 
 const getFrame = (animation, animationTime) => {

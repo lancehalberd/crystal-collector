@@ -1,6 +1,5 @@
 const {
-    WIDTH,
-    HEIGHT,
+    canvas,
     EDGE_LENGTH,
     SHORT_EDGE,
     LONG_EDGE,
@@ -12,6 +11,7 @@ const random = require('random');
 const Rectangle = require('Rectangle');
 const { createAnimation, r } = require('animations');
 const { drawImage, drawText } = require('draw');
+const { renderRobot } = require('renderRobot');
 
 const { z, canExploreCell, getFuelCost, isCellRevealed, getFlagValue } = require('digging');
 
@@ -20,9 +20,9 @@ function renderDigging(context, state) {
     renderBackground(context, state);
 
     const topRow = Math.max(0, Math.floor(state.camera.top / ROW_HEIGHT - 1));
-    const rows = Math.ceil(HEIGHT / ROW_HEIGHT) + 2;
+    const rows = Math.ceil(canvas.height / ROW_HEIGHT) + 2;
     const leftColumn = Math.floor(state.camera.left / COLUMN_WIDTH) - 1;
-    const columns = Math.ceil(WIDTH / COLUMN_WIDTH) + 2;
+    const columns = Math.ceil(canvas.width / COLUMN_WIDTH) + 2;
 
     for (let row = topRow + rows - 1; row >= topRow; row--) {
         // Draw every other tile in the row on below first.
@@ -37,6 +37,7 @@ function renderDigging(context, state) {
         }
     }
     renderSurfaceTiles(context, state);
+    renderRobot(context, state);
     for (let row = topRow; row < topRow + rows; row++) {
         for (let column = leftColumn; column < leftColumn + columns; column++) {
             renderCellShading(context,state, row, column, state.camera.top, state.camera.left);
@@ -77,29 +78,29 @@ function renderDigging(context, state) {
     }
     const lavaDepthY = state.displayLavaDepth * ROW_HEIGHT / 2 + ROW_HEIGHT / 2 - state.camera.top;
     const waveHeight = ROW_HEIGHT / 3;
-    if (lavaDepthY < HEIGHT + 200) {
+    if (lavaDepthY < canvas.height + 200) {
         let gradient = context.createLinearGradient(0, lavaDepthY - 150, 0, lavaDepthY + ROW_HEIGHT / 2);
         gradient.addColorStop(0.05 + Math.sin(state.time / 500) * 0.05, "rgba(255, 255, 0, 0.0)");
         gradient.addColorStop(.90, "rgba(255, 255, 0, 0.8)");
         context.fillStyle = gradient;
-        context.fillRect(0, lavaDepthY + waveHeight - 200, WIDTH, HEIGHT);
+        context.fillRect(0, lavaDepthY + waveHeight - 200, canvas.width, canvas.height);
     }
-    if (lavaDepthY < HEIGHT + ROW_HEIGHT / 2) {
+    if (lavaDepthY < canvas.height + ROW_HEIGHT / 2) {
         context.save();
         context.globalAlpha = 0.7;
         context.fillStyle = lavaPattern || 'red';
         context.beginPath();
         const numPoints = 30;
-        context.moveTo(0, HEIGHT);
+        context.moveTo(0, canvas.height);
         for (let i = 0; i <= numPoints; i++) {
-            const x = WIDTH * i / numPoints;
+            const x = canvas.width * i / numPoints;
             const y = lavaDepthY - 7
-                + waveHeight * Math.sin((x + state.time) / 100) / 20
-                + waveHeight * Math.sin((x + state.time) / 200) / 10
-                + waveHeight * Math.sin((x + state.time) / 500) / 5;
+                + waveHeight * Math.sin((x * 2 + state.time / 2) / 100) / 20
+                + waveHeight * Math.sin((x * 2 + state.time / 2) / 200) / 10
+                + waveHeight * Math.sin((x * 2 + state.time / 2) / 500) / 5;
             context.lineTo(x, y);
         }
-        context.lineTo(WIDTH, HEIGHT);
+        context.lineTo(canvas.width, canvas.height);
         context.closePath();
         context.translate(-state.camera.left + state.time / 100, lavaDepthY - state.time / 200);
         context.fill();
@@ -112,7 +113,7 @@ function renderDigging(context, state) {
     context.globalAlpha = 0.5;
     let depth = 5 * Math.max(1, Math.floor( (state.camera.top / (ROW_HEIGHT / 2) - 1) / 5));
     let y = (depth + 1) * ROW_HEIGHT / 2 - state.camera.top;
-    while (y < HEIGHT) {
+    while (y < canvas.height) {
         let size = 15;
         if (!(depth % 50)) size = 30;
         else if (!(depth % 10)) size = 20;
@@ -126,8 +127,8 @@ function renderBackground(context, state) {
     const height = 200, width = 200;
     const topRow = Math.max(0, Math.floor(state.camera.top / height));
     const leftColumn = Math.floor(state.camera.left / width) - 1;
-    const columns = Math.ceil(WIDTH / height) + 2;
-    const rows = Math.ceil(HEIGHT / width) + 1;
+    const columns = Math.ceil(canvas.width / height) + 2;
+    const rows = Math.ceil(canvas.height / width) + 1;
     for (let row = topRow + rows - 1; row >= topRow; row--) {
         let y = row * height - state.camera.top;
         const index = Math.min(cellBackgrounds.length - 1, Math.floor(row / 5));
@@ -142,11 +143,11 @@ function renderBackground(context, state) {
     gradient.addColorStop(0, "rgba(0,0,0,0)");
     gradient.addColorStop(1, "rgba(0,0,0,0.7)");
     context.fillStyle = gradient;
-    context.fillRect(0, 0, WIDTH, HEIGHT);
+    context.fillRect(0, 0, canvas.width, canvas.height);
     context.restore();
     if (state.camera.top < 0) {
         context.fillStyle = '#08F';
-        context.fillRect(0, 0, WIDTH, -state.camera.top);
+        context.fillRect(0, 0, canvas.width, -state.camera.top);
     }
 }
 const grassRoots = createAnimation('gfx/grasstiles.png', r(50, 50), {x: 0}).frames[0];
@@ -172,7 +173,7 @@ const decorationFrames = [
 function renderSurface(context, state) {
     const width = 50;
     const leftColumn = Math.floor(state.camera.left / width) - 1;
-    const columns = Math.ceil(WIDTH / width) + 2;
+    const columns = Math.ceil(canvas.width / width) + 2;
     // This is bottom half of the top type of cell.
     if (state.camera.top < LONG_EDGE) {
         for (let column = leftColumn; column < leftColumn + columns; column++) {
@@ -191,7 +192,7 @@ function renderSurface(context, state) {
 }
 function renderSurfaceTiles(context, state) {
     const leftColumn = Math.floor(state.camera.left / COLUMN_WIDTH) - 1;
-    const columns = Math.ceil(WIDTH / COLUMN_WIDTH) + 2;
+    const columns = Math.ceil(canvas.width / COLUMN_WIDTH) + 2;
     // This is bottom half of the top type of cell.
     const frame = {...cellFrames[0].frames[0], top: 45, height:46};
     if (state.camera.top < LONG_EDGE) {
@@ -230,17 +231,89 @@ const lavaAnimation = createAnimation('gfx/back.png', r(100, 100), {x: 4});
 function renderCellShading(context, state, row, column) {
     const columnz = z(column);
     const cell = state.rows[row] && state.rows[row][columnz];
-    if (!cell || cell.destroyed || isCellRevealed(state, row, column)) return;
-    drawCellPath(context, state, row, column, 5);
-    context.save();
-    context.strokeStyle = '#FFF';
-    context.globalAlpha = 0.15;
-    context.lineWidth = 6;
-    context.stroke();
-    context.restore();
+    if (!cell || cell.destroyed) return;
+    // Indicator that the player can explore this cell:
+    if (!isCellRevealed(state, row, column)) {
+        drawCellPath(context, state, row, column, 5);
+        context.save();
+        context.strokeStyle = '#FFF';
+        context.globalAlpha = 0.15;
+        context.lineWidth = 6;
+        context.stroke();
+        context.restore();
+    }
+    // Indicators for the number of crystals and bombs near this cell.
+    if (!cell.destroyed && (cell.crystals || cell.traps)) {
+        if (COLUMN_WIDTH) {
+            const pips = getPipPoints(state, row, column);
+            context.fillStyle = '#8CF';
+            context.strokeStyle = '#04F';
+            context.lineWidth = 1;
+            for(let i = 0;i < cell.crystals;i++) {
+                context.beginPath();
+                context.ellipse(pips[i][0], pips[i][1], 8, 8, 0, 0, Math.PI * 2);
+                context.fill();
+                context.beginPath();
+                context.ellipse(pips[i][0], pips[i][1], 4, 4, 0, 0, Math.PI * 2);
+                context.stroke();
+            }
+            context.fillStyle = '#FCC';
+            context.strokeStyle = '#800';
+            for(let i = 0;i < cell.traps;i++) {
+                context.beginPath();
+                context.ellipse(pips[6-i][0], pips[6-i][1], 8, 8, 0, 0, Math.PI * 2);
+                context.fill();
+                context.beginPath();
+                context.moveTo(pips[6-i][0] - 4, pips[6-i][1] - 3);
+                context.lineTo(pips[6-i][0] + 4, pips[6-i][1] + 3);
+                context.moveTo(pips[6-i][0] - 4, pips[6-i][1] + 3);
+                context.lineTo(pips[6-i][0] + 4, pips[6-i][1] - 3);
+                context.stroke();
+            }
+        } else {
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            context.font = `${EDGE_LENGTH / 2 + 12}px sans-serif`;
+            const centerX = column * COLUMN_WIDTH + SHORT_EDGE + Math.round(EDGE_LENGTH / 2) - Math.round(state.camera.left);
+            if (cell.crystals) {
+                const centerY = row * ROW_HEIGHT + ((column % 2) ? LONG_EDGE : 0)
+                    + Math.round(LONG_EDGE / 2) - Math.round(state.camera.top);
+                context.fillStyle = '#0AF';
+                context.fillText(cell.crystals, centerX, centerY);
+                context.lineWidth = 2;
+                context.strokeStyle = '#048';
+                context.strokeText(cell.crystals, centerX, centerY);
+            }
+            if (cell.traps) {
+                //context.font = `${EDGE_LENGTH / 2 + 4}px sans-serif`;
+                const centerY = row * ROW_HEIGHT + ((column % 2) ? LONG_EDGE : 0) + LONG_EDGE
+                    + Math.round(LONG_EDGE / 2) - Math.round(state.camera.top);
+                context.fillStyle = '#FCC';
+                context.fillText(cell.traps, centerX, centerY);
+                context.lineWidth = 2;
+                context.strokeStyle = '#400';
+                context.strokeText(cell.traps, centerX, centerY);
+            }
+        }
+    }
 }
+
+const tAnimation = x => createAnimation('gfx/destroyed.png', r(20, 20), {x});
+const trashParticles = [
+    [tAnimation(0),tAnimation(1),tAnimation(2)],
+    [tAnimation(0),tAnimation(1),tAnimation(2)],
+    [tAnimation(3),tAnimation(4),tAnimation(5)],
+    [tAnimation(6),tAnimation(7),tAnimation(8)],
+    [tAnimation(9),tAnimation(10),tAnimation(11)],
+    [tAnimation(9),tAnimation(10),tAnimation(11)],
+    [tAnimation(12),tAnimation(13),tAnimation(14)],
+    [tAnimation(12),tAnimation(13),tAnimation(14)],
+    [tAnimation(15),tAnimation(16),tAnimation(17)],
+    [tAnimation(15),tAnimation(16),tAnimation(17)],
+];
+const burnParticles = [tAnimation(18),tAnimation(19),tAnimation(20),tAnimation(21)]
 function renderCell(context, state, row, column) {
-    drawCellPath(context, state, row, column);
+    //drawCellPath(context, state, row, column);
     const columnz = z(column);
     const cell = state.rows[row] && state.rows[row][columnz];
     context.lineWidth = 1;
@@ -250,16 +323,28 @@ function renderCell(context, state, row, column) {
     index = Math.max(0, Math.floor(index / 10));
 
     const frame = cellFrames[Math.min(index, cellFrames.length - 1)].frames[0];
-    if (!cell) {
-        const x = column * COLUMN_WIDTH - state.camera.left;
-        const y = row * ROW_HEIGHT - state.camera.top + ((column % 2) ? LONG_EDGE : 0);
+    const x = column * COLUMN_WIDTH - state.camera.left;
+    const y = row * ROW_HEIGHT - state.camera.top + ((column % 2) ? LONG_EDGE : 0);
+    if (!cell) return drawImage(context, frame.image, frame, new Rectangle(frame).moveTo(x, y));
+    if (cell.destroyed) {
         drawImage(context, frame.image, frame, new Rectangle(frame).moveTo(x, y));
-        return;
-    }
-    if (cell.destroyed &&
-        (!state.spriteMap[cell.spriteId] || state.spriteMap[cell.spriteId].ending)
-    ) {
-        const points = getCellPoints(state, row, column);
+        // Don't draw the debris during the start of the explosion.
+        if (state.spriteMap[cell.spriteId] && !state.spriteMap[cell.spriteId].ending) return;
+        const pts = getTrashPoints(state, row, column);
+        const particles = [
+            ...trashParticles[Math.min(index, trashParticles.length - 1)],
+            ...trashParticles[Math.min(index, trashParticles.length - 1)],
+            ...burnParticles,
+        ];
+        for (let i = 0; i < pts.length; i++) {
+            const pIndex = Math.floor(random.normSeed(row+columnz+i) * particles.length);
+            //const pFrame = particles.splice(pIndex, 1)[0].frames[0];
+            const pFrame = particles[pIndex].frames[0];
+            drawImage(context, pFrame.image, pFrame,
+                new Rectangle(pFrame).scale(3).moveCenterTo(pts[i][0], pts[i][1])
+            );
+        }
+        /*const points = getCellPoints(state, row, column);
         context.beginPath();
         context.moveTo(points[0][0], points[0][1]);
         context.lineTo(points[2][0], points[2][1]);
@@ -276,7 +361,7 @@ function renderCell(context, state, row, column) {
         context.lineTo(points[4][0], points[4][1]);
         context.lineWidth = 3;
         context.strokeStyle = '#F40';
-        context.stroke();
+        context.stroke();*/
     } else if (isCellRevealed(state, row, column)) {
         // Currently do nothing here.
     } else {
@@ -296,29 +381,6 @@ function renderCell(context, state, row, column) {
             context.strokeStyle = flagValue == 2 ? 'red' : 'green';
             context.stroke();
         }
-    }
-    context.textAlign = 'center';
-    context.textBaseline = 'middle';
-    context.font = `${EDGE_LENGTH / 2 + 12}px sans-serif`;
-    const centerX = column * COLUMN_WIDTH + SHORT_EDGE + Math.round(EDGE_LENGTH / 2) - Math.round(state.camera.left);
-    if (!cell.destroyed && cell.crystals > 0) {
-        const centerY = row * ROW_HEIGHT + ((column % 2) ? LONG_EDGE : 0)
-            + Math.round(LONG_EDGE / 2) - Math.round(state.camera.top);
-        context.fillStyle = '#0AF';
-        context.fillText(cell.crystals, centerX, centerY);
-        context.lineWidth = 2;
-        context.strokeStyle = '#048';
-        context.strokeText(cell.crystals, centerX, centerY);
-    }
-    if (!cell.destroyed && cell.traps > 0) {
-        //context.font = `${EDGE_LENGTH / 2 + 4}px sans-serif`;
-        const centerY = row * ROW_HEIGHT + ((column % 2) ? LONG_EDGE : 0) + LONG_EDGE
-            + Math.round(LONG_EDGE / 2) - Math.round(state.camera.top);
-        context.fillStyle = '#FCC';
-        context.fillText(cell.traps, centerX, centerY);
-        context.lineWidth = 2;
-        context.strokeStyle = '#400';
-        context.strokeText(cell.traps, centerX, centerY);
     }
 }
 function drawCellPath(context, state, row, column, pad = 0) {
@@ -341,9 +403,36 @@ function getCellPoints(state, row, column, pad = 0) {
         [x + pad, y + LONG_EDGE]
     ];
 }
+const HEX_WIDTH = 2 * EDGE_LENGTH;
+function getPipPoints(state, row, column) {
+    const x = column * COLUMN_WIDTH - state.camera.left;
+    const y = row * ROW_HEIGHT - state.camera.top + ((column % 2) ? LONG_EDGE : 0);
+    const pad = 5;
+    return [
+        [x + HEX_WIDTH / 2, y + ROW_HEIGHT / 6 + pad * 1.5],
+        [x + SHORT_EDGE + pad, y + ROW_HEIGHT / 3 + pad],
+        [x + HEX_WIDTH - SHORT_EDGE - pad, y + ROW_HEIGHT / 3 + pad],
+        [x + HEX_WIDTH / 2, y + ROW_HEIGHT / 2],
+        [x + SHORT_EDGE + pad, y + 2 * ROW_HEIGHT / 3 - pad],
+        [x + HEX_WIDTH - SHORT_EDGE - pad, y + 2 * ROW_HEIGHT / 3 - pad],
+        [x + HEX_WIDTH / 2, y + 5 * ROW_HEIGHT / 6 - pad * 1.5],
+    ];
+}
+function getTrashPoints(state, row, column) {
+    const x = column * COLUMN_WIDTH - state.camera.left;
+    const y = row * ROW_HEIGHT - state.camera.top + ((column % 2) ? LONG_EDGE : 0);
+    const pad = 1;
+    return [
+        [x + HEX_WIDTH / 2, y + ROW_HEIGHT / 6 + pad * 1.5],
+        [x + SHORT_EDGE + pad, y + ROW_HEIGHT / 3 + pad],
+        [x + HEX_WIDTH - SHORT_EDGE - pad, y + ROW_HEIGHT / 3 + pad],
+        [x + HEX_WIDTH / 2, y + ROW_HEIGHT / 2],
+        [x + SHORT_EDGE + pad, y + 2 * ROW_HEIGHT / 3 - pad],
+        [x + HEX_WIDTH - SHORT_EDGE - pad, y + 2 * ROW_HEIGHT / 3 - pad],
+        [x + HEX_WIDTH / 2, y + 5 * ROW_HEIGHT / 6 - pad * 1.5],
+    ];
+}
 
 module.exports = {
     renderDigging
 };
-
-// const { skullFrame } = require('sprites');

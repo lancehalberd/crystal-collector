@@ -1,5 +1,5 @@
 const {
-    FRAME_LENGTH, WIDTH, HEIGHT,
+    canvas, FRAME_LENGTH,
 } = require('gameConstants');
 
 const { preloadSounds } = require('sounds');
@@ -34,14 +34,26 @@ try {
     console.log('Invalid save data');
 }
 
-
-const canvas = document.createElement('canvas');
-window.canvas = canvas;
-canvas.width = WIDTH;
-canvas.height = HEIGHT;
-const context = canvas.getContext('2d');
+const context = canvas.getContext('2d', {alpha: false});
 context.imageSmoothingEnabled = false;
-document.body.appendChild(canvas);
+
+function updateCanvasSize() {
+    let scale = window.innerWidth / 800;
+    if (scale <= 0.75) {
+        canvas.width = 600;
+        scale *= 4 / 3;
+    } else {
+        canvas.width = 800;
+    }
+    canvas.height = Math.max(300, Math.floor(window.innerHeight / scale));
+    canvas.style.transformOrigin = '0 0'; //scale from top left
+    canvas.style.transform = 'scale(' + scale + ')';
+    canvas.scale = scale;
+    if (state) state.lastResized = Date.now();
+    context.imageSmoothingEnabled = false;
+}
+updateCanvasSize();
+window.onresize = updateCanvasSize;
 
 function getEventCoords(event) {
     let x = 0, y = 0;
@@ -63,6 +75,8 @@ function getEventCoords(event) {
 
     x -= canvas.offsetLeft;
     y -= canvas.offsetTop;
+    x /= canvas.scale;
+    y /= canvas.scale;
     return {x, y};
 }
 function onMouseDown(event) {
@@ -95,6 +109,7 @@ TODO:
 const update = () => {
     if (!state) {
         state = getNewState();
+        state.lastResized = Date.now();
         state.context = context;
         if (savedState && !queryParams.reset) {
 

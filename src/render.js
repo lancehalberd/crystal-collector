@@ -14,15 +14,15 @@ function render(context, state) {
         renderAchievements(context, state);
     } else if (!state.shop) {
         renderDigging(context, state);
+        for (let spriteId in state.spriteMap) {
+            state.spriteMap[spriteId].render(context, state, state.spriteMap[spriteId]);
+        }
     } else {
         renderShop(context, state);
     }
 
     // Render HUD on top of the screen fading to black.
     renderHUD(context, state);
-    for (let spriteId in state.spriteMap) {
-        state.spriteMap[spriteId].render(context, state, state.spriteMap[spriteId]);
-    }
 
     if (state.interacted) {
         for (const sfx in state.sfx) {

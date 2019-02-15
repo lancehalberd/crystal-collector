@@ -1,6 +1,6 @@
 const {
-    WIDTH,
-    HEIGHT,
+    canvas,
+    ROW_HEIGHT,
 } = require('gameConstants');
 const Rectangle = require('Rectangle');
 const { drawImage } = require('draw');
@@ -13,11 +13,19 @@ const militaryFrame = {
 }
 const bombFrame = {...militaryFrame, left: 119, top: 108};
 const diffuserFrame = {...militaryFrame, left: 0, top: 91};
+const crystalAnimations = [
+     createAnimation('gfx/crystals.png', r(30, 30), {x:0}),
+     createAnimation('gfx/crystals.png', r(30, 30), {x:1}),
+     createAnimation('gfx/crystals.png', r(30, 30), {x:2}),
+     createAnimation('gfx/crystals.png', r(30, 30), {x:3}),
+     createAnimation('gfx/crystals.png', r(30, 30), {x:4}),
+     createAnimation('gfx/crystals.png', r(30, 30), {x:5}),
+     createAnimation('gfx/crystals.png', r(30, 30), {x:6}),
+     createAnimation('gfx/crystals.png', r(30, 30), {x:7, cols:2}),
+];
 const crystalFrame = {...militaryFrame, left: 153, top: 40};
-const greenCrystalFrame = {...crystalFrame, left: 170};
-const redCrystalFrame = {...crystalFrame, left: 187};
 const skullFrame = {...militaryFrame, left: 119, top: 23};
-const explosionAnimation = createAnimation('gfx/explosion.png', r(96, 96), {cols: 12, duration: 3});
+const explosionAnimation = createAnimation('gfx/explosion.png', r(215, 215), {cols: 14, duration: 3});
 window.explosionAnimation = explosionAnimation;
 let spriteIdCounter = 0;
 function addSprite(state, sprite) {
@@ -35,28 +43,30 @@ function updateSprite(state, sprite, props) {
 }
 const crystalSprite = {
     advance(state, sprite) {
-        if (sprite.y > state.camera.top + HEIGHT - 60) {
+        if (sprite.y > state.camera.top + canvas.height - 60) {
             state = gainCrystals(state, sprite.crystals);
             return deleteSprite(state, sprite);
         }
-        let {x = 0, y = 0, vx = 0, vy = 0, frame = 0} = sprite;
+        let {x = 0, y = 0, vx = 0, vy = 0, frame = 0, animationFrame = 0} = sprite;
         x += vx;
         y += vy;
         frame++;
+        animationFrame++;
         if (frame > 0) {
             // This assumes each character in the score is about 20 pixels wide.
-            const targetX = WIDTH - x - 80 - 20 * Math.floor(Math.log10(state.saved.score + 1));
+            const targetX = canvas.width - x - 80 - 20 * Math.floor(Math.log10(state.saved.score + 1));
             vx += (state.camera.left + targetX) / 300;
-            vy += (state.camera.top + HEIGHT - y - 50) / 300;
+            vy += (state.camera.top + canvas.height - y - 50) / 300;
         }
-        return updateSprite(state, sprite, {frame, x, y, vx, vy});
+        return updateSprite(state, sprite, {frame, x, y, vx, vy, animationFrame});
     },
     render(context, state, sprite) {
-        let scale = 1, frame = crystalFrame;
-        const index = CRYSTAL_SIZES.indexOf(sprite.crystals);
-        if (index % 3 === 1) frame = greenCrystalFrame;
-        else if (index % 3 === 2) frame = redCrystalFrame;
-        scale = 1.5 + Math.floor(scale / 3) * 0.5;
+        const size = CRYSTAL_SIZES.indexOf(sprite.crystals);
+        const index = Math.min(Math.floor(size / 2), crystalAnimations.length - 1);
+        const scale = 1 + 0.5 * (size%2);
+        const animation = crystalAnimations[index];
+        const frameIndex = Math.floor(sprite.animationFrame / 5) % animation.frames.length;
+        const frame = animation.frames[frameIndex];
         drawImage(context, frame.image, frame,
             new Rectangle(frame).scale(scale).moveCenterTo(sprite.x - state.camera.left, sprite.y - state.camera.top)
         );
@@ -78,19 +88,57 @@ const particleAnimations = [
 ];
 const debrisSprite = {
     advance(state, sprite) {
-        if (sprite.y > state.camera.top + HEIGHT) {
+        if (sprite.y > state.camera.top + canvas.height) {
             return deleteSprite(state, sprite);
         }
         let {x = 0, y = 0, vx = 0, vy = 0} = sprite;
         x += vx;
         y += vy;
-        vy+=0.5;
+        vy+=1;
         return updateSprite(state, sprite, {x, y, vx, vy});
     },
     render(context, state, sprite) {
         const frame = sprite.animation.frames[0];
         const x = sprite.x - state.camera.left;
         const y = sprite.y - state.camera.top;
+        const target = new Rectangle(frame).scale(2).moveCenterTo(x, y);
+        drawImage(context, frame.image, frame, target);
+    }
+};
+const lavaBubbleAnimations = [
+    createAnimation('gfx/particles.png', r(10, 10), {x:0, cols:3, frameMap: [0,0,0,1,1,2]}),
+    createAnimation('gfx/particles.png', r(10, 10), {x:3, cols:3, frameMap: [0,0,0,1,1,2]}),
+];
+const waveHeight = ROW_HEIGHT / 3;
+const lavaBubbleSprite = {
+    advance(state, sprite) {
+        if (state.shop) return deleteSprite(state, sprite);
+        if (state.time - sprite.spawnTime >= 160 * sprite.animation.frames.length) {
+            // recycle the bubble.
+            return updateSprite(state, sprite, {
+                x: sprite.x + 250,
+                y: 15+Math.floor(Math.random()*15),
+                spawnTime: state.time
+            });
+            //return deleteSprite(state, sprite);
+        }
+        return updateSprite(state, sprite, {x: sprite.x + 1/5, y: sprite.y - 1/2});
+    },
+    render(context, state, sprite) {
+        const lavaDepthY = state.displayLavaDepth * ROW_HEIGHT / 2 + ROW_HEIGHT / 2 - state.camera.top;
+        if (lavaDepthY >= canvas.height + ROW_HEIGHT / 2) return;
+        const time = state.time - sprite.spawnTime;
+        const frameIndex = Math.floor(time / 160);
+        if (frameIndex >= sprite.animation.frames.length) return;
+        const frame = sprite.animation.frames[frameIndex];
+        // Wrap this bubble to always appear on screen.
+        let x = (sprite.x - state.camera.left) % canvas.width;
+        while (x+10<=0)x += canvas.width;
+        const y = lavaDepthY + sprite.y - 7
+            + waveHeight * Math.sin((x + state.time) / 100) / 20
+            + waveHeight * Math.sin((x + state.time) / 200) / 10
+            + waveHeight * Math.sin((x + state.time) / 500) / 5;
+        //if (time === 0)console.log(x - state.camera.left, y - state.camera.top);
         const target = new Rectangle(frame).scale(2).moveCenterTo(x, y);
         drawImage(context, frame.image, frame, target);
     }
@@ -123,7 +171,7 @@ const bombSprite = {
 };
 const diffuserSprite = {
     advance(state, sprite) {
-        if (vy > 0 && sprite.y > state.camera.top + HEIGHT + 32) {
+        if (vy > 0 && sprite.y > state.camera.top + canvas.height + 32) {
             return deleteSprite(state, sprite);
         }
         let {y = 0, vy = 0, frame = 0} = sprite;
@@ -168,6 +216,8 @@ module.exports = {
     diffuserFrame,
     explosionSprite,
     particleAnimations,
+    lavaBubbleSprite,
+    lavaBubbleAnimations,
     skullFrame,
 };
 

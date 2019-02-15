@@ -1,16 +1,21 @@
 const random = require('random');
 
 const {
-    WIDTH, HEIGHT,
+    canvas,
+    FRAME_LENGTH,
     EDGE_LENGTH, COLUMN_WIDTH, ROW_HEIGHT,
     SHORT_EDGE, LONG_EDGE,
 } = require('gameConstants');
 
 const CRYSTAL_SIZES = [
-    1, 5, 20,
-    100, 500, 2000,
-    10000, 50000, 200000,
-    1E6, 5E6, 20E6,
+    1, 5,
+    10, 25,
+    100, 500,
+    1000, 2500,
+    10000, 50000,
+    100000, 250000,
+    1E6, 5E6,
+    10E6, 25E6,
 ];
 
 module.exports = {
@@ -23,6 +28,7 @@ module.exports = {
     getFuelCost,
     getDepth,
     getRangeAtDepth,
+    getDepthOfRange,
     getCellCenter,
     getOverCell,
     getExplosionProtectionAtDepth,
@@ -39,6 +45,8 @@ const {
     diffuserSprite,
     explosionSprite,
     particleAnimations,
+    lavaBubbleSprite,
+    lavaBubbleAnimations,
 } = require('sprites');
 
 const {
@@ -63,14 +71,17 @@ function getCellColor(state, row, column) {
     if (row === startingCell.row && column === startingCell.column) return 'black';
     let roll = random.normSeed(state.saved.seed + Math.cos(row) + Math.sin(column));
     const depth = getDepth(state, row, column);
-    if (roll < Math.max(0.1, 0.4 - depth / 400)) return 'green';
+    if (roll < Math.max(0.15, 0.4 - depth / 500)) return 'green';
     if (Math.abs(row - startingCell.row) + Math.abs(column - startingCell.column) <= 1) return 'black';
     roll = random.normSeed(roll);
-    if (roll < Math.min(0.5, 0.01 + depth / 400)) return 'red';
+    if (roll < Math.min(0.4, 0.01 + depth / 500)) return 'red';
     return 'black';
 }
 function getRangeAtDepth(state, depth, rangeOffset = 0) {
-    return Math.max(1, Math.min(3, (state.saved.range + rangeOffset) - 0.03 * depth));
+    return Math.max(1, Math.min(3, (0.5 + state.saved.range + rangeOffset) - 0.04 * depth));
+}
+function getDepthOfRange(state, range, rangeOffset = 0) {
+    return Math.round((0.5 + state.saved.range + rangeOffset - range) / 0.04);
 }
 function getExplosionProtectionAtDepth(state, depth, offset = 0) {
     let maxExplosionProtection = 0.5;
@@ -262,8 +273,12 @@ function getCellCenter(state, row, column) {
     const y = row * ROW_HEIGHT + ((column % 2) ? LONG_EDGE : 0) + ROW_HEIGHT / 2;
     return {x, y};
 }
-function blowUpCell(state, row, column, frameDelay = 0) {
-    if (row < 0) return;
+function blowUpCell(state, firstCell, row, column, frameDelay = 0) {
+    const columnz = z(column);
+    const explored = state.rows[row] && state.rows[row][columnz] && state.rows[row][columnz].explored;
+    if (!firstCell && (row < 0 || explored)) {
+        return state;
+    }
     const {x, y} = getCellCenter(state, row, column);
     const newExplosion = {...explosionSprite, x, y, frame: -frameDelay};
     state = createCell(state, row, column);
@@ -291,7 +306,7 @@ function exploreCell(state, row, column) {
         for (const cellCoords of cellsInRange) {
             const depth = getDepth(state, cellCoords.row, cellCoords.column);
             if (firstCell || Math.random() >= getExplosionProtectionAtDepth(state, depth)) {
-                state = blowUpCell(state, cellCoords.row, cellCoords.column, frameDelay += 2);
+                state = blowUpCell(state, firstCell, cellCoords.row, cellCoords.column, frameDelay += 4);
             } else {
                 state = incrementAchievementStat(state, ACHIEVEMENT_PREVENT_X_EXPLOSIONS, 1);
             }
@@ -324,7 +339,7 @@ function exploreCell(state, row, column) {
         }
         if (depth > state.saved.lavaDepth - 11 && depth < Math.floor(state.saved.lavaDepth)) {
             const delta = Math.floor(state.saved.lavaDepth) - depth;
-            state.saved.lavaDepth += 1 / delta;
+            state.saved.lavaDepth += 1.5 / delta;
         }
     } else {
         state = {...state, fuel: Math.max(0, state.fuel - fuelCost)};
@@ -332,6 +347,10 @@ function exploreCell(state, row, column) {
     if (!state.saved.playedToday) {
         state = {...state, saved: {...state.saved, playedToday: true}};
     }
+    state = {
+        ...state,
+        robot: {...state.robot, row, column, animationTime: state.time},
+    };
     return state;
 }
 function getStartingCell(state) {
@@ -343,6 +362,9 @@ function advanceDigging(state) {
     if (!state.rows[startingCell.row]) {
         state = revealCell(state, startingCell.row, startingCell.column);
         state = {...state, selected: startingCell};
+        state = spawnLavaBubbles(state);
+        state.targetCell = state.selected;
+        state.robot = {row: startingCell.row, column: startingCell.column, animationTime: state.time};
     }
     if ((state.rightClicked || (state.clicked && state.usingBombDiffuser)) && state.overButton && state.overButton.cell) {
         const {row, column} = state.overButton;
@@ -396,10 +418,10 @@ function advanceDigging(state) {
             state.selected = state.overButton;
         }
     }
-    if (state.selected) {
-        const targetLeft = state.selected.column * COLUMN_WIDTH + SHORT_EDGE + EDGE_LENGTH / 2 - WIDTH / 2;
-        const rowOffset = (state.selected.column % 2) ? ROW_HEIGHT / 2 : 0;
-        const targetTop = Math.max(-100, (state.selected.row + 0.5) * ROW_HEIGHT + rowOffset - HEIGHT / 2);
+    if (state.targetCell) {
+        const targetLeft = state.targetCell.column * COLUMN_WIDTH + SHORT_EDGE + EDGE_LENGTH / 2 - canvas.width / 2;
+        const rowOffset = (state.targetCell.column % 2) ? ROW_HEIGHT / 2 : 0;
+        const targetTop = Math.max(-100, (state.targetCell.row + 0.5) * ROW_HEIGHT + rowOffset - canvas.height / 2);
         state = {...state, camera: {...state.camera,
             top: Math.round((state.camera.top * 10 + targetTop) / 11),
             left: Math.round((state.camera.left * 10 + targetLeft) / 11)
@@ -418,18 +440,19 @@ function spawnCrystals(state, x, y, amount) {
     const crystalValues = [];
     for (let sizeIndex = CRYSTAL_SIZES.length - 1; sizeIndex >= 0; sizeIndex--) {
         const crystalSize = CRYSTAL_SIZES[sizeIndex];
-        while (amount >= crystalSize && crystalValues.length < 100) {
+        while (amount >= crystalSize && crystalValues.length < 10) {
             crystalValues.push(crystalSize);
             amount -= crystalSize;
         }
     }
-    let frame = -10;
+    crystalValues.reverse();
+    let frame = -10 - 2 * crystalValues.length;
     for (const crystalValue of crystalValues) {
         state = addSprite(state, {
             ...crystalSprite,
             x: x + Math.random() * EDGE_LENGTH - EDGE_LENGTH / 2,
             y: y + Math.random() * EDGE_LENGTH - EDGE_LENGTH / 2,
-            frame: frame -= 2,
+            frame: frame += 2,
             crystals: crystalValue,
         });
     }
@@ -450,6 +473,19 @@ function spawnDebris(state, x, y, row, column) {
             animation,
         });
         dx += SHORT_EDGE / 4 + SHORT_EDGE * Math.random() / 8;
+    }
+    return state;
+}
+function spawnLavaBubbles(state) {
+    for (let i = 0; i < 10; i++) {
+        const animation = lavaBubbleAnimations[i % 4 ? 0 : 1];
+        state = addSprite(state, {
+            ...lavaBubbleSprite,
+            x: canvas.width * i / 10 + Math.floor(Math.random() * 20) - 10,
+            y: 2 + Math.floor(Math.random() * 10),
+            animation,
+            spawnTime: state.time - FRAME_LENGTH * Math.floor(Math.random() *  40),
+        });
     }
     return state;
 }

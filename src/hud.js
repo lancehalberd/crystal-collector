@@ -1,7 +1,4 @@
-const {
-    WIDTH,
-    HEIGHT,
-} = require('gameConstants');
+const { canvas } = require('gameConstants');
 const Rectangle = require('Rectangle');
 const { drawImage, drawText } = require('draw');
 
@@ -9,9 +6,23 @@ function renderBasicButton(context, state, button) {
     let label = button.label;
     if (button.getLabel) label = button.getLabel(state, button);
     renderButtonBackground(context, state, button);
-    drawText(context, label, button.left + button.width / 2, button.top + button.height / 2,
-        {fillStyle: 'white', textAlign: 'center', textBaseline: 'middle', size: button.height - 30}
+    const size = button.fontSize || Math.min(
+        button.height - 20,
+        Math.round(button.width / 5),
     );
+    drawText(context, label, button.left + button.width / 2, button.top + button.height / 2,
+        {fillStyle: 'white', textAlign: 'center', textBaseline: 'middle', size }
+    );
+}
+function getLayoutProperties(context) {
+    return {
+        context,
+        padding: Math.round(Math.min(canvas.width, canvas.height) / 40),
+        width: canvas.width,
+        height: canvas.height,
+        buttonHeight: Math.round(Math.min(canvas.height / 8, canvas.width / 6 / 2.5)),
+        buttonWidth: Math.round(Math.min(2.5 * canvas.height / 8, canvas.width / 6)),
+    };
 }
 
 const sleepButton = {
@@ -20,33 +31,44 @@ const sleepButton = {
     onClick(state) {
         return nextDay(state);
     },
-    left: WIDTH - 130,
-    top: 10,
-    width: 120,
-    height: 60,
+    resize({padding, width, buttonWidth, buttonHeight}) {
+        this.height = buttonHeight;
+        this.width = buttonWidth;
+        this.top = padding;
+        this.left = width - padding - this.width;
+    },
 };
 
-const diffuserButton = {
-    render(context, state, button) {
-        renderButtonBackground(context, state, button);
-        drawText(context, state.bombDiffusers, button.left + button.width - 15, button.top + button.height / 2,
+class DiffuserButton {
+    constructor() {
+        this.left = 20;
+        this.top = canvas.height - 70;
+        this.width = 120;
+        this.height = 60;
+    }
+    render(context, state) {
+        renderButtonBackground(context, state, this);
+        drawText(context, state.bombDiffusers, this.left + this.width - 15, this.top + this.height / 2,
             {fillStyle: '#A40', strokeStyle: '#FA4', size: 36, textBaseline: 'middle', textAlign: 'right'});
         const iconRectangle = new Rectangle(diffuserFrame).scale(2);
         drawImage(context, diffuserFrame.image, diffuserFrame,
-            iconRectangle.moveCenterTo(button.left + 15 + iconRectangle.width / 2, button.top + button.height / 2)
+            iconRectangle.moveCenterTo(this.left + 15 + iconRectangle.width / 2, this.top + this.height / 2)
         );
-    },
+    }
     isActive(state) {
         return state.usingBombDiffuser;
-    },
+    }
     onClick(state) {
         return {...state, usingBombDiffuser: !state.usingBombDiffuser};
-    },
-    left: 20,
-    top: HEIGHT - 70,
-    width: 120,
-    height: 60,
-};
+    }
+    resize({padding, height, buttonWidth, buttonHeight}) {
+        this.height = buttonHeight;
+        this.width = buttonWidth;
+        this.top = height - padding - this.height;
+        this.left = padding;
+    }
+}
+const diffuserButton = new DiffuserButton();
 const achievementButton = {
     render(context, state, button) {
         context.save();
@@ -57,10 +79,13 @@ const achievementButton = {
     onClick(state) {
         return {...state, showAchievements: state.time};
     },
-    left: sleepButton.left - 60,
-    top: sleepButton.top + sleepButton.height / 2 - 25,
-    width: 50,
-    height: 50,
+    resize(layoutProperties) {
+        const {padding, buttonHeight} = layoutProperties;
+        this.width = this.height = buttonHeight;
+        sleepButton.resize(layoutProperties);
+        this.top = padding;
+        this.left = sleepButton.left - padding - this.width;
+    },
 };
 
 const digButton = {
@@ -69,18 +94,24 @@ const digButton = {
     onClick(state) {
         return {...state, shop: false, fuel: state.saved.maxFuel, startingDepth: 1};
     },
-    left: 650,
-    width: 130,
-    top: 20,
+    row: 0,
+    resize({padding, width, buttonWidth, buttonHeight}) {
+        this.height = buttonHeight;
+        this.width = buttonWidth;
+        this.top = padding + this.row * (buttonHeight+padding) + (this.row ? padding : 0);
+        this.left = width - padding - this.width;
+    },
 };
-const depthOffset = digButton.top + 60;
+const digButtonSpacing = digButton.height + 10;
+const depthOffset = digButton.top + 10;
 const depth20Button = {
     ...digButton,
     label: 'Dig 20',
     onClick(state) {
         return {...state, shop: false, fuel: state.saved.maxFuel, startingDepth: 20};
     },
-    top: depthOffset + (digButton.height + 20)
+    top: depthOffset + digButtonSpacing,
+    row: 1,
 };
 const depth50Button = {
     ...digButton,
@@ -88,7 +119,7 @@ const depth50Button = {
     onClick(state) {
         return {...state, shop: false, fuel: state.saved.maxFuel, startingDepth: 50};
     },
-    top: depthOffset + (digButton.height + 20) * 2
+    row: 2,
 };
 const depth100Button = {
     ...digButton,
@@ -96,7 +127,7 @@ const depth100Button = {
     onClick(state) {
         return {...state, shop: false, fuel: state.saved.maxFuel, startingDepth: 100};
     },
-    top: depthOffset + (digButton.height + 20) * 3
+    row: 3,
 };
 const depth150Button = {
     ...digButton,
@@ -104,27 +135,42 @@ const depth150Button = {
     onClick(state) {
         return {...state, shop: false, fuel: state.saved.maxFuel, startingDepth: 150};
     },
-    top: depthOffset + (digButton.height + 20) * 4
+    row: 4,
 };
 
-const closeButton = {
-    ...digButton,
+const closeButton =  {
+    ...sleepButton,
     label: 'Close',
     onClick(state) {
         return {...state, showAchievements: false};
     },
-    left: WIDTH / 2 - digButton.width / 2,
-    top: HEIGHT - 70,
+    resize({padding, width, height, buttonWidth, buttonHeight}) {
+        this.height = buttonHeight;
+        this.width = buttonWidth;
+        this.top = height - this.height - padding;
+        this.left = Math.round((width - this.width) / 2);
+    },
 };
 const restartButton = {
-    ...closeButton,
+    ...sleepButton,
     label: 'Restart from Day 1',
     onClick(state) {
         return restart(state);
     },
-    left: 20,
-    width: 300,
-}
+    resize({context, padding, height, width, buttonHeight}) {
+        this.height = buttonHeight;
+        this.fontSize = Math.min(
+            this.height - 20,
+            Math.round(width / 32),
+        );
+        const textWidth = drawText(context, this.label, 0, -10,
+            {fillStyle: 'white', textAlign: 'bottom', size: this.fontSize, measure: true}
+        );
+        this.width = textWidth + 20;
+        this.top = height - this.height - padding;
+        this.left = padding;
+    },
+};
 
 function renderButtonBackground(context, state, button) {
     const enabled = !button.isEnabled || button.isEnabled(state, button);
@@ -149,18 +195,31 @@ const shopButton = {
     render(context, state, button) {
         renderButtonBackground(context, state, button);
 
+        const {left, top, width, height} = new Rectangle(button).pad(-5);
+
+        const rowHeight = Math.round(height / 3);
+        const halfHeight = Math.round(height / 6);
+        const size = Math.min(
+            Math.round(rowHeight * .5 / 2) * 2,
+            Math.round(width / 26) * 2,
+        );
+        const middle = Math.round(width / 2);
+        const textBaseline = 'middle';
+        context.save();
+        context.translate(left, top);
+
         context.beginPath();
-        context.moveTo(button.left + 20, button.top + 70);
-        context.lineTo(button.left + button.width - 20, button.top + 70);
+        context.moveTo(10, rowHeight);
+        context.lineTo(width - 10, rowHeight);
         context.stroke();
 
-        drawText(context, button.getLabel(state, button), button.left + button.width / 2, button.top + 10 + 30,
-            {fillStyle: 'white', textAlign: 'center', textBaseline: 'middle', size: 30}
+        // console.log(left, top, width / 2, halfHeight)
+        drawText(context, button.getLabel(state, button), middle, halfHeight,
+            {fillStyle: 'white', textAlign: 'center', textBaseline, size}
         );
 
-        const x = button.left + button.width / 2;
-        const y = button.top + 10 + 90;
-
+        let x = middle;
+        let y = rowHeight + halfHeight;
         context.beginPath();
         context.moveTo(x - 10, y);
         context.lineTo(x + 10, y);
@@ -169,23 +228,29 @@ const shopButton = {
         context.lineTo(x + 5, y + 5);
         context.stroke();
 
-        drawText(context, button.getCurrentValue(state, button), button.left + button.width / 2 - 15, button.top + 10 + 90,
-            {fillStyle: 'white', textAlign: 'right', textBaseline: 'middle', size: 30}
+        drawText(context, button.getCurrentValue(state, button), x - 15, y,
+            {fillStyle: 'white', textAlign: 'right', textBaseline, size}
         );
 
-        drawText(context, button.getNextValue(state, button), button.left + button.width / 2 + 15, button.top + 10 + 90,
-            {fillStyle: '#0F0', textAlign: 'left', textBaseline: 'middle', size: 30}
+        drawText(context, button.getNextValue(state, button), x + 15, y,
+            {fillStyle: '#0F0', textAlign: 'left', textBaseline, size}
         );
 
+        x = width - 20;
+        y = 2 * rowHeight + halfHeight;
         const cost = button.getCost(state, button);
         const fillStyle = (cost <= state.saved.score) ? '#4AF' : '#F00';
-        const costWidth = drawText(context, cost, button.left + button.width - 20, button.top + 10 + 150,
-            {fillStyle, strokeStyle: 'white', textAlign: 'right', textBaseline: 'middle', size: 36, measure: true}
+        canvas.style.letterSpacing = '2px';
+        const costWidth = drawText(context, cost, x, y,
+            {fillStyle, strokeStyle: 'white', textAlign: 'right', textBaseline, size, measure: true}
         );
-        const iconRectangle = new Rectangle(crystalFrame).scale(2);
-        drawImage(context, crystalFrame.image, crystalFrame,
-            iconRectangle.moveCenterTo(button.left + button.width - 20 - costWidth - 5 - iconRectangle.width / 2, button.top + 10 + 150)
-        );
+        canvas.style.letterSpacing = '';
+        let scale = 1;
+        if (crystalFrame.height < 0.75 * size) scale = 2;
+        const iconRectangle = new Rectangle(crystalFrame).scale(scale);
+        x = x - costWidth - 5 - iconRectangle.width / 2;
+        drawImage(context, crystalFrame.image, crystalFrame, iconRectangle.moveCenterTo(x, y));
+        context.restore();
     },
     isEnabled(state, button) {
         return state.saved.score >= button.getCost(state, button);
@@ -197,8 +262,23 @@ const shopButton = {
         }
         return state;
     },
-    width: 300,
-    height: 200, // 3 60px lines 10px border
+    resize({padding, height, width, buttonWidth, buttonHeight}) {
+        if (height * 1.2 >= width) {
+            this.height = Math.round((height - 10 * padding) / 4);
+            this.width = width - buttonWidth - 6 * padding;
+            this.top = this.row ? 2 * padding + this.height : padding;
+            if (this.column) this.top += 2 * (padding + this.height);
+            this.left = padding;
+        } else {
+            const smallHeight = Math.round((5 * buttonHeight + 4 * padding) / 2);
+            const largeHeight = Math.round((height - 10 * padding) / 2);
+            if (largeHeight >= smallHeight + 20) this.height = largeHeight;
+            else this.height = smallHeight;
+            this.width = Math.round((width - buttonWidth - 6 * padding) / 2);
+            this.top = this.row ? 2 * padding + this.height : padding;
+            this.left = this.column ? 2 * padding + this.width : padding;
+        }
+    },
 };
 
 const fuelButton = {
@@ -218,28 +298,32 @@ const fuelButton = {
     onPurchase(state, button) {
         return {...state, saved: {...state.saved, maxFuel: this.getNextValue(state, button)}};
     },
-    left: 20,
-    top: 20,
+    row: 0, column: 0,
 };
 const rangeButton = {
     ...fuelButton,
     getCost(state) {
         return Math.round(100 * Math.pow(2, 2 * (state.saved.range - 0.2) - 1));
     },
-    getLabel(state){
-        return `Range At Depth ${state.saved.maxDepth}`;
+    getLabel() {
+        return `Range`;
     },
     getCurrentValue(state) {
-        return getRangeAtDepth(state, state.saved.maxDepth, 0).toFixed(2);
+        let A = getDepthOfRange(state, 2.5, 0);
+        let B = getDepthOfRange(state, 1.5, 0);
+        if (A>=0) return '++'+A+':+'+B;
+        return '+'+B;
     },
     getNextValue(state) {
-        return getRangeAtDepth(state, state.saved.maxDepth, 0.5).toFixed(2);
+        let A = getDepthOfRange(state, 2.5, 0.5);
+        let B = getDepthOfRange(state, 1.5, 0.5);
+        if (A>=0) return '++'+A+':+'+B;
+        return '+'+B;
     },
     onPurchase(state) {
         return {...state, saved: {...state.saved, range: state.saved.range + 0.5}};
     },
-    left: 330,
-    top: 20,
+    row: 0, column: 1,
 };
 const bombDiffuserButton = {
     ...fuelButton,
@@ -264,8 +348,7 @@ const bombDiffuserButton = {
             saved: {...state.saved, bombDiffusers: state.saved.bombDiffusers + 1}
         };
     },
-    left: 20,
-    top: 260,
+    row: 1, column: 0,
 };
 const explosionProtectionButton = {
     ...fuelButton,
@@ -284,8 +367,7 @@ const explosionProtectionButton = {
     onPurchase(state) {
         return {...state, saved: {...state.saved, explosionProtection: state.saved.explosionProtection + 0.2}};
     },
-    left: 330,
-    top: 260,
+    row: 1, column: 1,
 };
 
 function getHUDButtons(state) {
@@ -323,12 +405,15 @@ function getHUDButtons(state) {
 
 function renderHUD(context, state) {
     // Draw SCORE indicator
-    const scoreWidth = drawText(context, state.saved.score,WIDTH - 10, HEIGHT - 10,
+    const scoreWidth = drawText(context, state.saved.score, canvas.width - 10, canvas.height - 10,
         {fillStyle: '#4AF', strokeStyle: 'white', textAlign: 'right', textBaseline: 'bottom', size: 36, measure: true}
     );
     let iconRectangle = new Rectangle(crystalFrame).scale(2);
     drawImage(context, crystalFrame.image, crystalFrame,
-        iconRectangle.moveCenterTo(WIDTH - 20 - scoreWidth - 5 - iconRectangle.width / 2, HEIGHT - 10 - 20)
+        iconRectangle.moveCenterTo(
+            canvas.width - 20 - scoreWidth - 5 - iconRectangle.width / 2,
+            canvas.height - 10 - 20
+        )
     );
 
     // Draw FUEL indicator
@@ -376,7 +461,13 @@ function renderHUD(context, state) {
     }
 
     // Render buttons
+    const layoutProperties = getLayoutProperties(context);
     for (const button of getHUDButtons(state)) {
+        if (state.lastResized !== button.lastResized) {
+            if (button.resize) button.resize(layoutProperties);
+            else console.log('no resize function:', button);
+            button.lastResized = state.lastResized;
+        }
         button.render(context, state, button);
     }
 
@@ -388,7 +479,11 @@ module.exports = {
 };
 
 const { nextDay, restart } = require('state');
-const { canExploreCell, getFuelCost, getFlagValue, getRangeAtDepth, getExplosionProtectionAtDepth } = require('digging');
+const {
+    canExploreCell, getFuelCost, getFlagValue,
+    getDepthOfRange,
+    getExplosionProtectionAtDepth,
+} = require('digging');
 const { crystalFrame, diffuserFrame } = require('sprites');
 const {
     goldMedalFrame,

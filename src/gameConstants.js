@@ -3,9 +3,14 @@ const LONG_EDGE = 43.5;
 const SHORT_EDGE = EDGE_LENGTH / 2;
 const COLUMN_WIDTH = EDGE_LENGTH + SHORT_EDGE;
 const ROW_HEIGHT = LONG_EDGE * 2;
+
+const canvas = document.createElement('canvas');
+canvas.width = 800;
+canvas.height = 550;
+document.body.appendChild(canvas);
+
 module.exports = {
-    WIDTH: 800,
-    HEIGHT: 550,
+    canvas,
     FRAME_LENGTH: 20,
     EDGE_LENGTH,
     COLUMN_WIDTH,
