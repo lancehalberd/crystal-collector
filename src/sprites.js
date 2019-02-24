@@ -4,7 +4,7 @@ const {
 } = require('gameConstants');
 const Rectangle = require('Rectangle');
 const { drawImage } = require('draw');
-const { requireImage, createAnimation, r } = require('animations');
+const { requireImage, createAnimation, getFrame, r } = require('animations');
 
 const militaryFrame = {
     image: requireImage('gfx/militaryIcons.png'),
@@ -12,7 +12,8 @@ const militaryFrame = {
     height: 16,
 }
 const bombFrame = {...militaryFrame, left: 119, top: 108};
-const diffuserFrame = {...militaryFrame, left: 0, top: 91};
+const diffuserFrame = r(25, 16, {left: 25, top: 9, image: requireImage('gfx/diffuse.png')});
+const diffuserAnimation = createAnimation('gfx/diffuse.png', r(25, 25), {cols: 5}, {loop: false});
 const crystalAnimations = [
      createAnimation('gfx/crystals.png', r(30, 30), {x:0}),
      createAnimation('gfx/crystals.png', r(30, 30), {x:1}),
@@ -61,17 +62,40 @@ const crystalSprite = {
         return updateSprite(state, sprite, {frame, x, y, vx, vy, animationFrame});
     },
     render(context, state, sprite) {
+        const { animationFrame = 0 } = sprite;
         const size = CRYSTAL_SIZES.indexOf(sprite.crystals);
         const index = Math.min(Math.floor(size / 2), crystalAnimations.length - 1);
         const scale = 1 + 0.5 * (size%2);
         const animation = crystalAnimations[index];
-        const frameIndex = Math.floor(sprite.animationFrame / 5) % animation.frames.length;
+        const frameIndex = Math.floor(animationFrame / 5) % animation.frames.length;
         const frame = animation.frames[frameIndex];
+        if (!frame) debugger;
         drawImage(context, frame.image, frame,
             new Rectangle(frame).scale(scale).moveCenterTo(sprite.x - state.camera.left, sprite.y - state.camera.top)
         );
     }
 };
+const shieldAnimation = createAnimation('gfx/shield.png', r(25, 25), {cols: 5});
+const shieldSprite = {
+    advance(state, sprite) {
+        if (state.time - sprite.time > 1000) return deleteSprite(state, sprite);
+        return state;
+    },
+    render(context, state, sprite) {
+        const animationTime = state.time - sprite.time;
+        if (animationTime < 0) return;
+        const frame = getFrame(shieldAnimation, animationTime);
+        // console.log(sprite.time, animationTime, frame);
+        context.save();
+        const scale = Math.min(2, animationTime / 200);
+        context.globalAlpha = Math.max(0, Math.min(0.6, 2 - 2 * animationTime / shieldAnimation.duration));
+        drawImage(context, frame.image, frame,
+            new Rectangle(frame).scale(scale).moveCenterTo(sprite.x - state.camera.left, sprite.y - state.camera.top)
+        );
+        context.restore();
+    }
+};
+
 
 const pAnimation = x => createAnimation('gfx/particles.png', r(10, 10), {x});
 const particleAnimations = [
@@ -149,21 +173,19 @@ const bombSprite = {
             state = gainBonusFuel(state, sprite.bonusFuel);
             return deleteSprite(state, sprite);
         }
-        let {x = 0, y = 0, vx = 0, vy = 0, frame = 0} = sprite;
+        let {x = 0, y = 0, vx = 0, vy = 0} = sprite;
         x += vx;
         y += vy;
-        frame++;
-        if (frame > 20) {
+        const animationTime = Math.max(0, state.time - sprite.time);
+        if (animationTime >= diffuserAnimation.duration + 100) {
             vx += (state.camera.left + 200 - x) / 300;
             vy += (state.camera.top - y) / 300;
         }
-        return updateSprite(state, sprite, {frame, x, y, vx, vy});
+        return updateSprite(state, sprite, {x, y, vx, vy});
     },
     render(context, state, sprite) {
-        let frame = bombFrame;
-        if (sprite.frame < 0) {
-            frame = diffuserFrame;
-        }
+        const animationTime = Math.max(0, state.time - sprite.time);
+        const frame = getFrame(diffuserAnimation, animationTime);
         drawImage(context, frame.image, frame,
             new Rectangle(frame).scale(2).moveCenterTo(sprite.x - state.camera.left, sprite.y - state.camera.top)
         );
@@ -174,17 +196,18 @@ const diffuserSprite = {
         if (vy > 0 && sprite.y > state.camera.top + canvas.height + 32) {
             return deleteSprite(state, sprite);
         }
-        let {y = 0, vy = 0, frame = 0} = sprite;
-        frame++;
-        if (frame > 0) {
+        let {y = 0, vy = 0} = sprite;
+        const animationTime = state.time - sprite.time;
+        if (animationTime > 0) {
             vy++;
             y += vy;
         }
-        return updateSprite(state, sprite, {frame, y, vy});
+        return updateSprite(state, sprite, {y, vy});
     },
     render(context, state, sprite) {
-        drawImage(context, diffuserFrame.image, diffuserFrame,
-            new Rectangle(diffuserFrame).scale(2).moveCenterTo(sprite.x - state.camera.left, sprite.y - state.camera.top)
+        const frame = diffuserAnimation.frames[0];
+        drawImage(context, frame.image, frame,
+            new Rectangle(frame).scale(2).moveCenterTo(sprite.x - state.camera.left, sprite.y - state.camera.top)
         );
     }
 };
@@ -212,6 +235,7 @@ module.exports = {
     diffuserSprite,
     crystalFrame,
     crystalSprite,
+    shieldSprite,
     debrisSprite,
     diffuserFrame,
     explosionSprite,

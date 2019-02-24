@@ -9,7 +9,7 @@ const {
 
 const random = require('random');
 const Rectangle = require('Rectangle');
-const { createAnimation, r } = require('animations');
+const { createAnimation, requireImage, r } = require('animations');
 const { drawImage, drawText } = require('draw');
 const { renderRobot } = require('renderRobot');
 
@@ -228,6 +228,10 @@ const cellBackgrounds = [
     createAnimation('gfx/dirtback.png', r(100, 100), {x: 8}),
 ];
 const lavaAnimation = createAnimation('gfx/back.png', r(100, 100), {x: 4});
+
+const crystalPip = r(13, 13, {image: requireImage('gfx/pips.png')});
+const bombPip = r(13, 13, {left: 13, image: requireImage('gfx/pips.png')});
+const specialPip = r(13, 13, {left: 26, image: requireImage('gfx/pips.png')});
 function renderCellShading(context, state, row, column) {
     const columnz = z(column);
     const cell = state.rows[row] && state.rows[row][columnz];
@@ -243,24 +247,36 @@ function renderCellShading(context, state, row, column) {
         context.restore();
     }
     // Indicators for the number of crystals and bombs near this cell.
-    if (!cell.destroyed && (cell.crystals || cell.traps)) {
+    if (!cell.destroyed && (cell.crystals || cell.traps || cell.treasures)) {
         if (COLUMN_WIDTH) {
             const pips = getPipPoints(state, row, column);
             context.fillStyle = '#8CF';
             context.strokeStyle = '#04F';
             context.lineWidth = 1;
-            for(let i = 0;i < cell.crystals;i++) {
-                context.beginPath();
+            for(let i = 0; i < cell.crystals; i++) {
+                /*context.beginPath();
                 context.ellipse(pips[i][0], pips[i][1], 8, 8, 0, 0, Math.PI * 2);
                 context.fill();
                 context.beginPath();
                 context.ellipse(pips[i][0], pips[i][1], 4, 4, 0, 0, Math.PI * 2);
-                context.stroke();
+                context.stroke();*/
+                drawImage(context, crystalPip.image, crystalPip,
+                    new Rectangle(crystalPip).moveCenterTo(pips[i][0], pips[i][1]));
+            }
+            for(let i = cell.crystals; i < cell.crystals + cell.treasures; i++) {
+                /*context.beginPath();
+                context.ellipse(pips[i][0], pips[i][1], 8, 8, 0, 0, Math.PI * 2);
+                context.fill();
+                context.beginPath();
+                context.ellipse(pips[i][0], pips[i][1], 4, 4, 0, 0, Math.PI * 2);
+                context.stroke();*/
+                drawImage(context, specialPip.image, specialPip,
+                    new Rectangle(specialPip).scale(2).moveCenterTo(pips[i][0], pips[i][1]));
             }
             context.fillStyle = '#FCC';
             context.strokeStyle = '#800';
-            for(let i = 0;i < cell.traps;i++) {
-                context.beginPath();
+            for(let i = 0; i < cell.traps; i++) {
+                /*context.beginPath();
                 context.ellipse(pips[6-i][0], pips[6-i][1], 8, 8, 0, 0, Math.PI * 2);
                 context.fill();
                 context.beginPath();
@@ -268,7 +284,9 @@ function renderCellShading(context, state, row, column) {
                 context.lineTo(pips[6-i][0] + 4, pips[6-i][1] + 3);
                 context.moveTo(pips[6-i][0] - 4, pips[6-i][1] + 3);
                 context.lineTo(pips[6-i][0] + 4, pips[6-i][1] - 3);
-                context.stroke();
+                context.stroke();*/
+                drawImage(context, bombPip.image, bombPip,
+                    new Rectangle(bombPip).moveCenterTo(pips[6 - i][0], pips[6 - i][1]));
             }
         } else {
             context.textAlign = 'center';

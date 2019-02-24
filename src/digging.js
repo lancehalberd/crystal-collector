@@ -22,6 +22,7 @@ module.exports = {
     z,
     getCellColor,
     canExploreCell,
+    createCellsInRange,
     isCellRevealed,
     getFlagValue,
     advanceDigging,
@@ -35,6 +36,7 @@ module.exports = {
     gainBonusFuel,
     CRYSTAL_SIZES,
     gainCrystals,
+    spawnCrystals,
 };
 
 const {
@@ -44,6 +46,7 @@ const {
     debrisSprite,
     diffuserSprite,
     explosionSprite,
+    shieldSprite,
     particleAnimations,
     lavaBubbleSprite,
     lavaBubbleAnimations,
@@ -60,6 +63,10 @@ const {
     ACHIEVEMENT_DIFFUSE_X_BOMBS,
 } = require('achievements');
 
+const {
+    collectTreasure,
+} = require('treasures');
+
 // Injects indexes from the integers into non-negative integers.
 function z(i) {
     return (i >= 0) ? 2 * i : -2 * i - 1;
@@ -69,8 +76,10 @@ function getCellColor(state, row, column) {
     if (row < 0 || (row === 0 && column === 0)) return 'black';
     const startingCell = getStartingCell(state);
     if (row === startingCell.row && column === startingCell.column) return 'black';
-    let roll = random.normSeed(state.saved.seed + Math.cos(row) + Math.sin(column));
     const depth = getDepth(state, row, column);
+    let roll = random.normSeed(state.saved.seed + Math.cos(row) + Math.sin(column));
+    if (roll < Math.min(0.01, 0.005 + depth / 10000)) return 'treasure';
+    roll = random.normSeed(roll);
     if (roll < Math.max(0.15, 0.4 - depth / 500)) return 'green';
     if (Math.abs(row - startingCell.row) + Math.abs(column - startingCell.column) <= 1) return 'black';
     roll = random.normSeed(roll);
@@ -102,9 +111,10 @@ function isCellRevealed(state, row, column) {
 function getFlagValue(state, row, column) {
     return state.flags[row] && state.flags[row][z(column)];
 }
-function createCellsInRange(state, row, column) {
+function createCellsInRange(state, row, column, revealAll = false) {
     if (row < 0) return false;
-    const range = Math.round(getRangeAtDepth(state, getDepth(state, row, column)));
+    let range = Math.round(getRangeAtDepth(state, getDepth(state, row, column)));
+    if (revealAll) range = 3;
     const candidatesForReveal = [];
     for (const cellCoords of  getCellsInRange(state, row, column, range)) {
         state = createCell(state, cellCoords.row, cellCoords.column);
@@ -112,6 +122,14 @@ function createCellsInRange(state, row, column) {
         if (!state.rows[cellCoords.row][z(cellCoords.column)].numbersRevealed) {
             candidatesForReveal[cellCoords.distance].push(cellCoords);
         }
+    }
+    if (revealAll) {
+        for (const candidates of candidatesForReveal) {
+            for (const coords of candidates) {
+                state = revealCellNumbers(state, coords.row, coords.column);
+            }
+        }
+        return state;
     }
     const bonusChance = getAchievementBonus(state, ACHIEVEMENT_COLLECT_X_CRYSTALS_IN_ONE_DAY) / 100;
     for (let i = 1; i <= range; i++) {
@@ -203,7 +221,7 @@ function revealCellNumbers(state, row, column) {
     if (row < 0) return state;
     state = createCell(state, row, column);
     if (state.rows[row][z(column)].numbersRevealed) return state;
-    let crystals = 0, traps = 0, numbersRevealed = true;
+    let crystals = 0, traps = 0, treasures = 0, numbersRevealed = true;
     const rowOffset = Math.abs(column % 2);
     const cells = [
         [column - 1, row + rowOffset - 1], [column - 1, row + rowOffset],
@@ -214,7 +232,7 @@ function revealCellNumbers(state, row, column) {
         if (cell[1] < 0) continue;
         state = createCell(state, cell[1], cell[0]);
         const cellColor = getCellColor(state, cell[1], cell[0]);
-        if (!isCellRevealed(state, cell[1], cell[0]) && (cellColor === 'green' || cellColor === 'red')) {
+        if (!isCellRevealed(state, cell[1], cell[0]) && (cellColor === 'green' || cellColor === 'red' || cellColor === 'treasure')) {
             const updatedCell = state.rows[cell[1]][z(cell[0])];
             /*const updatedRow = [...state.rows[cell[1]]];
             updatedRow[cell[0]] = {...updatedRow[cell[0]], cellsToUpdate: [...updatedRow[cell[0]].cellsToUpdate, {row, column}]};
@@ -223,10 +241,11 @@ function revealCellNumbers(state, row, column) {
             state = updateCell(state, cell[1], cell[0], {cellsToUpdate: [...updatedCell.cellsToUpdate, {row, column}]});
             if (cellColor === 'green') crystals++;
             if (cellColor === 'red') traps++;
+            if (cellColor === 'treasure') treasures++;
         }
     }
-    let explored = state.rows[row][z(column)].explored || (crystals === 0 && traps === 0);
-    return updateCell(state, row, column, {crystals, traps, numbersRevealed, explored});
+    let explored = state.rows[row][z(column)].explored || (crystals === 0 && traps === 0 && treasures === 0);
+    return updateCell(state, row, column, {crystals, traps, treasures, numbersRevealed, explored});
 }
 
 function updateCell(state, row, column, properties) {
@@ -306,9 +325,17 @@ function exploreCell(state, row, column) {
         for (const cellCoords of cellsInRange) {
             const depth = getDepth(state, cellCoords.row, cellCoords.column);
             if (firstCell || Math.random() >= getExplosionProtectionAtDepth(state, depth)) {
-                state = blowUpCell(state, firstCell, cellCoords.row, cellCoords.column, frameDelay += 4);
+                state = blowUpCell(state, firstCell, cellCoords.row, cellCoords.column, frameDelay += 2);
             } else {
-                state = incrementAchievementStat(state, ACHIEVEMENT_PREVENT_X_EXPLOSIONS, 1);
+                const columnz = z(cellCoords.column);
+                const explored = state.rows[cellCoords.row] && state.rows[cellCoords.row][columnz] &&
+                                    state.rows[cellCoords.row][columnz].explored;
+                if (cellCoords.row >= 0 && !explored) {
+                    state = incrementAchievementStat(state, ACHIEVEMENT_PREVENT_X_EXPLOSIONS, 1);
+                    const {x, y} = getCellCenter(state, cellCoords.row, cellCoords.column);
+                    state = addSprite(state, {...shieldSprite, x, y, time: state.time + FRAME_LENGTH * frameDelay});
+                    frameDelay += 2;
+                }
             }
             firstCell = false;
         }
@@ -316,13 +343,24 @@ function exploreCell(state, row, column) {
             const cellToUpdate = state.rows[coordsToUpdate.row][z(coordsToUpdate.column)];
             const traps = cellToUpdate.traps - 1;
             // Mark cells with no nearby traps/crystals explored since numbers are already revealed.
-            let explored = cellToUpdate.explored || (!traps && !cellToUpdate.crystals);
+            let explored = cellToUpdate.explored || (!traps && !cellToUpdate.crystals && !cellToUpdate.treasures);
             state = updateCell(state, coordsToUpdate.row, coordsToUpdate.column, {traps, explored});
         }
     }
     const {x, y} = getCellCenter(state, row, column);
     state = spawnDebris(state, x, y, row, column);
-    if (cellColor === 'green') {
+    if (cellColor === 'treasure') {
+        const depth = getDepth(state, row, column);
+        state = gainBonusFuel(state, 0.1 * fuelCost);
+        state = collectTreasure(state, row, column);
+        for (const coordsToUpdate of state.rows[row][z(column)].cellsToUpdate) {
+            const cellToUpdate = state.rows[coordsToUpdate.row][z(coordsToUpdate.column)];
+            const treasures = cellToUpdate.treasures - 1;
+            // Mark cells with no nearby traps/crystals explored since numbers are already revealed.
+            let explored = cellToUpdate.explored || (!treasures && !cellToUpdate.crystals && !cellToUpdate.traps);
+            state = updateCell(state, coordsToUpdate.row, coordsToUpdate.column, {treasures, explored});
+        }
+    } else if (cellColor === 'green') {
         const depth = getDepth(state, row, column);
         state = gainBonusFuel(state, 0.1 * fuelCost);
 
@@ -334,7 +372,7 @@ function exploreCell(state, row, column) {
             const cellToUpdate = state.rows[coordsToUpdate.row][z(coordsToUpdate.column)];
             const crystals = cellToUpdate.crystals - 1;
             // Mark cells with no nearby traps/crystals explored since numbers are already revealed.
-            let explored = cellToUpdate.explored || (!crystals && !cellToUpdate.traps);
+            let explored = cellToUpdate.explored || (!crystals && !cellToUpdate.traps && !cellToUpdate.treasures);
             state = updateCell(state, coordsToUpdate.row, coordsToUpdate.column, {crystals, explored});
         }
         if (depth > state.saved.lavaDepth - 11 && depth < Math.floor(state.saved.lavaDepth)) {
@@ -387,10 +425,10 @@ function advanceDigging(state) {
                         let explored = cellToUpdate.explored || (!traps && !cellToUpdate.crystals);
                         state = updateCell(state, coordsToUpdate.row, coordsToUpdate.column, {traps, explored});
                     }
-                    state = addSprite(state, {...bombSprite, x, y, bonusFuel, frame: -30});
+                    state = addSprite(state, {...bombSprite, x, y, bonusFuel, time: state.time});
                 } else {
                     state = exploreCell(state, row, column);
-                    state = addSprite(state, {...diffuserSprite, x, y, frame: -20});
+                    state = addSprite(state, {...diffuserSprite, x, y, time: state.time + 200});
                 }
             } else {
                 const selectedRow = [...(state.flags[row] || [])];
@@ -436,7 +474,7 @@ function advanceDigging(state) {
     if (displayLavaDepth > state.saved.lavaDepth) displayLavaDepth = Math.max(displayLavaDepth - 0.01, state.saved.lavaDepth);
     return {...state, displayFuel, displayLavaDepth, saved };
 }
-function spawnCrystals(state, x, y, amount) {
+function spawnCrystals(state, x, y, amount, radius = EDGE_LENGTH - EDGE_LENGTH / 2) {
     const crystalValues = [];
     for (let sizeIndex = CRYSTAL_SIZES.length - 1; sizeIndex >= 0; sizeIndex--) {
         const crystalSize = CRYSTAL_SIZES[sizeIndex];
@@ -450,8 +488,8 @@ function spawnCrystals(state, x, y, amount) {
     for (const crystalValue of crystalValues) {
         state = addSprite(state, {
             ...crystalSprite,
-            x: x + Math.random() * EDGE_LENGTH - EDGE_LENGTH / 2,
-            y: y + Math.random() * EDGE_LENGTH - EDGE_LENGTH / 2,
+            x: x + Math.random() * radius,
+            y: y + Math.random() * radius,
             frame: frame += 2,
             crystals: crystalValue,
         });

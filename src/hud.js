@@ -40,12 +40,6 @@ const sleepButton = {
 };
 
 class DiffuserButton {
-    constructor() {
-        this.left = 20;
-        this.top = canvas.height - 70;
-        this.width = 120;
-        this.height = 60;
-    }
     render(context, state) {
         renderButtonBackground(context, state, this);
         drawText(context, state.bombDiffusers, this.left + this.width - 15, this.top + this.height / 2,
@@ -62,8 +56,8 @@ class DiffuserButton {
         return {...state, usingBombDiffuser: !state.usingBombDiffuser};
     }
     resize({padding, height, buttonWidth, buttonHeight}) {
-        this.height = buttonHeight;
-        this.width = buttonWidth;
+        this.height = Math.round(buttonHeight * 1.2);
+        this.width = Math.round(buttonWidth * 1.2);
         this.top = height - padding - this.height;
         this.left = padding;
     }

@@ -5,7 +5,9 @@ const {
     FRAME_LENGTH, canvas, EDGE_LENGTH, ROW_HEIGHT,
 } = require('gameConstants');
 
-function getNewCamera(lavaDepth = 100) {
+const INITIAL_LAVA_DEPTH = 100;
+
+function getNewCamera(lavaDepth = INITIAL_LAVA_DEPTH) {
     return {
         left: -canvas.width / 2 + EDGE_LENGTH,
         top: -100,
@@ -34,7 +36,7 @@ function getNewState() {
         bombsDiffusedToday: 0,
         bonusFuelToday: 0,
         crystalsCollectedToday: 0,
-        displayLavaDepth: 100,
+        displayLavaDepth: INITIAL_LAVA_DEPTH,
         saved: {
             bombDiffusers: 3,
             explosionProtection: 0.2,
@@ -46,7 +48,7 @@ function getNewState() {
             score: 0,
             playedToday: false,
             achievementStats: {},
-            lavaDepth: 100,
+            lavaDepth: INITIAL_LAVA_DEPTH,
         },
     };
 }
@@ -78,9 +80,10 @@ function nextDay(state) {
 function restart(state) {
     state = nextDay({
         ...state,
+        startingDepth: 1,
         showAchievements: false,
         displayFuel: 0,
-        displayLavaDepth: 30,
+        displayLavaDepth: INITIAL_LAVA_DEPTH,
         saved: {
             ...state.saved,
             score: 0,
@@ -90,7 +93,7 @@ function restart(state) {
             range: 1.2,
             maxFuel: 100,
             maxDepth: 0,
-            lavaDepth: 30,
+            lavaDepth: INITIAL_LAVA_DEPTH,
         }
     });
     return {...state, shop: false};

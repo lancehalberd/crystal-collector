@@ -15,9 +15,9 @@ module.exports = {
     renderRobot
 };
 
-const idleAnimation = createAnimation('gfx/avatar.png', r(30, 30), {cols: 7, duration: 12, frameMap: [0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 6]});
+const idleAnimation = createAnimation('gfx/avatar.png', r(30, 30), {cols: 7, duration: 12, frameMap: [0, 1, 2, 1, 0, 1, 2, 1, 0, 1, 2, 1, 0, 1, 2, 1, 6]});
 
-const tiredAnimation = createAnimation('gfx/avatar.png', r(30, 30), {x: 3, cols: 3, duration: 24, frameMap: [0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2]});
+const tiredAnimation = createAnimation('gfx/avatar.png', r(30, 30), {x: 3, cols: 3, duration: 24, frameMap: [0, 1, 2, 1, 0, 1, 2, 1, 0, 1, 2, 1, 0, 1, 2, 1]});
 const digAnimation = createAnimation('gfx/avatar.png', r(30, 30), {x: 7, cols: 3, duration: 4, frameMap: [0, 1, 2, 1, 2, 0]})
 
 const hurtAnimation = createAnimation('gfx/avatar.png', r(30, 30), {x: 10, cols: 3, duration: 12, frameMap: [0, 0, 0, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1]})
