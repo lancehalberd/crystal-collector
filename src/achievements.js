@@ -14,17 +14,17 @@ const ACHIEVEMENT_REPAIR_SHIP_IN_X_DAYS = 'repairShipInXDays';
 
 const diamondMedalFrame = {
     image: requireImage('gfx/achievements.png'),
-    left: 120,
+    left: 156,
     top: 0,
-    width: 40,
-    height: 40,
+    width: 39,
+    height: 39,
 };
-const goldMedalFrame = {...diamondMedalFrame, left: 80};
-const silverMedalFrame = {...diamondMedalFrame, left: 40};
+const goldMedalFrame = {...diamondMedalFrame, left: 78};
+const silverMedalFrame = {...diamondMedalFrame, left: 39};
 const bronzeMedalFrame = {...diamondMedalFrame, left: 0};
 
-const achievementAnimation = createAnimation('gfx/achievements.png', r(40, 40),
-    {cols: 5, duration: 20, frameMap:[2, 4, 2, 4, 2, 4, 2, 4, 2, 4, 2, 4, 2, 4, 2, 4]},
+const achievementAnimation = createAnimation('gfx/achievements.png', r(39, 39),
+    {x: 2, cols: 2, duration: 20, frameMap:[0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1]},
     {loop: false}
 );
 
@@ -263,7 +263,7 @@ function renderAchievements(context, state) {
         context.save();
         for (let i = 0; i < data.bonusValues.length; i++) {
             const iconFrame = ACHIEVEMENT_ICON_FRAMES[i];
-            context.globalAlpha = (i <= bonusLevel) ? 1 : 0.5 - 0.1 * i;
+            context.globalAlpha = (i <= bonusLevel) ? 1 : 0.25 - 0.05 * i;
             const target = new Rectangle(iconFrame).scale(iconScale);
             drawImage(context, iconFrame.image, iconFrame,
                 target.moveCenterTo(middle - (4-i) * (target.width + 2) + target.width / 2, top + rowHeight / 3)
