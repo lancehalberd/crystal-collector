@@ -1,17 +1,23 @@
-const { canvas } = require('gameConstants');
-
-function renderShop(context, state) {
-    const time = Math.min(800, state.time - state.shop) / 800;
-    const gradient = context.createLinearGradient(800 - time * 200, 900, 300 + time * 200, -200);
-    gradient.addColorStop(0, "#08F");
-    gradient.addColorStop(0.9 - 0.87 * time, "#08F");
-    gradient.addColorStop(0.99 - time / 2, "#008");
-    gradient.addColorStop(0.99 - time / 4, "#004");
-    gradient.addColorStop(1, "#000");
-    context.fillStyle = gradient;
-    context.fillRect(0, 0, canvas.width, canvas.height);
-}
-
+const Rectangle = require('Rectangle');
+const { r, requireImage } = require('animations');
+const { drawImage } = require('draw');
 module.exports = {
     renderShop
 };
+const { renderShipBackground, renderShip } = require('ship');
+const { getLayoutProperties } = require('hud');
+
+const robotFrame = r(300, 300, {image: requireImage('gfx/shop.png')});
+function renderShop(context, state) {
+    renderShipBackground(context, state);
+    renderShip(context, state);
+
+    const { shopRectangle } = getLayoutProperties(context, state);
+    drawImage(context, robotFrame.image, robotFrame,
+        new Rectangle(robotFrame).moveCenterTo(
+            shopRectangle.left + shopRectangle.width / 2,
+            shopRectangle.top + shopRectangle.height / 2,
+        )
+    );
+}
+

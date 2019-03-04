@@ -13,7 +13,11 @@ const { createAnimation, requireImage, r } = require('animations');
 const { drawImage, drawText } = require('draw');
 const { renderRobot } = require('renderRobot');
 
-const { z, canExploreCell, getFuelCost, isCellRevealed, getFlagValue } = require('digging');
+const {
+    z, canExploreCell, getFuelCost, isCellRevealed,
+    getFlagValue, getCellCenter,
+} = require('digging');
+const { getShipPartLocation, renderShip, renderTransitionShipBackground } = require('ship');
 
 let lavaPattern = null;
 function renderDigging(context, state) {
@@ -38,9 +42,14 @@ function renderDigging(context, state) {
     }
     renderSurfaceTiles(context, state);
     renderRobot(context, state);
-    for (let row = topRow; row < topRow + rows; row++) {
-        for (let column = leftColumn; column < leftColumn + columns; column++) {
-            renderCellShading(context,state, row, column, state.camera.top, state.camera.left);
+    if (state.leaving || state.incoming) {
+        renderShip(context, state);
+    }
+    if (!state.collectingPart) {
+        for (let row = topRow; row < topRow + rows; row++) {
+            for (let column = leftColumn; column < leftColumn + columns; column++) {
+                renderCellShading(context,state, row, column, state.camera.top, state.camera.left);
+            }
         }
     }
     if (state.overButton && state.overButton.cell) {
@@ -52,7 +61,7 @@ function renderDigging(context, state) {
             if (canExploreCell(state, row, column)) {
                 const fuelCost = getFuelCost(state, row, column);
                 const isFlagged = getFlagValue(state, row, column);
-                context.strokeStyle = (fuelCost <= state.fuel  && isFlagged !== 2) ? '#0F0' : 'red';
+                context.strokeStyle = (fuelCost <= state.saved.fuel  && isFlagged !== 2) ? '#0F0' : 'red';
             } else {
                 context.strokeStyle = 'red';
             }
@@ -145,10 +154,11 @@ function renderBackground(context, state) {
     context.fillStyle = gradient;
     context.fillRect(0, 0, canvas.width, canvas.height);
     context.restore();
-    if (state.camera.top < 0) {
+    renderTransitionShipBackground(context, state);
+   /* if (state.camera.top < 0) {
         context.fillStyle = '#08F';
         context.fillRect(0, 0, canvas.width, -state.camera.top);
-    }
+    }*/
 }
 const grassRoots = createAnimation('gfx/grasstiles.png', r(50, 50), {x: 0}).frames[0];
 const grassFrames = [
@@ -237,11 +247,17 @@ function renderCellShading(context, state, row, column) {
     const cell = state.rows[row] && state.rows[row][columnz];
     if (!cell || cell.destroyed) return;
     // Indicator that the player can explore this cell:
+    context.strokeStyle = '#FFF';
     if (!isCellRevealed(state, row, column)) {
+        const shipPartLocation = getShipPartLocation(state);
+        const p1 = getCellCenter(state, shipPartLocation.row, shipPartLocation.column);
+        const p2 = getCellCenter(state, row, column);
+        const dy = p1.y - p2.y, dx = p1.x - p2.x;
+        const d2 = dx * dx + dy * dy;
         drawCellPath(context, state, row, column, 5);
         context.save();
-        context.strokeStyle = '#FFF';
-        context.globalAlpha = 0.15;
+        const p = Math.round(Math.max(0, 1 - d2 / 500000) * 5) / 5;
+        context.globalAlpha = 0.15 + p * p * (0.25 + 0.25 * Math.sin(state.time / 500));
         context.lineWidth = 6;
         context.stroke();
         context.restore();
@@ -254,39 +270,18 @@ function renderCellShading(context, state, row, column) {
             context.strokeStyle = '#04F';
             context.lineWidth = 1;
             for(let i = 0; i < cell.crystals; i++) {
-                /*context.beginPath();
-                context.ellipse(pips[i][0], pips[i][1], 8, 8, 0, 0, Math.PI * 2);
-                context.fill();
-                context.beginPath();
-                context.ellipse(pips[i][0], pips[i][1], 4, 4, 0, 0, Math.PI * 2);
-                context.stroke();*/
                 drawImage(context, crystalPip.image, crystalPip,
-                    new Rectangle(crystalPip).moveCenterTo(pips[i][0], pips[i][1]));
+                    new Rectangle(crystalPip).moveCenterTo(pips[i][0], pips[i][1]).round());
             }
             for(let i = cell.crystals; i < cell.crystals + cell.treasures; i++) {
-                /*context.beginPath();
-                context.ellipse(pips[i][0], pips[i][1], 8, 8, 0, 0, Math.PI * 2);
-                context.fill();
-                context.beginPath();
-                context.ellipse(pips[i][0], pips[i][1], 4, 4, 0, 0, Math.PI * 2);
-                context.stroke();*/
                 drawImage(context, specialPip.image, specialPip,
-                    new Rectangle(specialPip).scale(2).moveCenterTo(pips[i][0], pips[i][1]));
+                    new Rectangle(specialPip).scale(2).moveCenterTo(pips[i][0], pips[i][1]).round());
             }
             context.fillStyle = '#FCC';
             context.strokeStyle = '#800';
             for(let i = 0; i < cell.traps; i++) {
-                /*context.beginPath();
-                context.ellipse(pips[6-i][0], pips[6-i][1], 8, 8, 0, 0, Math.PI * 2);
-                context.fill();
-                context.beginPath();
-                context.moveTo(pips[6-i][0] - 4, pips[6-i][1] - 3);
-                context.lineTo(pips[6-i][0] + 4, pips[6-i][1] + 3);
-                context.moveTo(pips[6-i][0] - 4, pips[6-i][1] + 3);
-                context.lineTo(pips[6-i][0] + 4, pips[6-i][1] - 3);
-                context.stroke();*/
                 drawImage(context, bombPip.image, bombPip,
-                    new Rectangle(bombPip).moveCenterTo(pips[6 - i][0], pips[6 - i][1]));
+                    new Rectangle(bombPip).moveCenterTo(pips[6 - i][0], pips[6 - i][1]).round());
             }
         } else {
             context.textAlign = 'center';
@@ -448,7 +443,7 @@ function getTrashPoints(state, row, column) {
         [x + SHORT_EDGE + pad, y + 2 * ROW_HEIGHT / 3 - pad],
         [x + HEX_WIDTH - SHORT_EDGE - pad, y + 2 * ROW_HEIGHT / 3 - pad],
         [x + HEX_WIDTH / 2, y + 5 * ROW_HEIGHT / 6 - pad * 1.5],
-    ];
+    ].map(a => a.map(Math.round));
 }
 
 module.exports = {

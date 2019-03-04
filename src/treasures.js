@@ -10,7 +10,7 @@ const { r, createAnimation, getFrame } = require('animations');
 export {
     collectTreasure,
 };
-
+const { updateSave } = require('state');
 const { addSprite, deleteSprite, updateSprite } = require('sprites');
 
 const {
@@ -24,7 +24,6 @@ const {
     getDepth,
     getFuelCost,
     spawnCrystals,
-    z,
     gainBonusFuel,
 } = require('digging');
 
@@ -66,7 +65,7 @@ const treasures = {
             state = addSprite(state, {...diffuserSprite, x, y, time: state.time, amount});
             return state;
         },
-    },
+    }
 };
 
 const radarAnimation = createAnimation('gfx/bonus.png', r(25, 25), {cols: 4}, {loop: false});
@@ -153,7 +152,7 @@ const diffuserAnimation = createAnimation('gfx/diffuse.png', r(25, 25), {x: 1});
 const diffuserSprite = {
     advance(state, sprite) {
         if (sprite.y > state.camera.top + canvas.height - 80 && sprite.x < state.camera.left + 60) {
-            state = {...state, bombDiffusers: state.bombDiffusers + sprite.amount};
+            state = updateSave(state, {bombDiffusers: state.saved.bombDiffusers + sprite.amount});
             return deleteSprite(state, sprite);
         }
         let {x = 0, y = 0, vx = 0, vy = 0, frame = 0} = sprite;
@@ -181,4 +180,3 @@ const diffuserSprite = {
         );
     }
 };
-

@@ -8,6 +8,7 @@ const {
     getNewState,
     advanceState,
     nextDay,
+    resumeDigging,
 } = require('state');
 const render = require('render');
 
@@ -49,6 +50,7 @@ function updateCanvasSize() {
     canvas.style.transformOrigin = '0 0'; //scale from top left
     canvas.style.transform = 'scale(' + scale + ')';
     canvas.scale = scale;
+    window.canvas = canvas;
     if (state) state.lastResized = Date.now();
     context.imageSmoothingEnabled = false;
 }
@@ -119,9 +121,18 @@ const update = () => {
             // Decrement day by 1 if they haven't played yet today so that
             // caling next day leaves them on the same day.
             if (!state.saved.playedToday) {
-                state.saved.day--;
+                state = resumeDigging(state);
+                if (state.saved.day !== 1) {
+                    state.shop = true;
+                    state.incoming = false;
+                }
+            } else {
+                state = nextDay(state);
             }
-            state = nextDay(state);
+            // Add shipPart to old save files.
+            state.saved.shipPart = state.saved.shipPart || 0;
+            //state.saved.shipPart = 0; //reset ship part.
+
         }
         savedState = state.saved;
         canvas.onmousedown =  onMouseDown;

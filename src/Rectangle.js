@@ -128,6 +128,10 @@ class Rectangle {
         return !(this.bottom <= rectangle.top || this.top >= rectangle.bottom
             || this.right <= rectangle.left || this.left >= rectangle.right);
     }
+
+    round() {
+        return new Rectangle(Math.round(this.left), Math.round(this.top), Math.round(this.width), Math.round(this.height));
+    }
 }
 
 module.exports = Rectangle;

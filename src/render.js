@@ -3,7 +3,13 @@ const {
     playTrack,
 } = require('sounds');
 
+module.exports = render;
+
 const { renderHUD } = require('hud');
+const { renderDigging } = require('renderDigging');
+const { renderShipScene } = require('ship');
+const { renderShop } = require('shop');
+const { renderAchievements } = require('achievements');
 
 function render(context, state) {
     /*if (state.interacted && state.bgm) {
@@ -12,12 +18,15 @@ function render(context, state) {
     }*/
     if (state.showAchievements) {
         renderAchievements(context, state);
-    } else if (!state.shop) {
+    } else if (!state.shop && !state.ship) {
         renderDigging(context, state);
         for (let spriteId in state.spriteMap) {
             state.spriteMap[spriteId].render(context, state, state.spriteMap[spriteId]);
         }
-    } else {
+    }
+    if (state.ship) {
+        renderShipScene(context, state);
+    } else if (state.shop) {
         renderShop(context, state);
     }
 
@@ -32,8 +41,3 @@ function render(context, state) {
     state.sfx = {};
 }
 
-module.exports = render;
-
-const { renderDigging } = require('renderDigging');
-const { renderShop } = require('shop');
-const { renderAchievements } = require('achievements');

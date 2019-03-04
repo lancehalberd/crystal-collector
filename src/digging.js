@@ -32,12 +32,17 @@ module.exports = {
     getDepthOfRange,
     getCellCenter,
     getOverCell,
+    getMaxExplosionProtection,
     getExplosionProtectionAtDepth,
+    getDepthOfExplosionProtection,
     gainBonusFuel,
     CRYSTAL_SIZES,
     gainCrystals,
     spawnCrystals,
+    teleportOut,
 };
+
+const { updateSave, nextDay } = require('state');
 
 const {
     addSprite,
@@ -58,14 +63,15 @@ const {
     ACHIEVEMENT_COLLECT_X_CRYSTALS,
     ACHIEVEMENT_COLLECT_X_CRYSTALS_IN_ONE_DAY,
     ACHIEVEMENT_GAIN_X_BONUS_FUEL_IN_ONE_DAY,
-    ACHIEVEMENT_EXPLORED_DEEP_IN_X_DAYS,
+    ACHIEVEMENT_REPAIR_SHIP_IN_X_DAYS,
     ACHIEVEMENT_PREVENT_X_EXPLOSIONS,
     ACHIEVEMENT_DIFFUSE_X_BOMBS,
 } = require('achievements');
 
-const {
-    collectTreasure,
-} = require('treasures');
+const { collectTreasure } = require('treasures');
+
+const { collectShipPart, getShipPartLocation } = require('ship');
+const { teleportInAnimationFinish, teleportOutAnimationStart, teleportOutAnimationFinish } = require('renderRobot');
 
 // Injects indexes from the integers into non-negative integers.
 function z(i) {
@@ -76,6 +82,8 @@ function getCellColor(state, row, column) {
     if (row < 0 || (row === 0 && column === 0)) return 'black';
     const startingCell = getStartingCell(state);
     if (row === startingCell.row && column === startingCell.column) return 'black';
+    const shipCell = getShipPartLocation(state);
+    if (row === shipCell.row && column === shipCell.column) return 'treasure';
     const depth = getDepth(state, row, column);
     let roll = random.normSeed(state.saved.seed + Math.cos(row) + Math.sin(column));
     if (roll < Math.min(0.01, 0.005 + depth / 10000)) return 'treasure';
@@ -92,11 +100,19 @@ function getRangeAtDepth(state, depth, rangeOffset = 0) {
 function getDepthOfRange(state, range, rangeOffset = 0) {
     return Math.round((0.5 + state.saved.range + rangeOffset - range) / 0.04);
 }
-function getExplosionProtectionAtDepth(state, depth, offset = 0) {
-    let maxExplosionProtection = 0.5;
-    maxExplosionProtection += getAchievementBonus(state, ACHIEVEMENT_PREVENT_X_EXPLOSIONS) / 100;
-    return Math.max(0, Math.min(maxExplosionProtection, (state.saved.explosionProtection + offset) - 0.015 * depth));
+function getMaxExplosionProtection(state) {
+    return 0.5 + getAchievementBonus(state, ACHIEVEMENT_PREVENT_X_EXPLOSIONS) / 100;
 }
+window.getMaxExplosionProtection = getMaxExplosionProtection;
+function getExplosionProtectionAtDepth(state, depth, offset = 0) {
+    return Math.max(0, Math.min(getMaxExplosionProtection(state), (state.saved.explosionProtection + 0.1 + offset) - 0.015 * depth));
+}
+window.getExplosionProtectionAtDepth = getExplosionProtectionAtDepth;
+function getDepthOfExplosionProtection(state, percent, offset = 0) {
+    if (percent > getMaxExplosionProtection(state)) return 0;
+    return Math.floor((percent - (state.saved.explosionProtection + 0.1 + offset)) / -0.015);
+}
+window.getDepthOfExplosionProtection = getDepthOfExplosionProtection;
 function getDepth(state, row, column) {
     return row * 2 + Math.abs(column % 2);
 }
@@ -116,7 +132,7 @@ function createCellsInRange(state, row, column, revealAll = false) {
     let range = Math.round(getRangeAtDepth(state, getDepth(state, row, column)));
     if (revealAll) range = 3;
     const candidatesForReveal = [];
-    for (const cellCoords of  getCellsInRange(state, row, column, range)) {
+    for (const cellCoords of getCellsInRange(state, row, column, range)) {
         state = createCell(state, cellCoords.row, cellCoords.column);
         candidatesForReveal[cellCoords.distance] = candidatesForReveal[cellCoords.distance] || [];
         if (!state.rows[cellCoords.row][z(cellCoords.column)].numbersRevealed) {
@@ -209,12 +225,7 @@ function revealCell(state, row, column) {
     state = revealCellNumbers(state, row, column);
     state = updateCell(state, row, column, {explored: true});
     const maxDepth = Math.max(state.saved.maxDepth, getDepth(state, row, column));
-    if (maxDepth !== state.saved.maxDepth) {
-        state = {
-            ...state,
-            saved: {...state.saved, maxDepth},
-        };
-    }
+    if (maxDepth !== state.saved.maxDepth) state = updateSave(state, { maxDepth });
     return createCellsInRange(state, row, column);
 }
 function revealCellNumbers(state, row, column) {
@@ -303,14 +314,13 @@ function blowUpCell(state, firstCell, row, column, frameDelay = 0) {
     state = createCell(state, row, column);
     state = addSprite(state, newExplosion);
     state = updateCell(state, row, column, {destroyed: true, explored: true, spriteId: newExplosion.id});
-    return {
-        ...state,
-        // Lose 10% of max fuel for every explosion.
-        fuel: Math.max(0, Math.floor(state.fuel - state.saved.maxFuel / 10)),
-    };
+    // Lose 10% of max fuel for every explosion.
+    const fuel = Math.max(0, Math.floor(state.saved.fuel - state.saved.maxFuel / 10));
+    return updateSave(state, { fuel });
 }
 
 function exploreCell(state, row, column) {
+    let foundTreasure = false;
     state = revealCell(state, row, column);
     const fuelCost = getFuelCost(state, row, column);
     const cellColor = getCellColor(state, row, column);
@@ -348,11 +358,16 @@ function exploreCell(state, row, column) {
         }
     }
     const {x, y} = getCellCenter(state, row, column);
+    const shipPartLocation = getShipPartLocation(state);
     state = spawnDebris(state, x, y, row, column);
     if (cellColor === 'treasure') {
-        const depth = getDepth(state, row, column);
+        foundTreasure = true;
         state = gainBonusFuel(state, 0.1 * fuelCost);
-        state = collectTreasure(state, row, column);
+        if (shipPartLocation.row === row && shipPartLocation.column === column) {
+            state = collectShipPart(state, row, column);
+        } else {
+            state = collectTreasure(state, row, column);
+        }
         for (const coordsToUpdate of state.rows[row][z(column)].cellsToUpdate) {
             const cellToUpdate = state.rows[coordsToUpdate.row][z(coordsToUpdate.column)];
             const treasures = cellToUpdate.treasures - 1;
@@ -380,14 +395,14 @@ function exploreCell(state, row, column) {
             state.saved.lavaDepth += 1.5 / delta;
         }
     } else {
-        state = {...state, fuel: Math.max(0, state.fuel - fuelCost)};
+        state = updateSave(state, { fuel: Math.max(0, state.saved.fuel - fuelCost) })
     }
     if (!state.saved.playedToday) {
-        state = {...state, saved: {...state.saved, playedToday: true}};
+        state = updateSave(state, { playedToday: true });
     }
     state = {
         ...state,
-        robot: {...state.robot, row, column, animationTime: state.time},
+        robot: {...state.robot, row, column, animationTime: state.time, foundTreasure},
     };
     return state;
 }
@@ -395,25 +410,90 @@ function getStartingCell(state) {
     return {row: Math.floor(state.startingDepth / 2), column: 0};
 }
 
+function teleportOut(state) {
+    return  {
+        ...state,
+        leaving: true,
+        robot: {...state.robot, teleporting: true, finishingTeleport: false, animationTime: state.time},
+    }
+}
+
 function advanceDigging(state) {
     const startingCell = getStartingCell(state);
-    if (!state.rows[startingCell.row]) {
-        state = revealCell(state, startingCell.row, startingCell.column);
-        state = {...state, selected: startingCell};
-        state = spawnLavaBubbles(state);
-        state.targetCell = state.selected;
-        state.robot = {row: startingCell.row, column: startingCell.column, animationTime: state.time};
+    if (state.leaving) {
+        // Don't start moving the camera until the robot has reached the end of the start animtion (the narrow beam).
+        if (state.time - state.robot.animationTime < teleportOutAnimationStart.duration) {
+            return state;
+        }
+        const targetTop = -canvas.height * 3;
+        let dy = Math.max(-20, Math.round((state.camera.top * 10 + targetTop) / 11) - state.camera.top);
+        dy = Math.min(-5, dy);
+        state = {...state, camera: {...state.camera,
+            top: Math.max(targetTop, state.camera.top + dy),
+        }};
+        if (state.camera.top === targetTop) {
+            if (!state.robot.finishingTeleport) {
+                state = {...state, robot: {...state.robot, animationTime: state.time, finishingTeleport: true}};
+            } else if (state.time - state.robot.animationTime >= teleportOutAnimationFinish.duration) {
+                state = {...state, robot: false, leaving: false};
+                if (state.collectingPart) state = {...state, ship: state.time};
+                else state = nextDay({...state, shop: state.time, ship: false});
+            }
+        }
+        return state;
+    }
+    if (state.incoming) {
+        if (!state.robot) {
+            state = {...state, robot: {
+                    row: startingCell.row, column: startingCell.column,
+                    teleportingIn: true, animationTime: state.time
+                }
+            };
+        }
+        const targetLeft = startingCell.column * COLUMN_WIDTH + SHORT_EDGE + EDGE_LENGTH / 2 - canvas.width / 2;
+        const rowOffset = (startingCell.column % 2) ? ROW_HEIGHT / 2 : 0;
+        const targetTop = Math.max(-200, (startingCell.row + 0.5) * ROW_HEIGHT + rowOffset - canvas.height / 2);
+        const dy = Math.min(20, Math.round((state.camera.top * 10 + targetTop) / 11) - state.camera.top);
+        state = {...state, camera: {...state.camera,
+            top: state.camera.top + dy,
+            left: Math.round((state.camera.left * 20 + targetLeft) / 21)
+        }};
+        if (Math.abs(targetTop - state.camera.top) < 50) {
+            if (!state.robot.finishingTeleport) {
+                state = {...state, robot: {...state.robot, animationTime: state.time, finishingTeleport: true}};
+            } else if (state.time - state.robot.animationTime >= teleportInAnimationFinish.duration) {
+                state = {...state, incoming: false};
+                // This needs to happen before we allow dragging, otherwise the min/max coords for camera
+                // won't be set yet, which breaks dragging.
+                if (!state.rows[startingCell.row]) {
+                    state = revealCell(state, startingCell.row, startingCell.column);
+                    state = {...state, selected: startingCell};
+                    state = spawnLavaBubbles(state);
+                    state.targetCell = state.selected;
+                    state = {...state, robot: {...state.robot, teleportingIn: false, finishingTeleport: false, animationTime: state.time}};
+                }
+            }
+        }
+        return state;
+    }
+    // Do nothing while the animation plays out for collecting a ship part.
+    if (state.collectingPart) {
+        if (state.robot.teleporting && state.time - state.robot.animationTime >= 1500) {
+            state = {...state, ship: state.time, robot: {...state.robot, teleporting: false}};
+        }
+        return state;
     }
     if ((state.rightClicked || (state.clicked && state.usingBombDiffuser)) && state.overButton && state.overButton.cell) {
         const {row, column} = state.overButton;
         if (canExploreCell(state, row, column)) {
-            if (state.bombDiffusers > 0) {
-                state = {...state, bombDiffusers: state.bombDiffusers - 1};
+            if (state.saved.bombDiffusers > 0) {
+                state = updateSave(state, {bombDiffusers: state.saved.bombDiffusers - 1});
                 const cellColor = getCellColor(state, row, column);
                 const {x, y} = getCellCenter(state, row, column);
                 if (cellColor === 'red') {
                     state = revealCell(state, row, column);
-                    state = {...state, bombsDiffusedToday: state.bombsDiffusedToday + 1};
+                    const bombsDiffusedToday = state.saved.bombsDiffusedToday + 1;
+                    state = updateSave(state, {bombsDiffusedToday});
                     state = incrementAchievementStat(state, ACHIEVEMENT_DIFFUSE_X_BOMBS, 1);
                     const bombDiffusionMultiplier = 1 + getAchievementBonus(state, ACHIEVEMENT_DIFFUSE_X_BOMBS) / 100;
                     const bonusFuel = state.saved.maxFuel * 0.05 * bombDiffusionMultiplier;
@@ -449,7 +529,7 @@ function advanceDigging(state) {
     if (!state.rightClicked && state.clicked && state.overButton && state.overButton.cell) {
         const {row, column} = state.overButton;
         const fuelCost = getFuelCost(state, row, column);
-        if (canExploreCell(state, row, column) && getFlagValue(state, row, column) !== 2 && fuelCost <= state.fuel) {
+        if (canExploreCell(state, row, column) && getFlagValue(state, row, column) !== 2 && fuelCost <= state.saved.fuel) {
             state = exploreCell(state, row, column);
         }
         if (isCellRevealed(state, row, column) || getFlagValue(state, row, column)) {
@@ -459,7 +539,7 @@ function advanceDigging(state) {
     if (state.targetCell) {
         const targetLeft = state.targetCell.column * COLUMN_WIDTH + SHORT_EDGE + EDGE_LENGTH / 2 - canvas.width / 2;
         const rowOffset = (state.targetCell.column % 2) ? ROW_HEIGHT / 2 : 0;
-        const targetTop = Math.max(-100, (state.targetCell.row + 0.5) * ROW_HEIGHT + rowOffset - canvas.height / 2);
+        const targetTop = Math.max(-200, (state.targetCell.row + 0.5) * ROW_HEIGHT + rowOffset - canvas.height / 2);
         state = {...state, camera: {...state.camera,
             top: Math.round((state.camera.top * 10 + targetTop) / 11),
             left: Math.round((state.camera.left * 10 + targetLeft) / 11)
@@ -467,8 +547,8 @@ function advanceDigging(state) {
     }
     let saved = state.saved;
     let displayFuel = state.displayFuel;
-    if (displayFuel < state.fuel) displayFuel = Math.ceil((displayFuel * 10 + state.fuel) / 11);
-    if (displayFuel > state.fuel) displayFuel = Math.floor((displayFuel * 10 + state.fuel) / 11);
+    if (displayFuel < state.saved.fuel) displayFuel = Math.ceil((displayFuel * 10 + state.saved.fuel) / 11);
+    if (displayFuel > state.saved.fuel) displayFuel = Math.floor((displayFuel * 10 + state.saved.fuel) / 11);
     let displayLavaDepth = state.displayLavaDepth;
     if (displayLavaDepth < state.saved.lavaDepth) displayLavaDepth = Math.min(displayLavaDepth + 0.01, state.saved.lavaDepth);
     if (displayLavaDepth > state.saved.lavaDepth) displayLavaDepth = Math.max(displayLavaDepth - 0.01, state.saved.lavaDepth);
@@ -528,21 +608,17 @@ function spawnLavaBubbles(state) {
     return state;
 }
 function gainCrystals(state, amount) {
-    state = {
-        ...state,
-        crystalsCollectedToday: state.crystalsCollectedToday + amount,
-        saved: {...state.saved, score: state.saved.score + amount},
-    };
+    const score = state.saved.score + amount;
+    const crystalsCollectedToday = state.saved.crystalsCollectedToday + amount;
+    state = updateSave(state, {score, crystalsCollectedToday});
     return incrementAchievementStat(state, ACHIEVEMENT_COLLECT_X_CRYSTALS, amount);
 }
 function gainBonusFuel(state, amount) {
-    const bonusFuelMultiplier = 1 + getAchievementBonus(state, ACHIEVEMENT_EXPLORED_DEEP_IN_X_DAYS) / 100;
+    const bonusFuelMultiplier = 1 + getAchievementBonus(state, ACHIEVEMENT_REPAIR_SHIP_IN_X_DAYS) / 100;
     amount = Math.round(amount * bonusFuelMultiplier);
     const fuelMultiplier = 1 + getAchievementBonus(state, ACHIEVEMENT_GAIN_X_BONUS_FUEL_IN_ONE_DAY) / 100;
-    return {
-        ...state,
-        fuel: Math.min(Math.round(state.saved.maxFuel * fuelMultiplier), state.fuel + amount),
-        bonusFuelToday: state.bonusFuelToday + amount,
-    };
+    const fuel = Math.min(Math.round(state.saved.maxFuel * fuelMultiplier), state.saved.fuel + amount);
+    const bonusFuelToday = state.saved.bonusFuelToday + amount;
+    return updateSave(state, { fuel, bonusFuelToday });
 }
 

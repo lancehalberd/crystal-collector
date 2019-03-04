@@ -11,7 +11,6 @@ const militaryFrame = {
     width: 16,
     height: 16,
 }
-const bombFrame = {...militaryFrame, left: 119, top: 108};
 const diffuserFrame = r(25, 16, {left: 25, top: 9, image: requireImage('gfx/diffuse.png')});
 const diffuserAnimation = createAnimation('gfx/diffuse.png', r(25, 25), {cols: 5}, {loop: false});
 const crystalAnimations = [
@@ -25,7 +24,6 @@ const crystalAnimations = [
      createAnimation('gfx/crystals.png', r(30, 30), {x:7, cols:2}),
 ];
 const crystalFrame = {...militaryFrame, left: 153, top: 40};
-const skullFrame = {...militaryFrame, left: 119, top: 23};
 const explosionAnimation = createAnimation('gfx/explosion.png', r(215, 215), {cols: 14, duration: 3});
 window.explosionAnimation = explosionAnimation;
 let spriteIdCounter = 0;
@@ -242,7 +240,6 @@ module.exports = {
     particleAnimations,
     lavaBubbleSprite,
     lavaBubbleAnimations,
-    skullFrame,
 };
 
 const { gainBonusFuel, CRYSTAL_SIZES, gainCrystals } = require('digging');

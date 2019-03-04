@@ -5,12 +5,32 @@ const {
     FRAME_LENGTH, canvas, EDGE_LENGTH, ROW_HEIGHT,
 } = require('gameConstants');
 
+module.exports = {
+    getNewState,
+    advanceState,
+    applyActions,
+    nextDay,
+    restart,
+    resumeDigging,
+    updateSave,
+};
+
+const { getHUDButtons } = require('hud');
+
+const { advanceDigging, getOverCell } = require('digging');
+
+const {
+    advanceAchievements,
+    getAchievementBonus,
+    ACHIEVEMENT_DIFFUSE_X_BOMBS_IN_ONE_DAY,
+} = require('achievements');
+
 const INITIAL_LAVA_DEPTH = 100;
 
 function getNewCamera(lavaDepth = INITIAL_LAVA_DEPTH) {
     return {
         left: -canvas.width / 2 + EDGE_LENGTH,
-        top: -100,
+        top: -canvas.height * 3,
         minX: 1E9,
         maxX: -1E9,
         minY: 1E9,
@@ -18,11 +38,19 @@ function getNewCamera(lavaDepth = INITIAL_LAVA_DEPTH) {
     };
 }
 
+function updateSave(state, props) {
+    return {
+        ...state,
+        saved: {
+            ...state.saved,
+            ...props,
+        },
+    };
+}
+
 function getNewState() {
     return {
         actions: {},
-        fuel: 100,
-        bombDiffusers: 3,
         displayFuel: 0,
         camera: getNewCamera(),
         rows: [],
@@ -33,15 +61,18 @@ function getNewState() {
         time: 20,
         spriteMap: {},
         startingDepth: 1,
-        bombsDiffusedToday: 0,
-        bonusFuelToday: 0,
-        crystalsCollectedToday: 0,
         displayLavaDepth: INITIAL_LAVA_DEPTH,
+        incoming: true,
         saved: {
+            maxBombDiffusers: 3,
             bombDiffusers: 3,
+            bombsDiffusedToday: 0,
+            bonusFuelToday: 0,
+            crystalsCollectedToday: 0,
             explosionProtection: 0.2,
             range: 1.2,
             maxFuel: 100,
+            fuel: 100,
             seed: random.nextSeed(),
             day: 1,
             maxDepth: 0,
@@ -49,6 +80,7 @@ function getNewState() {
             playedToday: false,
             achievementStats: {},
             lavaDepth: INITIAL_LAVA_DEPTH,
+            shipPart: 0,
         },
     };
 }
@@ -56,24 +88,48 @@ function getNewState() {
 function nextDay(state) {
     return {
         ...state,
-        bombsDiffusedToday: 0,
-        bonusFuelToday: 0,
-        crystalsCollectedToday: 0,
         usingBombDiffuser: false,
         displayLavaDepth: state.saved.lavaDepth,
+        incoming: false,
         saved: {
             ...state.saved,
+            bombDiffusers: state.saved.maxBombDiffusers + getAchievementBonus(state, ACHIEVEMENT_DIFFUSE_X_BOMBS_IN_ONE_DAY),
+            bombsDiffusedToday: 0,
+            bonusFuelToday: 0,
+            crystalsCollectedToday: 0,
             day: state.saved.day + 1,
+            fuel: state.saved.maxFuel,
             seed: random.nextSeed(state.saved.seed),
             playedToday: false,
         },
         camera: getNewCamera(state.saved.lavaDepth || 100),
         rows: [],
         flags: [],
-        fuel: state.saved.maxFuel,
-        bombDiffusers: state.saved.bombDiffusers + getAchievementBonus(state, ACHIEVEMENT_DIFFUSE_X_BOMBS_IN_ONE_DAY),
         selected: null,
+        collectingPart: false,
         shop: state.time,
+    };
+}
+
+// Continue digging on the current day.
+function resumeDigging(state) {
+    return {
+        ...state,
+        usingBombDiffuser: false,
+        displayLavaDepth: state.saved.lavaDepth,
+        incoming: true,
+        saved: {
+            ...state.saved,
+            seed: random.nextSeed(state.saved.seed),
+            playedToday: false,
+        },
+        camera: getNewCamera(state.saved.lavaDepth || 100),
+        rows: [],
+        flags: [],
+        collectingPart: false,
+        shop: false,
+        ship: false,
+        selected: null,
     };
 }
 
@@ -88,12 +144,14 @@ function restart(state) {
             ...state.saved,
             score: 0,
             day: 0,
+            maxBombDiffusers: 3,
             bombDiffusers: 3,
             explosionProtection: 0.2,
             range: 1.2,
             maxFuel: 100,
             maxDepth: 0,
             lavaDepth: INITIAL_LAVA_DEPTH,
+            shipPart: 0,
         }
     });
     return {...state, shop: false};
@@ -137,13 +195,17 @@ function setButtonState(state) {
 }
 function advanceState(state) {
     state = {...state, time: state.time + FRAME_LENGTH}
-    if (!state.shop && !state.showAchievements && state.mouseDown && state.mouseDragged && state.lastProcessedMouseCoords) {
+    const disableDragging = state.collectingPart || state.incoming || state.leaving || state.ship || state.shop || state.showAchievements;
+    if (!disableDragging && state.mouseDown && state.mouseDragged && state.lastProcessedMouseCoords) {
         const camera = {...state.camera};
         const dx = state.lastMouseCoords.x - state.lastProcessedMouseCoords.x;
         const dy = state.lastMouseCoords.y - state.lastProcessedMouseCoords.y;
         camera.left = Math.min(Math.max(camera.left - dx, camera.minX - canvas.width / 2), camera.maxX - canvas.width / 2);
         camera.top = Math.min(Math.max(camera.top - dy, camera.minY - canvas.height / 2), camera.maxY - canvas.height / 2);
         state = {...state, selected: false, targetCell: false, camera, dragDistance: state.dragDistance + Math.abs(dx) + Math.abs(dy)};
+    }
+    if (state.ship || state.shop) {
+        state = {...state, camera: {...state.camera, top : -canvas.height * 3}};
     }
     state = setButtonState(state);
     state.lastProcessedMouseCoords = state.lastMouseCoords;
@@ -153,10 +215,10 @@ function advanceState(state) {
         }
     }
     state = advanceAchievements(state);
-    if (state.clicked && state.overButton && state.overButton.onClick) {
+    if (!state.leaving && !state.incoming && !state.collectingPart && state.clicked && state.overButton && state.overButton.onClick) {
         state = state.overButton.onClick(state, state.overButton);
     }
-    if (!state.showAchievements && !state.shop) {
+    if (!state.showAchievements && !state.shop && !state.ship) {
         state = advanceDigging(state);
     }
     for (let spriteId in state.spriteMap) {
@@ -176,21 +238,4 @@ function applyActions(state, actions) {
     return state
 }
 
-module.exports = {
-    getNewState,
-    advanceState,
-    applyActions,
-    nextDay,
-    restart,
-};
-
-const { getHUDButtons } = require('hud');
-
-const { advanceDigging, getOverCell } = require('digging');
-
-const {
-    advanceAchievements,
-    getAchievementBonus,
-    ACHIEVEMENT_DIFFUSE_X_BOMBS_IN_ONE_DAY,
-} = require('achievements');
 

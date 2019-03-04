@@ -1,12 +1,7 @@
 const { canvas } = require('gameConstants');
 const Rectangle = require('Rectangle');
 const { drawRectangle, drawText, drawImage, measureText } = require('draw');
-const { requireImage } = require('animations');
-
-const FINAL_DEPTH_GOAL = 200;
-
-// const ACHIEVEMENT_LEVELS = ['Bronze', 'Silver', 'Gold', 'Crystal'];
-
+const { requireImage, r, createAnimation, } = require('animations');
 
 const ACHIEVEMENT_COLLECT_X_CRYSTALS = 'collectXCrystals';
 const ACHIEVEMENT_COLLECT_X_CRYSTALS_IN_ONE_DAY = 'collectXCrystalsInOneDay';
@@ -15,7 +10,48 @@ const ACHIEVEMENT_DIFFUSE_X_BOMBS = 'diffuseXBombs';
 const ACHIEVEMENT_DIFFUSE_X_BOMBS_IN_ONE_DAY = 'diffuseXBombsInOneDay';
 const ACHIEVEMENT_PREVENT_X_EXPLOSIONS = 'preventXExplosions';
 const ACHIEVEMENT_EXPLORE_DEPTH_X = 'exploreDepthX';
-const ACHIEVEMENT_EXPLORED_DEEP_IN_X_DAYS = 'exploredDeepInXDays';
+const ACHIEVEMENT_REPAIR_SHIP_IN_X_DAYS = 'repairShipInXDays';
+
+const diamondMedalFrame = {
+    image: requireImage('gfx/achievements.png'),
+    left: 120,
+    top: 0,
+    width: 40,
+    height: 40,
+};
+const goldMedalFrame = {...diamondMedalFrame, left: 80};
+const silverMedalFrame = {...diamondMedalFrame, left: 40};
+const bronzeMedalFrame = {...diamondMedalFrame, left: 0};
+
+const achievementAnimation = createAnimation('gfx/achievements.png', r(40, 40),
+    {cols: 5, duration: 20, frameMap:[2, 4, 2, 4, 2, 4, 2, 4, 2, 4, 2, 4, 2, 4, 2, 4]},
+    {loop: false}
+);
+
+module.exports = {
+    initializeAchievements,
+    advanceAchievements,
+    renderAchievements,
+    getAchievementBonus,
+    getAchievementStat,
+    setAchievementStatIfBetter,
+    incrementAchievementStat,
+    ACHIEVEMENT_COLLECT_X_CRYSTALS,
+    ACHIEVEMENT_COLLECT_X_CRYSTALS_IN_ONE_DAY,
+    ACHIEVEMENT_GAIN_X_BONUS_FUEL_IN_ONE_DAY,
+    ACHIEVEMENT_DIFFUSE_X_BOMBS,
+    ACHIEVEMENT_DIFFUSE_X_BOMBS_IN_ONE_DAY,
+    ACHIEVEMENT_PREVENT_X_EXPLOSIONS,
+    ACHIEVEMENT_EXPLORE_DEPTH_X,
+    ACHIEVEMENT_REPAIR_SHIP_IN_X_DAYS,
+    achievementAnimation,
+};
+
+const { addSprite, deleteSprite, updateSprite } = require('sprites');
+const { warpDriveSlots, renderSpaceBackground } = require('ship');
+const ACHIEVEMENT_ICON_FRAMES = [bronzeMedalFrame, silverMedalFrame, goldMedalFrame, diamondMedalFrame];
+
+
 const achievementsData = {
     [ACHIEVEMENT_COLLECT_X_CRYSTALS]: {
         goals: [500, 20000, 100000, 10000000],
@@ -31,7 +67,7 @@ const achievementsData = {
         getAchievementLabel: goal => `Collect ${goal} crystals in 1 day`,
         // This may increase your effective range when it triggers in your outer ring.
         getBonusLabel: bonusValue => `${bonusValue}% chance to reveal bonus information`,
-        getValue: state => state.crystalsCollectedToday,
+        getValue: state => state.saved.crystalsCollectedToday,
         valueIsBetter: (value, goal) => value > goal,
     },
     [ACHIEVEMENT_GAIN_X_BONUS_FUEL_IN_ONE_DAY]: {
@@ -39,7 +75,7 @@ const achievementsData = {
         bonusValues: [25, 50, 75, 100],
         getAchievementLabel: goal => `Gain ${goal} bonus fuel in one day`,
         getBonusLabel: bonusValue => `${bonusValue}% more fuel capacity`,
-        getValue: state => state.bonusFuelToday,
+        getValue: state => state.saved.bonusFuelToday,
         valueIsBetter: (value, goal) => value > goal,
     },
     [ACHIEVEMENT_DIFFUSE_X_BOMBS]: {
@@ -55,7 +91,7 @@ const achievementsData = {
         bonusValues: [1, 2, 3, 5],
         getAchievementLabel: goal => `Diffuse ${goal} bombs in one day`,
         getBonusLabel: bonusValue => `${bonusValue} extra bomb diffusers`,
-        getValue: state => state.bombsDiffusedToday,
+        getValue: state => state.saved.bombsDiffusedToday,
         valueIsBetter: (value, goal) => value > goal,
     },
     [ACHIEVEMENT_PREVENT_X_EXPLOSIONS]: {
@@ -74,12 +110,12 @@ const achievementsData = {
         getValue: state => state.saved.maxDepth,
         valueIsBetter: (value, goal) => value > goal,
     },
-    [ACHIEVEMENT_EXPLORED_DEEP_IN_X_DAYS]: {
+    [ACHIEVEMENT_REPAIR_SHIP_IN_X_DAYS]: {
         goals: [100, 50, 25, 5],
         bonusValues: [50, 100, 150, 200],
-        getAchievementLabel: goal => `Explore depth ${FINAL_DEPTH_GOAL} by day ${goal}`,
+        getAchievementLabel: goal => `Repair ship by day ${goal}`,
         getBonusLabel: bonusValue => `Gain ${bonusValue}% more bonus fuel`,
-        getValue: state => ((state.saved.maxDepth >= FINAL_DEPTH_GOAL) && state.saved.day),
+        getValue: state => ((state.saved.shipPart >= warpDriveSlots.length) && state.saved.day),
         valueIsBetter: (value, goal) => value < goal,
     },
 };
@@ -152,7 +188,7 @@ function advanceAchievements(state) {
             state = addSprite(state, achievement);
             // This is a null op if lastAchievement is not set or is no longer present.
             state = updateSprite(state, {id: state.lastAchievementId}, {nextAchievementId: achievement.id});
-            state = {...state, lastAchievementId: achievement.id};
+            state = {...state, lastAchievementId: achievement.id, lastAchievementTime: state.time};
         }
     }
     return state;
@@ -195,7 +231,7 @@ const achievementSprite = {
         const rectangle = sprite.getRectangle(state, sprite);
         renderAchievementBackground(context, state, sprite);
         const iconFrame = ACHIEVEMENT_ICON_FRAMES[sprite.bonusLevel];
-        const target = new Rectangle(iconFrame).scale(2);
+        const target = new Rectangle(iconFrame);
         drawImage(context, iconFrame.image, iconFrame,
             target.moveCenterTo(rectangle.left + 15 + target.width / 2, rectangle.top + rectangle.height / 2)
         );
@@ -208,17 +244,18 @@ const achievementSprite = {
 };
 
 function renderAchievements(context, state) {
-    context.fillStyle = '#08F';
-    context.fillRect(0, 0, canvas.width, canvas.height);
+    //context.fillStyle = '#08F';
+    //context.fillRect(0, 0, canvas.width, canvas.height);
+    renderSpaceBackground(context, state);
     const achievementKeys = Object.keys(achievementsData);
     const padding = Math.round(Math.min(canvas.width, canvas.height) / 40);
     const rowHeight = Math.round((canvas.height - 40 - 4 * padding) / achievementKeys.length);
     const size = Math.round(Math.min(rowHeight * 0.5, canvas.width / 25));
     const smallSize = Math.round(size * 0.8);
-    let iconScale = 1;
-    if (rowHeight >= 30) iconScale += 0.5;
-    if (rowHeight >= 36) iconScale += 0.5;
-    const middle = Math.round(80 * iconScale);
+    let iconScale = 0.5;
+    if (rowHeight >= 30) iconScale += 0.25;
+    if (rowHeight >= 36) iconScale += 0.25;
+    const middle = Math.round(180 * iconScale);
     let top = padding;
     for (const key of achievementKeys) {
         const data = achievementsData[key];
@@ -229,7 +266,7 @@ function renderAchievements(context, state) {
             context.globalAlpha = (i <= bonusLevel) ? 1 : 0.5 - 0.1 * i;
             const target = new Rectangle(iconFrame).scale(iconScale);
             drawImage(context, iconFrame.image, iconFrame,
-                target.moveCenterTo(middle - (4-i) * (target.width + 2) + target.width / 2, top + rowHeight / 4)
+                target.moveCenterTo(middle - (4-i) * (target.width + 2) + target.width / 2, top + rowHeight / 3)
             );
         }
         context.restore();
@@ -237,9 +274,6 @@ function renderAchievements(context, state) {
         if (bonusLevel + 1 < data.goals.length) {
             goalValue += ' / ' + data.goals[bonusLevel + 1];
         }
-        /*if (key === ACHIEVEMENT_EXPLORED_DEEP_IN_X_DAYS && bonusLevel < 0) {
-            goalValue = data.goals[bonusLevel + 1];
-        }*/
         drawText(context, data.getAchievementLabel(goalValue), middle + 10, top + rowHeight / 4,
             {fillStyle: 'white', textAlign: 'left', textBaseline: 'middle', size}
         );
@@ -251,35 +285,3 @@ function renderAchievements(context, state) {
         top += rowHeight;
     }
 }
-
-const goldMedalFrame = {
-    image: requireImage('gfx/militaryIcons.png'),
-    left: 68,
-    top: 40,
-    width: 16,
-    height: 16,
-};
-
-module.exports = {
-    initializeAchievements,
-    advanceAchievements,
-    renderAchievements,
-    getAchievementBonus,
-    getAchievementStat,
-    setAchievementStatIfBetter,
-    incrementAchievementStat,
-    ACHIEVEMENT_COLLECT_X_CRYSTALS,
-    ACHIEVEMENT_COLLECT_X_CRYSTALS_IN_ONE_DAY,
-    ACHIEVEMENT_GAIN_X_BONUS_FUEL_IN_ONE_DAY,
-    ACHIEVEMENT_DIFFUSE_X_BOMBS,
-    ACHIEVEMENT_DIFFUSE_X_BOMBS_IN_ONE_DAY,
-    ACHIEVEMENT_PREVENT_X_EXPLOSIONS,
-    ACHIEVEMENT_EXPLORE_DEPTH_X,
-    ACHIEVEMENT_EXPLORED_DEEP_IN_X_DAYS,
-    goldMedalFrame,
-};
-
-const { crystalFrame, addSprite, deleteSprite, updateSprite } = require('sprites');
-const silverMedalFrame = {...goldMedalFrame, left: goldMedalFrame.left + 17};
-const bronzeMedalFrame = {...silverMedalFrame, left: silverMedalFrame.left + 17};
-const ACHIEVEMENT_ICON_FRAMES = [bronzeMedalFrame, silverMedalFrame, goldMedalFrame, crystalFrame];
