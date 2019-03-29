@@ -1,33 +1,56 @@
+const { canvas } = require('gameConstants');
 const {
-    playSound,
-    playTrack,
+    getCurrentTrackSource,
+    isPlayingTrack,
 } = require('sounds');
+const { drawText } = require('draw');
 
 module.exports = render;
 
-const { renderHUD } = require('hud');
+const { areImagesLoaded } = require('animations');
+const { renderHUD, renderPlayButton } = require('hud');
+const { playSound, playTrack } = require('state');
 const { renderDigging } = require('renderDigging');
-const { renderShipScene } = require('ship');
+const { renderShipScene, renderSpaceBackground } = require('ship');
 const { renderShop } = require('shop');
+const { renderTitle } = require('title');
 const { renderAchievements } = require('achievements');
+const loadTime = Date.now();
 
 function render(context, state) {
-    /*if (state.interacted && state.bgm) {
-        playTrack(state.bgm, 0);
-        state.bgm = false;
-    }*/
+    const bgm = (state.title || state.ship || state.shop) ? 'ship' : 'title';
+    const bgmTime = state.time - (state.bgmTime || 0);
+    if (areImagesLoaded()) {
+        if (bgm && getCurrentTrackSource() !== bgm) {
+            playTrack(state, bgm, bgmTime);
+        }
+        if (!state.interacted && getCurrentTrackSource() === bgm && isPlayingTrack()) {
+            state.interacted = true;
+        }
+    }
+    if (!areImagesLoaded() || !state.interacted) {
+        context.fillStyle = 'black';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        // Don't render for the first 200ms, to prevent 'Loading...' from flashing
+        // when assets are cached.
+        if (Date.now() - loadTime > 200) renderPlayButton(context, state);
+        return;
+    }
     if (state.showAchievements) {
         renderAchievements(context, state);
-    } else if (!state.shop && !state.ship) {
+    } else if (state.showOptions) {
+        renderSpaceBackground(context, state);
+    } else if (state.title) {
+        renderTitle(context, state);
+    } else if (state.ship) {
+        renderShipScene(context, state);
+    } else if (state.shop) {
+        renderShop(context, state);
+    } else {
         renderDigging(context, state);
         for (let spriteId in state.spriteMap) {
             state.spriteMap[spriteId].render(context, state, state.spriteMap[spriteId]);
         }
-    }
-    if (state.ship) {
-        renderShipScene(context, state);
-    } else if (state.shop) {
-        renderShop(context, state);
     }
 
     // Render HUD on top of the screen fading to black.
@@ -35,7 +58,7 @@ function render(context, state) {
 
     if (state.interacted) {
         for (const sfx in state.sfx) {
-            playSound(sfx);
+            playSound(state, sfx);
         }
     }
     state.sfx = {};

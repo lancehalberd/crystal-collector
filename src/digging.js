@@ -40,9 +40,10 @@ module.exports = {
     gainCrystals,
     spawnCrystals,
     teleportOut,
+    getTopTarget,
 };
 
-const { updateSave, nextDay } = require('state');
+const { playSound, updateSave, nextDay } = require('state');
 
 const {
     addSprite,
@@ -268,7 +269,7 @@ function updateCell(state, row, column, properties) {
     return {...state, rows};
 }
 function getOverCell(state, {x, y}) {
-    if (state.shop || state.showAchievements) return null;
+    if (state.shop || state.showAchievements || state.showOptions) return null;
     x += state.camera.left;
     y += state.camera.top;
     let column = Math.floor(x / COLUMN_WIDTH);
@@ -393,6 +394,9 @@ function exploreCell(state, row, column) {
         if (depth > state.saved.lavaDepth - 11 && depth < Math.floor(state.saved.lavaDepth)) {
             const delta = Math.floor(state.saved.lavaDepth) - depth;
             state.saved.lavaDepth += 1.5 / delta;
+            if (1.5 / delta >= 0.1) {
+                playSound(state, 'lava');
+            }
         }
     } else {
         state = updateSave(state, { fuel: Math.max(0, state.saved.fuel - fuelCost) })
@@ -417,6 +421,10 @@ function teleportOut(state) {
         robot: {...state.robot, teleporting: true, finishingTeleport: false, animationTime: state.time},
     }
 }
+function getTopTarget() {
+    return Math.min(-canvas.height * 3, -2000);
+}
+const MAX_TELEPORT_SPEED = 25;
 
 function advanceDigging(state) {
     const startingCell = getStartingCell(state);
@@ -425,9 +433,9 @@ function advanceDigging(state) {
         if (state.time - state.robot.animationTime < teleportOutAnimationStart.duration) {
             return state;
         }
-        const targetTop = -canvas.height * 3;
-        let dy = Math.max(-20, Math.round((state.camera.top * 10 + targetTop) / 11) - state.camera.top);
-        dy = Math.min(-5, dy);
+        const targetTop = getTopTarget(state);
+        let dy = Math.round((state.camera.top * 5 + targetTop) / 6) - state.camera.top;
+        dy = Math.max(-MAX_TELEPORT_SPEED, Math.min(-5, dy));
         state = {...state, camera: {...state.camera,
             top: Math.max(targetTop, state.camera.top + dy),
         }};
@@ -436,8 +444,9 @@ function advanceDigging(state) {
                 state = {...state, robot: {...state.robot, animationTime: state.time, finishingTeleport: true}};
             } else if (state.time - state.robot.animationTime >= teleportOutAnimationFinish.duration) {
                 state = {...state, robot: false, leaving: false};
-                if (state.collectingPart) state = {...state, ship: state.time};
-                else state = nextDay({...state, shop: state.time, ship: false});
+                if (state.collectingPart) {
+                    state = updateSave({...state, ship: state.time, bgmTime: state.time}, {playedToday: false});
+                } else state = nextDay({...state, shop: state.time, ship: false, bgmTime: state.time});
             }
         }
         return state;
@@ -453,12 +462,14 @@ function advanceDigging(state) {
         const targetLeft = startingCell.column * COLUMN_WIDTH + SHORT_EDGE + EDGE_LENGTH / 2 - canvas.width / 2;
         const rowOffset = (startingCell.column % 2) ? ROW_HEIGHT / 2 : 0;
         const targetTop = Math.max(-200, (startingCell.row + 0.5) * ROW_HEIGHT + rowOffset - canvas.height / 2);
-        const dy = Math.min(20, Math.round((state.camera.top * 10 + targetTop) / 11) - state.camera.top);
-        state = {...state, camera: {...state.camera,
-            top: state.camera.top + dy,
-            left: Math.round((state.camera.left * 20 + targetLeft) / 21)
-        }};
-        if (Math.abs(targetTop - state.camera.top) < 50) {
+        if (Math.abs(targetTop - state.camera.top) >= 5) {
+            let dy = Math.round((state.camera.top * 5 + targetTop) / 6) - state.camera.top;
+            dy = Math.min(MAX_TELEPORT_SPEED, Math.max(5, dy));
+            state = {...state, camera: {...state.camera,
+                top: state.camera.top + dy,
+                left: Math.round((state.camera.left * 20 + targetLeft) / 21)
+            }};
+        } else {
             if (!state.robot.finishingTeleport) {
                 state = {...state, robot: {...state.robot, animationTime: state.time, finishingTeleport: true}};
             } else if (state.time - state.robot.animationTime >= teleportInAnimationFinish.duration) {
@@ -467,6 +478,8 @@ function advanceDigging(state) {
                 // won't be set yet, which breaks dragging.
                 if (!state.rows[startingCell.row]) {
                     state = revealCell(state, startingCell.row, startingCell.column);
+                    const {x, y} = getCellCenter(state, startingCell.row, startingCell.column);
+                    state = spawnDebris(state, x, y, startingCell.row, startingCell.column);
                     state = {...state, selected: startingCell};
                     state = spawnLavaBubbles(state);
                     state.targetCell = state.selected;
@@ -513,6 +526,7 @@ function advanceDigging(state) {
             } else {
                 const selectedRow = [...(state.flags[row] || [])];
                 let flagValue = getFlagValue(state, row, column) || 0;
+                playSound(state, 'flag');
                 if (flagValue === 2) {
                     delete selectedRow[z(column)];
                 } else {
@@ -577,6 +591,7 @@ function spawnCrystals(state, x, y, amount, radius = EDGE_LENGTH - EDGE_LENGTH /
     return state;
 }
 function spawnDebris(state, x, y, row, column) {
+    playSound(state, 'dig');
     let index = row - 3 + 6 * random.normSeed(Math.cos(row) + Math.sin(z(column)));
     index = Math.min(Math.max(0, Math.floor(index / 10)), particleAnimations.length - 1);
     let dx = -SHORT_EDGE;

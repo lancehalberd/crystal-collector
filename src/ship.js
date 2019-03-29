@@ -11,8 +11,19 @@ const warpDriveSlots = [
     [79, 23],
     [56, 50],
 ];
+const arriveAnimation = createAnimation('gfx/teleport.png', r(30, 30), {x: 1, cols: 7, frameMap:[6,5,4,3,2,1,0]});
+
+const duration = 36;
+const shipPartAnimations = [
+    createAnimation('gfx/warppieces.png', r(20, 20), {cols: 2, duration}),
+    createAnimation('gfx/warppieces.png', r(20, 20), {x: 2, cols: 3, duration}),
+    createAnimation('gfx/warppieces.png', r(20, 20), {x: 5, cols: 3, duration}),
+    createAnimation('gfx/warppieces.png', r(20, 20), {x: 8, cols: 3, duration}),
+    createAnimation('gfx/warppieces.png', r(20, 20), {x: 14, cols: 3, duration}),
+];
 
 module.exports = {
+    arriveAnimation,
     collectShipPart,
     getShipPartLocation,
     renderShip,
@@ -20,11 +31,12 @@ module.exports = {
     renderShipBackground,
     renderSpaceBackground,
     renderTransitionShipBackground,
+    shipPartAnimations,
     warpDriveSlots,
 };
 const { updateSave } = require('state');
 const { addSprite, deleteSprite } = require('sprites');
-const { getCellCenter, teleportOut } = require('digging');
+const { getCellCenter, teleportOut, getTopTarget } = require('digging');
 const { getLayoutProperties } = require('hud');
 
 
@@ -51,37 +63,39 @@ function collectShipPart(state, row, column) {
     return state;
 }
 
-const nightAnimation = createAnimation('gfx/nightskysleep.png', r(800, 1100));
-const shipAnimation = createAnimation('gfx/mothership.png', r(110, 110));
+const nightAnimation = createAnimation('gfx/nightskysleepanim.png', r(800, 1100), {
+    cols: 3,
+    duration: 20,
+    frameMap: [0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 2, 2, 2, 2, 2, 2, 1],
+});
+const shipAnimation = createAnimation('gfx/mothershipwarp.png', r(170, 57));
+const shipWarpAnimation = createAnimation('gfx/mothershipwarp.png', r(170, 57), {x: 1, cols: 9});
 const warpdriveAnimation = createAnimation('gfx/warpdrive.png', r(100, 100));
-function renderSpaceBackground(context) {
-    let frame = getFrame(nightAnimation, 0);
+function renderSpaceBackground(context, state) {
+    let frame = getFrame(nightAnimation, state.time);
     // Fill the whole canvas with black, in case somehow it is too tall in portrait mode.
     drawRectangle(context, r(canvas.width, canvas.height), {fillStyle: '#000'});
-    drawImage(context, frame.image, frame, frame);
+    drawImage(context, frame.image, frame, new Rectangle(frame).moveTo(0, 0));
     drawImage(context, frame.image, frame, new Rectangle(frame).moveTo(400, 0));
 }
 function renderShipBackground(context, state) {
     return renderTransitionShipBackground(context, state);
-   /* let frame = getFrame(nightAnimation, 0);
-    // Fill the whole canvas with black, in case somehow it is too tall in portrait mode.
-    drawRectangle(context, r(canvas.width, canvas.height), {fillStyle: '#000'});
-    drawImage(context, frame.image, frame, frame);*/
 }
 function renderTransitionShipBackground(context, state) {
     if (state.camera.top >= 0) return;
 
     context.fillStyle = '#08F';
     context.fillRect(0, 0, canvas.width, -state.camera.top);
+    const topTarget = getTopTarget();
 
-    const spaceAlpha = Math.max(0, Math.min(1, (-state.camera.top - canvas.height) / (2 * canvas.height)));
+    const spaceAlpha = Math.max(0, Math.min(1, (topTarget / 3 -state.camera.top) / (-topTarget * 2 / 3)));
     if (!spaceAlpha) return;
     context.save();
     context.globalAlpha = spaceAlpha;
-    let frame = getFrame(nightAnimation, 0);
+    let frame = getFrame(nightAnimation, state.time);
     const spaceBaseHeight = Math.round(Math.min(
             0,
-            -200 + 200 * (-state.camera.top - canvas.height) / (2 * canvas.height)
+            -200 + 200 * (topTarget / 3 -state.camera.top) / (-topTarget * 2 / 3)
     ));
     drawImage(context, frame.image, frame, new Rectangle(frame).moveTo(0, spaceBaseHeight));
     // Fill the whole canvas with black, in case somehow it is too tall in portrait mode.
@@ -93,15 +107,22 @@ function renderTransitionShipBackground(context, state) {
 
 }
 function renderShip(context, state) {
+    const topTarget = getTopTarget();
     const shipBaseHeight = Math.min(
             canvas.height / 2,
-            canvas.height / 2 * (-state.camera.top - canvas.height * 2) / (1 * canvas.height)
+            canvas.height / 2 * (topTarget * 2 / 3 -state.camera.top) / (-topTarget / 3)
     );
-    const frame = getFrame(shipAnimation, 0);
+    let frame = getFrame(shipAnimation, state.time);
     drawImage(context, frame.image, frame,
         new Rectangle(frame)
             .moveCenterTo(Math.round(canvas.width / 2 + EDGE_LENGTH / 2), Math.round(shipBaseHeight + 3 * Math.sin(state.time / 500)))
     );
+    // Testing warp animation. Note that starting on frame 3, the ship shouldn't be drawn underneath.
+    /*frame = getFrame(shipWarpAnimation, state.time);
+    drawImage(context, frame.image, frame,
+        new Rectangle(frame)
+            .moveCenterTo(Math.round(canvas.width / 2 + EDGE_LENGTH / 2), Math.round(shipBaseHeight + 3 * Math.sin(state.time / 500)))
+    );*/
 }
 function renderShipScene(context, state) {
     renderShipBackground(context, state);
@@ -120,10 +141,16 @@ function renderShipScene(context, state) {
         // If this part was just found, display it teleporting in.
         if (i === state.saved.shipPart - 1 && state.collectingPart) {
             if (animationTime < arriveAnimation.duration) {
-                animation = arriveAnimation;
-            } else {
-                animationTime -= arriveAnimation.duration;
+                frame = getFrame(arriveAnimation, animationTime);
+                drawImage(context, frame.image, frame,
+                    new Rectangle(frame).scale(scale).moveCenterTo(
+                        left + scale * warpDriveSlots[i][0],
+                        top + scale * warpDriveSlots[i][1],
+                    )
+                );
             }
+            // Don't draw the part itself until the last part of the arrival animation
+            if (animationTime < arriveAnimation.duration - 200) break;
         }
         frame = getFrame(animation, animationTime);
         drawImage(context, frame.image, frame,
@@ -135,16 +162,7 @@ function renderShipScene(context, state) {
     }
 }
 
-const duration = 36;
-const shipPartAnimations = [
-    createAnimation('gfx/warppieces.png', r(20, 20), {cols: 2, duration}),
-    createAnimation('gfx/warppieces.png', r(20, 20), {x: 2, cols: 3, duration}),
-    createAnimation('gfx/warppieces.png', r(20, 20), {x: 5, cols: 3, duration}),
-    createAnimation('gfx/warppieces.png', r(20, 20), {x: 8, cols: 3, duration}),
-    createAnimation('gfx/warppieces.png', r(20, 20), {x: 14, cols: 3, duration}),
-];
 const teleportAnimation = createAnimation('gfx/teleport.png', r(30, 30), {x: 1, cols: 7});
-const arriveAnimation = createAnimation('gfx/teleport.png', r(30, 30), {x: 1, cols: 7, frameMap:[6,5,4,3,2,1,0]});
 // This sprite shows the next ship part as long as animationTime is negative, then plays
 // the teleport animation and disappears, returning the player to the ship scene.
 const shipPartSprite = {

@@ -4,13 +4,12 @@ const Rectangle = require('Rectangle');
 const { drawImage } = require('draw');
 
 const { canvas } = require('gameConstants');
-
 const { r, createAnimation, getFrame } = require('animations');
 
 export {
     collectTreasure,
 };
-const { updateSave } = require('state');
+const { playSound, updateSave } = require('state');
 const { addSprite, deleteSprite, updateSprite } = require('sprites');
 
 const {
@@ -71,6 +70,9 @@ const treasures = {
 const radarAnimation = createAnimation('gfx/bonus.png', r(25, 25), {cols: 4}, {loop: false});
 const radarSprite = {
     advance(state, sprite) {
+        if (state.time - sprite.time === 800) {
+            playSound(state, 'upgrade');
+        }
         if (state.time - sprite.time === 1200) {
             state = createCellsInRange(state, sprite.row, sprite.column, true);
         }
@@ -126,6 +128,7 @@ const energySprite = {
     advance(state, sprite) {
         if (sprite.y < state.camera.top + 20) {
             state = gainBonusFuel(state, sprite.bonusFuel);
+            playSound(state, 'energy');
             return deleteSprite(state, sprite);
         }
         let {x = 0, y = 0, vx = 0, vy = 0, frame = 0} = sprite;
@@ -153,6 +156,7 @@ const diffuserSprite = {
     advance(state, sprite) {
         if (sprite.y > state.camera.top + canvas.height - 80 && sprite.x < state.camera.left + 60) {
             state = updateSave(state, {bombDiffusers: state.saved.bombDiffusers + sprite.amount});
+            playSound(state, 'energy');
             return deleteSprite(state, sprite);
         }
         let {x = 0, y = 0, vx = 0, vy = 0, frame = 0} = sprite;

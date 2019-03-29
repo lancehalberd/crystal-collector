@@ -1,9 +1,11 @@
 const {
     canvas,
     ROW_HEIGHT,
+    FRAME_LENGTH,
 } = require('gameConstants');
 const Rectangle = require('Rectangle');
 const { drawImage } = require('draw');
+const { playSound } = require('state');
 const { requireImage, createAnimation, getFrame, r } = require('animations');
 
 const militaryFrame = {
@@ -11,7 +13,6 @@ const militaryFrame = {
     width: 16,
     height: 16,
 }
-const diffuserFrame = r(25, 16, {left: 25, top: 9, image: requireImage('gfx/diffuse.png')});
 const diffuserAnimation = createAnimation('gfx/diffuse.png', r(25, 25), {cols: 5}, {loop: false});
 const crystalAnimations = [
      createAnimation('gfx/crystals.png', r(30, 30), {x:0}),
@@ -44,6 +45,7 @@ const crystalSprite = {
     advance(state, sprite) {
         if (sprite.y > state.camera.top + canvas.height - 60) {
             state = gainCrystals(state, sprite.crystals);
+            playSound(state, 'money');
             return deleteSprite(state, sprite);
         }
         let {x = 0, y = 0, vx = 0, vy = 0, frame = 0, animationFrame = 0} = sprite;
@@ -169,12 +171,14 @@ const bombSprite = {
     advance(state, sprite) {
         if (sprite.y < state.camera.top + 20) {
             state = gainBonusFuel(state, sprite.bonusFuel);
+            playSound(state, 'energy');
             return deleteSprite(state, sprite);
         }
         let {x = 0, y = 0, vx = 0, vy = 0} = sprite;
         x += vx;
         y += vy;
         const animationTime = Math.max(0, state.time - sprite.time);
+        if (animationTime > 0 && animationTime - FRAME_LENGTH <= 0) playSound(state, 'diffuser');
         if (animationTime >= diffuserAnimation.duration + 100) {
             vx += (state.camera.left + 200 - x) / 300;
             vy += (state.camera.top - y) / 300;
@@ -212,6 +216,7 @@ const diffuserSprite = {
 const explosionSprite = {
     advance(state, sprite) {
         let {frame = 0} = sprite;
+        if (frame === 0) playSound(state, 'explosion');
         if (frame > explosionAnimation.frames.length * explosionAnimation.frameDuration) return deleteSprite(state, sprite);
         frame++;
         return updateSprite(state, sprite, {frame, ending: frame >= 4 * explosionAnimation.frameDuration});
@@ -235,7 +240,6 @@ module.exports = {
     crystalSprite,
     shieldSprite,
     debrisSprite,
-    diffuserFrame,
     explosionSprite,
     particleAnimations,
     lavaBubbleSprite,

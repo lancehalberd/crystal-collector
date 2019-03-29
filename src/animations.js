@@ -21,6 +21,9 @@ function requireImage(imageFile) {
         numberOfImagesLeftToLoad--
     });
 }
+function areImagesLoaded() {
+    return numberOfImagesLeftToLoad <= 0;
+}
 const initialImagesToLoad = [
 
 ];
@@ -84,6 +87,7 @@ const getHitBox = (animation, animationTime) => {
 };
 
 module.exports = {
+    areImagesLoaded,
     requireImage,
     r, i, a,
     getFrame,

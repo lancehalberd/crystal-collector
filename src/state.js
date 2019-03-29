@@ -5,19 +5,37 @@ const {
     FRAME_LENGTH, canvas, EDGE_LENGTH, ROW_HEIGHT,
 } = require('gameConstants');
 
+const {
+    playSound,
+    playTrack,
+} = require('sounds');
+
 module.exports = {
     getNewState,
+    getNewSaveSlot,
     advanceState,
     applyActions,
     nextDay,
+    playSound: playSoundWithState,
+    playTrack: playTrackWithState,
     restart,
     resumeDigging,
     updateSave,
 };
 
+function playSoundWithState(state, sound) {
+    playSound(sound, state.saved.muteSounds);
+}
+function playTrackWithState(state, bgm, bgmTime) {
+    playTrack(bgm, bgmTime, state.saved.muteMusic)
+}
+
+
+const { areImagesLoaded } = require('animations');
 const { getHUDButtons } = require('hud');
 
-const { advanceDigging, getOverCell } = require('digging');
+const { advanceDigging, getOverCell, getTopTarget } = require('digging');
+const { arriveAnimation } = require('ship');
 
 const {
     advanceAchievements,
@@ -30,7 +48,7 @@ const INITIAL_LAVA_DEPTH = 100;
 function getNewCamera(lavaDepth = INITIAL_LAVA_DEPTH) {
     return {
         left: -canvas.width / 2 + EDGE_LENGTH,
-        top: -canvas.height * 3,
+        top: getTopTarget(),
         minX: 1E9,
         maxX: -1E9,
         minY: 1E9,
@@ -48,6 +66,28 @@ function updateSave(state, props) {
     };
 }
 
+function getNewSaveSlot() {
+    return {
+        maxBombDiffusers: 3,
+        bombDiffusers: 3,
+        bombsDiffusedToday: 0,
+        bonusFuelToday: 0,
+        crystalsCollectedToday: 0,
+        explosionProtection: 0.2,
+        range: 1.2,
+        maxFuel: 100,
+        fuel: 100,
+        seed: random.nextSeed(),
+        day: 1,
+        maxDepth: 0,
+        score: 0,
+        playedToday: false,
+        achievementStats: {},
+        lavaDepth: INITIAL_LAVA_DEPTH,
+        shipPart: 0,
+    };
+}
+
 function getNewState() {
     return {
         actions: {},
@@ -56,32 +96,17 @@ function getNewState() {
         rows: [],
         flags: [],
         sfx: {},
-        bgm: 'bgm/title.mp3',
         interacted: false,
         time: 20,
         spriteMap: {},
         startingDepth: 1,
         displayLavaDepth: INITIAL_LAVA_DEPTH,
-        incoming: true,
-        saved: {
-            maxBombDiffusers: 3,
-            bombDiffusers: 3,
-            bombsDiffusedToday: 0,
-            bonusFuelToday: 0,
-            crystalsCollectedToday: 0,
-            explosionProtection: 0.2,
-            range: 1.2,
-            maxFuel: 100,
-            fuel: 100,
-            seed: random.nextSeed(),
-            day: 1,
-            maxDepth: 0,
-            score: 0,
-            playedToday: false,
-            achievementStats: {},
-            lavaDepth: INITIAL_LAVA_DEPTH,
-            shipPart: 0,
-        },
+        title: 20,
+        incoming: false,
+        bgmTime: 20,
+        saveSlot: false, // indicates save has not been selected yet.
+        deleteSlot: false, // indicates file to delete in the delete modal.
+        saved: {},
     };
 }
 
@@ -129,6 +154,7 @@ function resumeDigging(state) {
         collectingPart: false,
         shop: false,
         ship: false,
+        bgmTime: state.time,
         selected: null,
     };
 }
@@ -140,6 +166,7 @@ function restart(state) {
         showAchievements: false,
         displayFuel: 0,
         displayLavaDepth: INITIAL_LAVA_DEPTH,
+        bgmTime: state.time,
         saved: {
             ...state.saved,
             score: 0,
@@ -160,7 +187,7 @@ function restart(state) {
 function getOverButton(state, coords = {}) {
     const {x, y} = coords;
     if (!(x >= 0 && x <= canvas.width && y >= 0 && y <= canvas.height)) return null;
-    for (const hudButton of getHUDButtons(state)) {
+    for (const hudButton of getHUDButtons(state).reverse()) {
         if (new Rectangle(hudButton).containsPoint(x, y)) {
             return hudButton;
         }
@@ -181,7 +208,7 @@ function setButtonState(state) {
         if (buttonsMatch && !(dragIsBlocking && lastButton.cell)) {
             state = {...state, clicked: true};
         }
-        state = {...state, mouseDragged: false, mouseDownCoords: false, lastMouseCoords: false};
+        state = {...state, mouseDragged: false, mouseDownCoords: false};
     }
     if (!state.mouseDown && state.mouseDownCoords) {
         state = {...state, mouseDownCoords: false};
@@ -194,8 +221,14 @@ function setButtonState(state) {
     return state;
 }
 function advanceState(state) {
+    if (!areImagesLoaded() || !state.interacted) return state;
     state = {...state, time: state.time + FRAME_LENGTH}
-    const disableDragging = state.collectingPart || state.incoming || state.leaving || state.ship || state.shop || state.showAchievements;
+    // Turn off the collecting part (and enable buttons again) after the part teleports in.
+    if (state.collectingPart && state.ship && state.time - state.ship > arriveAnimation.duration) {
+        state = {...state, collectingPart: false};
+    }
+    const disableDragging = state.title || state.collectingPart || state.incoming || state.leaving
+        || state.ship || state.shop || state.showAchievements || state.showOptions;
     if (!disableDragging && state.mouseDown && state.mouseDragged && state.lastProcessedMouseCoords) {
         const camera = {...state.camera};
         const dx = state.lastMouseCoords.x - state.lastProcessedMouseCoords.x;
@@ -204,8 +237,8 @@ function advanceState(state) {
         camera.top = Math.min(Math.max(camera.top - dy, camera.minY - canvas.height / 2), camera.maxY - canvas.height / 2);
         state = {...state, selected: false, targetCell: false, camera, dragDistance: state.dragDistance + Math.abs(dx) + Math.abs(dy)};
     }
-    if (state.ship || state.shop) {
-        state = {...state, camera: {...state.camera, top : -canvas.height * 3}};
+    if (state.ship || state.shop || state.title) {
+        state = {...state, camera: {...state.camera, top : getTopTarget()}};
     }
     state = setButtonState(state);
     state.lastProcessedMouseCoords = state.lastMouseCoords;
@@ -218,13 +251,12 @@ function advanceState(state) {
     if (!state.leaving && !state.incoming && !state.collectingPart && state.clicked && state.overButton && state.overButton.onClick) {
         state = state.overButton.onClick(state, state.overButton);
     }
-    if (!state.showAchievements && !state.shop && !state.ship) {
+    if (!state.showAchievements && !state.showOptions && !state.shop && !state.ship && !state.title) {
         state = advanceDigging(state);
     }
     for (let spriteId in state.spriteMap) {
         state = state.spriteMap[spriteId].advance(state, state.spriteMap[spriteId]);
     }
-    //camera.top += 1;
     return {...state, clicked: false, rightClicked: false};
 }
 

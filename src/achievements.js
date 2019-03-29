@@ -1,6 +1,7 @@
 const { canvas } = require('gameConstants');
 const Rectangle = require('Rectangle');
 const { drawRectangle, drawText, drawImage, measureText } = require('draw');
+const { playSound } = require('state');
 const { requireImage, r, createAnimation, } = require('animations');
 
 const ACHIEVEMENT_COLLECT_X_CRYSTALS = 'collectXCrystals';
@@ -33,6 +34,7 @@ module.exports = {
     advanceAchievements,
     renderAchievements,
     getAchievementBonus,
+    getAchievementPercent,
     getAchievementStat,
     setAchievementStatIfBetter,
     incrementAchievementStat,
@@ -165,6 +167,15 @@ function initializeAchievements(state) {
     for (let key in achievementsData) state = updateAchievement(state, key);
     return state;
 }
+function getAchievementPercent(state, saveData) {
+    state = initializeAchievements({...state, saved: saveData});
+    let total = 0, unlocked = 0;
+    for (let key in achievementsData) {
+        total += 4;
+        unlocked += (state.achievements[key] + 1);
+    }
+    return unlocked / total;
+}
 
 function advanceAchievements(state) {
     if (!state.achievements) return initializeAchievements(state);
@@ -186,6 +197,7 @@ function advanceAchievements(state) {
             achievement.width = achievement.textWidth + 72;
             achievement.x = canvas.width - 10 - achievement.width;
             state = addSprite(state, achievement);
+            playSound(state, 'achievement');
             // This is a null op if lastAchievement is not set or is no longer present.
             state = updateSprite(state, {id: state.lastAchievementId}, {nextAchievementId: achievement.id});
             state = {...state, lastAchievementId: achievement.id, lastAchievementTime: state.time};

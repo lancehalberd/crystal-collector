@@ -1,6 +1,5 @@
 /* globals Float32Array, clearTimeout, setTimeout, Audio, Set, Map */
 const sounds = new Map();
-let soundsMuted = false;
 
 function ifdefor(value, defaultValue) {
     if (value !== undefined && !(typeof value === 'number' && isNaN(value))) {
@@ -12,8 +11,8 @@ function ifdefor(value, defaultValue) {
     return null;
 }
 
-const requireSound = key => {
-    let source, offset, volume, duration, limit;
+function requireSound(key) {
+    let source, offset, volume, duration, limit, repeatFrom;
     if (typeof key === 'string') {
         [source, offset, volume] = key.split('+');
         key = source;
@@ -22,6 +21,7 @@ const requireSound = key => {
         volume = key.volume;
         limit = key.limit;
         source = key.source;
+        repeatFrom = key.repeatFrom;
         key = key.key || source;
     }
     if (sounds.has(key)) return sounds.get(key);
@@ -32,13 +32,13 @@ const requireSound = key => {
     newSound.customDuration = duration || 0;
     newSound.defaultVolume = volume || 1;
     newSound.instanceLimit = limit || 5;
+    newSound.repeatFrom = repeatFrom || 0;
     sounds.set(key, newSound);
     return newSound;
-};
+}
 
 const playingSounds = new Set();
-const playSound = (key) => {
-    if (soundsMuted) return;
+function playSound(key, muted = false) {
     let source, offset,volume, duration;
     [source, offset, volume] = key.split('+');
     key = source;
@@ -50,9 +50,22 @@ const playSound = (key) => {
         return;
     }
     if (sound.instances.size >= sound.instanceLimit) return;
+    const now = Date.now();
+    const customDelay = sound.customDelay || 40;
+    if (sound.canPlayAfter && sound.canPlayAfter > now) {
+        // Don't play the sound if more than the instance limit are queued into
+        // the future.
+        const delay = sound.canPlayAfter - now;
+        if (delay <= sound.instanceLimit * customDelay) {
+            setTimeout(() => playSound(key, muted), delay);
+        }
+        return;
+    }
+    sound.canPlayAfter = now + customDelay;
     const newInstance = sound.cloneNode(false);
     newInstance.currentTime = (ifdefor(offset || sound.offset) || 0) / 1000;
-    newInstance.volume = Math.min(1, (ifdefor(volume, sound.defaultVolume) || 1) / 50);
+    newInstance.calculatedVolume = Math.min(1, (ifdefor(volume, sound.defaultVolume) || 1) / 50);
+    newInstance.volume = muted ? 0 : newInstance.calculatedVolume;
     newInstance.play().then(() => {
         let timeoutId;
         if (duration || sound.customDuration) {
@@ -71,76 +84,99 @@ const playSound = (key) => {
             newInstance.onended = null;
             clearTimeout(timeoutId);
         }
-    });
-};
+    }).catch((/*reason*/) => {
 
-let previousTrack = null;
-const playTrack = (source, timeOffset) => {
-    let offset, volume, duration;
-    [source, offset, volume] = source.split('+');
+    });
+}
+window.playSound = playSound;
+
+let previousTrack = null, currentTrackSource = null, trackIsPlaying = false;
+const playTrack = (source, timeOffset, muted = false) => {
+    trackIsPlaying = false;
     if (previousTrack) {
         previousTrack.pause();
         if (previousTrack.timeoutId) clearTimeout(previousTrack.timeoutId);
     }
-    if (offset) [offset, duration] = offset.split(':').map(Number);
     const sound = requireSound(source);
-    const startOffset = (ifdefor(offset, sound.offset) || 0) / 1000;
-    const customDuration = (duration || sound.customDuration || 0) / 1000;
-    sound.volume = Math.min(1, (ifdefor(volume, sound.defaultVolume) || 1) / 50);
-    if (soundsMuted) {
-        sound.volume = 0;
-    }
+    const startOffset = (sound.offset || 0) / 1000;
+    const customDuration = (sound.customDuration || 0) / 1000;
+    sound.calculatedVolume = Math.min(1, (sound.defaultVolume || 1) / 50);
+    sound.volume = muted ? 0 : sound.calculatedVolume;
     function startTrack(offset) {
+        currentTrackSource = source;
+        // console.log('bgm:', {offset});
         // console.log({source, offset, actual: startOffset + offset, customDuration});
         sound.currentTime = startOffset + offset;
-        try {
-            sound.play().then(() => {
-                // If a custom duration is set, restart the song at that point.
-                if (customDuration) {
-                    sound.timeoutId = setTimeout(() => {
-                        sound.pause();
-                        startTrack(0);
-                    }, (customDuration - offset) * 1000);
-                }
-                sound.onended = () => {
-                    if (sound.timeoutId) clearTimeout(sound.timeoutId);
-                    startTrack(0);
-                }
-            }).catch(error => {
-                console.log("Failed to play track.", error);
-            });
-        } catch (error) {
-            console.log("Failed to play track.", error);
-        }
+        sound.play().then(() => {
+            trackIsPlaying = true;
+            currentTrackSource = source;
+            // If a custom duration is set, restart the song at that point.
+            if (customDuration) {
+                sound.timeoutId = setTimeout(() => {
+                    sound.pause();
+                    startTrack(sound.repeatFrom / 1000);
+                }, (customDuration - offset) * 1000);
+            }
+            sound.onended = () => {
+                if (sound.timeoutId) clearTimeout(sound.timeoutId);
+                currentTrackSource = null;
+                trackIsPlaying = false;
+                startTrack(sound.repeatFrom / 1000);
+            }
+        }).catch(() => {
+            currentTrackSource = null;
+            trackIsPlaying = false;
+        });
     }
     startTrack((timeOffset / 1000) % (customDuration || sound.duration || 10000000));
     previousTrack = sound;
 };
 
-const stopTrack = () => {
+function stopTrack() {
+    currentTrackSource = null;
     if (previousTrack) {
         previousTrack.pause();
         if (previousTrack.timeoutId) clearTimeout(previousTrack.timeoutId);
+        previousTrack = null;
     }
-};
+}
+function getCurrentTrackSource() {
+    return currentTrackSource;
+}
+function isPlayingTrack() {
+    return trackIsPlaying;
+}
 
-// This hasn't been tested yet, not sure if it works.
-const muteSounds = () => {
-    soundsMuted = true;
-    if (previousTrack) {
-        previousTrack.volume = 0;
-    }
-    for (const sound of playingSounds) {
-        sound.volume = 0;
-    }
-};
+function muteSounds() {
+    for (const sound of playingSounds) sound.volume = 0;
+}
+function unmuteSounds() {
+    for (const sound of playingSounds) sound.volume = sound.calculatedVolume;
+}
+function muteTrack() {
+    if (previousTrack) previousTrack.volume = 0;
+}
+function unmuteTrack() {
+    if (previousTrack) previousTrack.volume = previousTrack.calculatedVolume;
+}
 
 const preloadSounds = () => {
     [
-        {key: 'coin', source: 'sfx/coin.mp3'},
+        {key: 'achievement', source: 'sfx/achievement.mp3', volume: 2, limit: 2}, // Unlock an achievement
+        {key: 'coin', source: 'sfx/coin.mp3', volume: 0.3, limit: 10}, // receieve a crystal
+        {key: 'diffuser', source: 'sfx/diffuse.mp3', volume: 5}, // Diffuse a bomb
+        {key: 'dig', source: 'sfx/dig.mp3', volume: 0.5, limit: 2}, // explore a cell
+        {key: 'explosion', source: 'sfx/explosion.mp3'}, // Bomb explodes
+        {key: 'flag', source: 'sfx/flag.mp3'}, // Mark a square as a bomb
+        {key: 'energy', source: 'sfx/gainenergy.mp3', volume: 3}, // Gain energy from energy chest/diffuser
+        {key: 'lava', source: 'sfx/lavalower.mp3', limit: 2}, // Lower the lava
+        {key: 'money', source: 'sfx/money.mp3', volume: 0.3, limit: 10}, // receieve a crystal
+        {key: 'select', source: 'sfx/select.mp3'}, // Button click
+        {key: 'upgrade', source: 'sfx/upgrade.mp3', volume: 5 }, // Purchase upgrade
         //{key: 'lightningBolt', source: 'sfx/fastlightning.mp3', volume: 1.5, limit: 3},
         // See credits.html for: mobbrobb.
-        'bgm/title.mp3+0+2',
+        {key: 'title', source: 'bgm/title.mp3', volume: 2},
+        {key: 'ship', source: 'bgm/ship.mp3', volume: 10},
         /*'bgm/field.mp3+0+1',
         'bgm/lowerForest.mp3+0+2',
         'bgm/upperForest.mp3+0:104000+2',
@@ -229,8 +265,13 @@ window.playSound = playSound;
 
 module.exports = {
     muteSounds,
+    unmuteSounds,
+    muteTrack,
+    unmuteTrack,
     playSound,
     playTrack,
     stopTrack,
     preloadSounds,
+    getCurrentTrackSource,
+    isPlayingTrack,
 };

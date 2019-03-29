@@ -2,38 +2,46 @@ const {
     canvas, FRAME_LENGTH,
 } = require('gameConstants');
 
-const { preloadSounds } = require('sounds');
+const { preloadSounds, muteSounds } = require('sounds');
 
 const {
     getNewState,
     advanceState,
-    nextDay,
-    resumeDigging,
 } = require('state');
 const render = require('render');
-
-/*const { isKeyDown,
-    KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_SPACE,
-    KEY_ENTER, KEY_R, KEY_X, KEY_C, KEY_V,
-    KEY_T,
-} = require('keyboard');*/
 
 preloadSounds();
 let preloadedSounds = true;
 let stateQueue = [];
 let state = null;
 
-const queryParams = {};
-window.location.search.slice(1).split('&')
-    .map(pairString => pairString.split('='))
-    .forEach(pair => queryParams[pair[0]] = pair[1]);
-const saveKey = queryParams.save ? `save-${queryParams.save}` : 'defaultSave';
+const saveKey = 'defaultSave';
 let savedState;
+let changedLocalStorage = Date.now();
+let savedLocalStorage = changedLocalStorage;
 try {
     savedState = JSON.parse(window.localStorage.getItem(saveKey));
+    if (!savedState) {
+        savedState = {
+            muteSounds: false,
+            muteMusic: false,
+            saveSlots: [],
+        };
+    }
+    // Convert legacy saved data to newer format that supports multiple save slots.
+    if (!savedState.saveSlots) {
+        savedState = {
+            muteSounds: false,
+            muteMusic: false,
+            saveSlots: [
+                {...savedState},
+            ],
+        };
+    }
 } catch (e) {
     console.log('Invalid save data');
 }
+window.savedState = savedState;
 
 const context = canvas.getContext('2d', {alpha: false});
 context.imageSmoothingEnabled = false;
@@ -46,7 +54,7 @@ function updateCanvasSize() {
     } else {
         canvas.width = 800;
     }
-    canvas.height = Math.max(300, Math.floor(window.innerHeight / scale));
+    canvas.height = Math.max(300, Math.ceil(window.innerHeight / scale));
     canvas.style.transformOrigin = '0 0'; //scale from top left
     canvas.style.transform = 'scale(' + scale + ')';
     canvas.scale = scale;
@@ -82,7 +90,10 @@ function getEventCoords(event) {
     return {x, y};
 }
 function onMouseDown(event) {
-    state.interacted = true;
+    if (!state.interacted) {
+        state.interacted = true;
+        return false;
+    }
     state.mouseDown = state.time;
     state.dragDistance = 0;
     state.mouseDragged = false;
@@ -103,38 +114,15 @@ function onMouseUp(event) {
     event.preventDefault();
     return false;
 }
-/*
-TODO:
-    -Scale the canvas to fill the screen, modify tile size based on canvas dimensions.
-*/
 
 const update = () => {
     if (!state) {
         state = getNewState();
+        state.saved.muteMusic = savedState.muteMusic;
+        state.saved.muteSounds = savedState.muteSounds;
+        state.saveSlots = savedState.saveSlots;
         state.lastResized = Date.now();
         state.context = context;
-        if (savedState && !queryParams.reset) {
-
-            // console.log(`Loading state from ${saveKey}`, savedState);
-            state.saved = {...state.saved, ...savedState};
-            state = initializeAchievements(state);
-            // Decrement day by 1 if they haven't played yet today so that
-            // caling next day leaves them on the same day.
-            if (!state.saved.playedToday) {
-                state = resumeDigging(state);
-                if (state.saved.day !== 1) {
-                    state.shop = true;
-                    state.incoming = false;
-                }
-            } else {
-                state = nextDay(state);
-            }
-            // Add shipPart to old save files.
-            state.saved.shipPart = state.saved.shipPart || 0;
-            //state.saved.shipPart = 0; //reset ship part.
-
-        }
-        savedState = state.saved;
         canvas.onmousedown =  onMouseDown;
         canvas.oncontextmenu = function (event) {
             state.rightClicked = true;
@@ -174,9 +162,23 @@ const update = () => {
     // This is here to help with debugging from console.
     window.state = state;
     window.stateQueue = stateQueue;
-    if (state.saved !== savedState) {
-        savedState = state.saved;
-        // console.log(`Saving state to ${saveKey}`, savedState);
+    const now = Date.now();
+    if (state.saveSlot !== false && state.saved !== savedState.saveSlots[state.saveSlot]) {
+        savedState.saveSlots[state.saveSlot] = state.saved;
+        changedLocalStorage = now;
+    }
+    if (!!state.saved.muteSounds !== !!savedState.muteSounds) {
+        savedState.muteSounds = !!state.saved.muteSounds;
+        changedLocalStorage = now;
+    }
+    if (!!state.saved.muteMusic !== !!savedState.muteMusic) {
+        savedState.muteMusic = !!state.saved.muteMusic;
+        changedLocalStorage = now;
+    }
+    // Only commit to local storage once every 5 seconds.
+    if (changedLocalStorage > savedLocalStorage && now - savedLocalStorage > 5000) {
+        //console.log("Attempting to save to local storage");
+        savedLocalStorage = now;
         window.localStorage.setItem(saveKey, JSON.stringify(savedState));
     }
 };
@@ -192,5 +194,3 @@ const renderLoop = () => {
     }
 };
 renderLoop();
-
-const { initializeAchievements } = require('achievements');
