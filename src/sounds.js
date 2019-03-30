@@ -173,10 +173,14 @@ const preloadSounds = () => {
         {key: 'money', source: 'sfx/money.mp3', volume: 0.3, limit: 10}, // receieve a crystal
         {key: 'select', source: 'sfx/select.mp3'}, // Button click
         {key: 'upgrade', source: 'sfx/upgrade.mp3', volume: 5 }, // Purchase upgrade
+        {key: 'alarm', source: 'sfx/alarm.mp3', volume: 2},
+        {key: 'teleport', source: 'sfx/teleport.mp3', volume: 5},
+        {key: 'shipWarp', source: 'sfx/largeteleport.mp3', volume: 5},
         //{key: 'lightningBolt', source: 'sfx/fastlightning.mp3', volume: 1.5, limit: 3},
         // See credits.html for: mobbrobb.
         {key: 'title', source: 'bgm/title.mp3', volume: 2},
         {key: 'ship', source: 'bgm/ship.mp3', volume: 10},
+
         /*'bgm/field.mp3+0+1',
         'bgm/lowerForest.mp3+0+2',
         'bgm/upperForest.mp3+0:104000+2',

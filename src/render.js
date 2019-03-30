@@ -15,10 +15,14 @@ const { renderShipScene, renderSpaceBackground } = require('ship');
 const { renderShop } = require('shop');
 const { renderTitle } = require('title');
 const { renderAchievements } = require('achievements');
+const { renderIntro, renderOutro } = require('scenes');
 const loadTime = Date.now();
 
 function render(context, state) {
-    const bgm = (state.title || state.ship || state.shop) ? 'ship' : 'title';
+    const bgm = (
+        state.title || state.ship || state.shop ||
+        !state.saved.finishedIntro || state.outroTime !== false
+    ) ? 'ship' : 'title';
     const bgmTime = state.time - (state.bgmTime || 0);
     if (areImagesLoaded()) {
         if (bgm && getCurrentTrackSource() !== bgm) {
@@ -36,12 +40,16 @@ function render(context, state) {
         if (Date.now() - loadTime > 200) renderPlayButton(context, state);
         return;
     }
-    if (state.showAchievements) {
+    if (state.outroTime !== false) {
+        renderOutro(context, state);
+    } else if (state.title) {
+        renderTitle(context, state);
+    } else if (!state.saved.finishedIntro) {
+        renderIntro(context, state);
+    } else if (state.showAchievements) {
         renderAchievements(context, state);
     } else if (state.showOptions) {
         renderSpaceBackground(context, state);
-    } else if (state.title) {
-        renderTitle(context, state);
     } else if (state.ship) {
         renderShipScene(context, state);
     } else if (state.shop) {

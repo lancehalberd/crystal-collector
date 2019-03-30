@@ -20,14 +20,14 @@ const titleBottomFrame = r(800, 800, {image: requireImage('gfx/titlebottom.png')
 //const trashFrame = r(480, 480, {'image': requireImage('gfx/trash.png')});
 const loadButtonAnimationTime = 400;
 const chooseFileButton = {
-    label: 'Choose File',
+    label: 'Start',
     onClick(state) {
         return {...state, loadScreen: state.time};
     },
     render: renderBasicButton,
     resize({width, height, buttonWidth, buttonHeight}) {
         this.height = buttonHeight;
-        this.width = buttonWidth * 1.5;
+        this.width = buttonWidth;
         this.top = 5 * height / 6 - this.height / 2;
         this.left = (width - this.width) / 2;
     },
@@ -121,22 +121,26 @@ const fileButton = {
         state = initializeAchievements(state);
         state.loadScreen = false;
         state.title = false;
-        // Decrement day by 1 if they haven't played yet today so that
-        // caling next day leaves them on the same day.
         if (!state.saved.playedToday) {
             state = resumeDigging(state);
+            state.incoming = false;
             if (state.saved.day !== 1) {
                 state.shop = true;
-                state.incoming = false;
             } else {
-                state.incoming = true;
+                state.incoming = state.saved.finishedIntro;
             }
         } else {
+            // Increment the day if they had already played on the current day.
             state = nextDay(state);
         }
+        state.introTime = 0;
+        state.startingDepth = 1;
         // Add shipPart to old save files.
         state.saved.shipPart = state.saved.shipPart || 0;
-        //state.saved.shipPart = 0; //reset ship part.
+        state.displayFuel = state.saved.fuel;
+        state.displayLavaDepth = state.saved.lavaDepth;
+        //state.saved.finishedIntro = false; // show intro again.
+        //state.saved.shipPart = 0; // reset ship part.
         return state;
     },
     resize({animationTime, width, height, padding}) {

@@ -78,9 +78,8 @@ function getLayoutProperties(context, state) {
     };
 }
 
-
-const sleepButtonAnimation = createAnimation('gfx/teleportnew.png', r(30, 30), {x: 1, cols: 2, duration: 20});
-const sleepButtonActiveAnimation = createAnimation('gfx/teleportnew.png', r(30, 30), {cols: 10, duration: 12});
+const sleepButtonAnimation = createAnimation('gfx/teleportnew.png', r(30, 30), {x: 0, cols: 1, duration: 20});
+const sleepButtonActiveAnimation = createAnimation('gfx/teleportnew.png', r(30, 30), {x: 0, cols: 10, duration: 6});
 const sleepButton = {
     label: 'Sleep',
     render(context, state, button) {
@@ -108,6 +107,19 @@ const sleepButton = {
         this.width *= this.scale;
         this.top = padding;
         this.left = padding;
+    },
+};
+const continueButton = {
+    label: 'Continue',
+    onClick(state) {
+        return {...state, outroTime: false};
+    },
+    render: renderBasicButton,
+    resize({width, height, buttonWidth, buttonHeight, padding}) {
+        this.height = buttonHeight;
+        this.width = buttonWidth;
+        this.top = height - padding - this.height;
+        this.left = (width - this.width) / 2;
     },
 };
 const optionsAnimation = createAnimation('gfx/options.png', r(24, 24));
@@ -187,6 +199,20 @@ const upgradeButton = {
         this.left = padding;
     },
 };
+const skipIntroButton = {
+    label: 'Skip',
+    render: renderBasicButton,
+    onClick(state) {
+        playSound(state, 'select');
+        return updateSave(resumeDigging(state), {finishedIntro: true});
+    },
+    resize({padding, height, width, buttonWidth, buttonHeight}) {
+        this.height = buttonHeight;
+        this.width = buttonWidth;
+        this.top = height - padding - this.height;
+        this.left = width - padding - this.width;
+    },
+};
 const shipButton = {
     ...upgradeButton,
     label: 'Warp Drive',
@@ -245,7 +271,11 @@ const titleButton = {
     label: 'Title',
     render: renderBasicButton,
     onClick(state) {
-        return {...state, bgmTime: state.time, title: state.time, showOptions: false};
+        return {
+            ...state, bgmTime: state.time,
+            title: state.time, showOptions: false, saveSlot: false,
+            robot: false
+        };
     },
     resize({padding, height, width, buttonWidth, buttonHeight}) {
         this.height = buttonHeight;
@@ -715,6 +745,12 @@ const explosionProtectionButton = {
 };
 
 function getHUDButtons(state) {
+    if (state.saveSlot !== false && !state.saved.finishedIntro) {
+        return [skipIntroButton];
+    }
+    if (state.outroTime !== false) {
+        return state.outroTime > 5000 ? [continueButton] : [];
+    }
     if (state.showAchievements) {
         const buttons = [closeButton, achievementButton, optionsButton];
         if (getAchievementStat(state, ACHIEVEMENT_EXPLORE_DEPTH_X) >= 200) {
@@ -770,7 +806,7 @@ function renderHUD(context, state) {
     if (state.leaving || state.incoming) return;
     const layoutProperties = getLayoutProperties(context, state);
 
-    if (!state.title && !state.showOptions && !state.showAchievements) {
+    if (!state.title && !state.showOptions && !state.showAchievements && state.saved.finishedIntro && state.outroTime === false) {
         // Draw SCORE indicator
         const scoreWidth = drawText(context, state.saved.score, canvas.width - 10, canvas.height - 10,
             {fillStyle: '#4AF', strokeStyle: 'white', textAlign: 'right', textBaseline: 'bottom', size: 36, measure: true}
@@ -785,7 +821,10 @@ function renderHUD(context, state) {
     }
 
     // Draw FUEL indicator
-    if (!state.title && !state.shop && !state.showAchievements && !state.ship && !state.showOptions) {
+    if (!state.title && !state.shop
+        && !state.showAchievements && !state.ship && !state.showOptions
+        && state.saved.finishedIntro  && state.outroTime === false
+    ) {
         const fuelMultiplier = 1 + getAchievementBonus(state, ACHIEVEMENT_GAIN_X_BONUS_FUEL_IN_ONE_DAY) / 100;
         const fuelBarWidth = Math.min(canvas.width / 2.5, 200 * fuelMultiplier);
         const maxFuel = Math.round(state.saved.maxFuel * fuelMultiplier);

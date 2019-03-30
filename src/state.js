@@ -23,6 +23,8 @@ module.exports = {
     updateSave,
 };
 
+const { introSequenceDuration } = require('scenes');
+
 function playSoundWithState(state, sound) {
     playSound(sound, state.saved.muteSounds);
 }
@@ -85,6 +87,7 @@ function getNewSaveSlot() {
         achievementStats: {},
         lavaDepth: INITIAL_LAVA_DEPTH,
         shipPart: 0,
+        finishedIntro: false,
     };
 }
 
@@ -107,6 +110,7 @@ function getNewState() {
         saveSlot: false, // indicates save has not been selected yet.
         deleteSlot: false, // indicates file to delete in the delete modal.
         saved: {},
+        outroTime: false,
     };
 }
 
@@ -228,7 +232,7 @@ function advanceState(state) {
         state = {...state, collectingPart: false};
     }
     const disableDragging = state.title || state.collectingPart || state.incoming || state.leaving
-        || state.ship || state.shop || state.showAchievements || state.showOptions;
+        || state.ship || state.shop || state.showAchievements || state.showOptions || !state.saved.finishedIntro;
     if (!disableDragging && state.mouseDown && state.mouseDragged && state.lastProcessedMouseCoords) {
         const camera = {...state.camera};
         const dx = state.lastMouseCoords.x - state.lastProcessedMouseCoords.x;
@@ -237,7 +241,7 @@ function advanceState(state) {
         camera.top = Math.min(Math.max(camera.top - dy, camera.minY - canvas.height / 2), camera.maxY - canvas.height / 2);
         state = {...state, selected: false, targetCell: false, camera, dragDistance: state.dragDistance + Math.abs(dx) + Math.abs(dy)};
     }
-    if (state.ship || state.shop || state.title) {
+    if (!state.saved.finishedIntro || state.ship || state.shop || state.title) {
         state = {...state, camera: {...state.camera, top : getTopTarget()}};
     }
     state = setButtonState(state);
@@ -248,10 +252,25 @@ function advanceState(state) {
         }
     }
     state = advanceAchievements(state);
-    if (!state.leaving && !state.incoming && !state.collectingPart && state.clicked && state.overButton && state.overButton.onClick) {
+    const disableButtons = state.leaving || state.incoming || state.collectingPart;
+    if (!disableButtons && state.clicked && state.overButton && state.overButton.onClick) {
         state = state.overButton.onClick(state, state.overButton);
     }
-    if (!state.showAchievements && !state.showOptions && !state.shop && !state.ship && !state.title) {
+    if (state.outroTime !== false) {
+        if (state.outroTime === 2300) playSoundWithState(state, 'shipWarp');
+        state = {
+            ...state,
+            outroTime: state.outroTime + FRAME_LENGTH,
+        };
+    } else if (!state.saved.finishedIntro) {
+        state = {
+            ...state,
+            introTime: (state.introTime || 0) + FRAME_LENGTH,
+        };
+        if (state.introTime >= introSequenceDuration) {
+            state = updateSave(resumeDigging(state), {finishedIntro: true});
+        }
+    } else if (!state.showAchievements && !state.showOptions && !state.shop && !state.ship && !state.title) {
         state = advanceDigging(state);
     }
     for (let spriteId in state.spriteMap) {

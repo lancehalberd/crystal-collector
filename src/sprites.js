@@ -25,8 +25,7 @@ const crystalAnimations = [
      createAnimation('gfx/crystals.png', r(30, 30), {x:7, cols:2}),
 ];
 const crystalFrame = {...militaryFrame, left: 153, top: 40};
-const explosionAnimation = createAnimation('gfx/explosion.png', r(215, 215), {cols: 14, duration: 3});
-window.explosionAnimation = explosionAnimation;
+const explosionAnimation = createAnimation('gfx/explosion.png', r(215, 215), {cols: 14, duration: 3}, {loop: false});
 let spriteIdCounter = 0;
 function addSprite(state, sprite) {
     sprite.id = `sprite-${spriteIdCounter++}`;
@@ -240,6 +239,7 @@ module.exports = {
     crystalSprite,
     shieldSprite,
     debrisSprite,
+    explosionAnimation,
     explosionSprite,
     particleAnimations,
     lavaBubbleSprite,

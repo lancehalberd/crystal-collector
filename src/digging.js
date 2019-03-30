@@ -415,6 +415,7 @@ function getStartingCell(state) {
 }
 
 function teleportOut(state) {
+    playSound(state, 'teleport');
     return  {
         ...state,
         leaving: true,
@@ -445,7 +446,12 @@ function advanceDigging(state) {
             } else if (state.time - state.robot.animationTime >= teleportOutAnimationFinish.duration) {
                 state = {...state, robot: false, leaving: false};
                 if (state.collectingPart) {
-                    state = updateSave({...state, ship: state.time, bgmTime: state.time}, {playedToday: false});
+                    state = updateSave({
+                        ...state,
+                        ship: state.time,
+                        bgmTime: state.time,
+                        outroTime: state.saved.shipPart >= 5 ? 0 : false,
+                    }, {playedToday: false});
                 } else state = nextDay({...state, shop: state.time, ship: false, bgmTime: state.time});
             }
         }
@@ -453,6 +459,7 @@ function advanceDigging(state) {
     }
     if (state.incoming) {
         if (!state.robot) {
+            playSound(state, 'teleport');
             state = {...state, robot: {
                     row: startingCell.row, column: startingCell.column,
                     teleportingIn: true, animationTime: state.time
@@ -498,7 +505,8 @@ function advanceDigging(state) {
     }
     if ((state.rightClicked || (state.clicked && state.usingBombDiffuser)) && state.overButton && state.overButton.cell) {
         const {row, column} = state.overButton;
-        if (canExploreCell(state, row, column)) {
+        const fuelCost = getFuelCost(state, row, column);
+        if (canExploreCell(state, row, column) && fuelCost <= state.saved.fuel) {
             if (state.saved.bombDiffusers > 0) {
                 state = updateSave(state, {bombDiffusers: state.saved.bombDiffusers - 1});
                 const cellColor = getCellColor(state, row, column);
@@ -514,8 +522,8 @@ function advanceDigging(state) {
                     for (const coordsToUpdate of state.rows[row][z(column)].cellsToUpdate) {
                         const cellToUpdate = state.rows[coordsToUpdate.row][z(coordsToUpdate.column)];
                         const traps = cellToUpdate.traps - 1;
-                        // Mark cells with no nearby traps/crystals explored since numbers are already revealed.
-                        let explored = cellToUpdate.explored || (!traps && !cellToUpdate.crystals);
+                        // Mark cells with no nearby traps/crystals/treasures explored since numbers are already revealed.
+                        let explored = cellToUpdate.explored || (!traps && !cellToUpdate.crystals && !cellToUpdate.treasures);
                         state = updateCell(state, coordsToUpdate.row, coordsToUpdate.column, {traps, explored});
                     }
                     state = addSprite(state, {...bombSprite, x, y, bonusFuel, time: state.time});
