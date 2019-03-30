@@ -324,6 +324,7 @@ function exploreCell(state, row, column) {
     let foundTreasure = false;
     state = revealCell(state, row, column);
     const fuelCost = getFuelCost(state, row, column);
+    // const cellColor = 'treasure' || getCellColor(state, row, column);
     const cellColor = getCellColor(state, row, column);
     if (cellColor === 'red') {
         const depth = getDepth(state, row, column);
@@ -359,7 +360,9 @@ function exploreCell(state, row, column) {
         }
     }
     const {x, y} = getCellCenter(state, row, column);
+    // const shipPartLocation = {row, column} || getShipPartLocation(state);
     const shipPartLocation = getShipPartLocation(state);
+    // state = updateSave(state, {shipPart: 4});
     state = spawnDebris(state, x, y, row, column);
     if (cellColor === 'treasure') {
         foundTreasure = true;

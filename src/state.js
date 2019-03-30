@@ -262,7 +262,7 @@ function advanceState(state) {
             ...state,
             outroTime: state.outroTime + FRAME_LENGTH,
         };
-    } else if (!state.saved.finishedIntro) {
+    } else if (state.saveSlot !== false && !state.saved.finishedIntro) {
         state = {
             ...state,
             introTime: (state.introTime || 0) + FRAME_LENGTH,
