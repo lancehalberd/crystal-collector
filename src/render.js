@@ -3,7 +3,6 @@ const {
     getCurrentTrackSource,
     isPlayingTrack,
 } = require('sounds');
-const { drawText } = require('draw');
 
 module.exports = render;
 

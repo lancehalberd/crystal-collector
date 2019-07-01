@@ -13,6 +13,22 @@ module.exports = {
     getButtonColor,
 };
 
+Number.prototype.abbreviate = function () {
+    if (this >= 1000000000000) {
+        return (this / 1000000000000).toFixed(2) + 'T';
+    }
+    if (this >= 1000000000) {
+        return (this / 1000000000).toFixed(2) + 'B';
+    }
+    if (this >= 1000000) {
+        return (this / 1000000).toFixed(2) + 'M';
+    }
+    if (this >= 10000) {
+        return (this / 1000).toFixed(2) + 'K';
+    }
+    return this;
+}
+
 const { playSound, restart, updateSave, resumeDigging, } = require('state');
 const {
     canExploreCell, getFuelCost, getFlagValue,
@@ -75,6 +91,7 @@ function getLayoutProperties(context, state) {
         height: canvas.height,
         buttonHeight,
         buttonWidth,
+        buttonFontSize: Math.min(buttonHeight - 20, Math.round(canvas.width / 32)),
     };
 }
 
@@ -603,7 +620,7 @@ const shopButton = {
         const cost = button.getCost(state, button);
         const fillStyle = (cost <= state.saved.score) ? '#4AF' : COLOR_BAD;
         canvas.style.letterSpacing = '2px';
-        const costWidth = drawText(context, cost, x, y,
+        const costWidth = drawText(context, cost.abbreviate(), x, y,
             {fillStyle, textAlign: 'right', textBaseline, size: Math.round(1.5 * size), measure: true}
         );
         canvas.style.letterSpacing = '';
@@ -662,10 +679,10 @@ const fuelButton = {
         return 'Max Fuel';
     },
     getCurrentValue(state) {
-        return state.saved.maxFuel;
+        return state.saved.maxFuel.abbreviate();
     },
     getNextValue(state) {
-        return Math.round(state.saved.maxFuel * 1.2 + 50);
+        return Math.round(state.saved.maxFuel * 1.2 + 50).abbreviate();
     },
     onPurchase(state, button) {
         const maxFuel = this.getNextValue(state, button);
@@ -682,7 +699,7 @@ const rangeButton = {
         return Math.round(100 * Math.pow(2, 2 * (state.saved.range - 0.2) - 1));
     },
     getLabel() {
-        return `Range`;
+        return `Sensors`;
     },
     getCurrentValue(state) {
         return getDepthOfRange(state, 1.5, 0);
@@ -808,7 +825,7 @@ function renderHUD(context, state) {
 
     if (!state.title && !state.showOptions && !state.showAchievements && state.saved.finishedIntro && state.outroTime === false) {
         // Draw SCORE indicator
-        const scoreWidth = drawText(context, state.saved.score, canvas.width - 10, canvas.height - 10,
+        const scoreWidth = drawText(context, state.saved.score.abbreviate(), canvas.width - 10, canvas.height - 10,
             {fillStyle: '#4AF', strokeStyle: 'white', textAlign: 'right', textBaseline: 'bottom', size: 36, measure: true}
         );
         let iconRectangle = new Rectangle(crystalFrame).scale(2);
@@ -869,7 +886,7 @@ function renderHUD(context, state) {
         const fuelIconTarget = new Rectangle(fuelFrame).moveTo(fuelBarLeft - 2, 10);
         drawImage(context, fuelFrame.image, fuelFrame, fuelIconTarget);
         // Render FUEL + DAY #
-        drawText(context, state.saved.fuel, fuelBarLeft + fuelFrame.width - 6, midline, textStyle);
+        drawText(context, state.saved.fuel.abbreviate(), fuelBarLeft + fuelFrame.width - 6, midline, textStyle);
         drawText(context, `DAY ${state.saved.day}`, fuelBarLeft + fuelBarWidth + 10, midline, textStyle);
     }
 

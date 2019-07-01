@@ -151,6 +151,9 @@ function resumeDigging(state) {
             ...state.saved,
             seed: random.nextSeed(state.saved.seed),
             playedToday: false,
+            // Top off fuel + bomb diffusers before digging each day.
+            fuel: Math.max(state.saved.fuel, state.saved.maxFuel),
+            bombDiffusers: Math.max(state.saved.bombDiffusers, state.saved.maxBombDiffusers),
         },
         camera: getNewCamera(state.saved.lavaDepth || 100),
         rows: [],

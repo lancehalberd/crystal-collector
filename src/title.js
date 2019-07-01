@@ -104,7 +104,7 @@ const fileButton = {
                 top + halfHeight * 5,
             )
         );
-        drawText(context, saveData.score, left + 5 + iconRectangle.width, top + halfHeight * 5,
+        drawText(context, saveData.score.abbreviate(), left + 5 + iconRectangle.width, top + halfHeight * 5,
             {fillStyle: '#4AF', strokeStyle: 'white', textAlign: 'left', textBaseline: 'middle', size, measure: true}
         );
     },

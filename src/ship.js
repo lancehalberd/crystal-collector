@@ -21,6 +21,7 @@ const shipPartAnimations = [
     createAnimation('gfx/warppieces.png', r(20, 20), {x: 8, cols: 3, duration}),
     createAnimation('gfx/warppieces.png', r(20, 20), {x: 14, cols: 3, duration}),
 ];
+const shipPartDepths = [10, 40, 80, 150, 200];
 
 module.exports = {
     arriveAnimation,
@@ -32,6 +33,7 @@ module.exports = {
     renderSpaceBackground,
     renderTransitionShipBackground,
     shipPartAnimations,
+    shipPartDepths,
     warpDriveSlots,
 };
 const { playSound, updateSave } = require('state');
@@ -40,7 +42,6 @@ const { getCellCenter, teleportOut, getTopTarget } = require('digging');
 const { getLayoutProperties } = require('hud');
 
 
-const shipPartDepths = [10, 40, 80, 150, 200];
 const shipPartRadius = 10;
 function getShipPartLocation(state) {
     const baseDepth = shipPartDepths[Math.min(shipPartDepths.length - 1, state.saved.shipPart)];
