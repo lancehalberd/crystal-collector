@@ -492,6 +492,10 @@ function renderButtonBackground(context, state, button, fillColor = '#000') {
     context.fillRect(button.left + 1, button.top + 8, button.width - 2, button.height - 16);*/
 }
 
+function getDisplayValue(value) {
+    return value.abbreviate ? value.abbreviate() : value;
+}
+
 const shopButtonAnimationTime = 500;
 const shopButtonAnimationStagger = 200;
 const shopButton = {
@@ -570,10 +574,10 @@ const shopButton = {
             );
             y += rowHeight;
             drawArrow(x, y);
-            drawText(context, button.getCurrentValue(state, button), leftText, y,
+            drawText(context, getDisplayValue(button.getCurrentValue(state, button)), leftText, y,
                 {fillStyle: 'white', textAlign: 'right', textBaseline, size}
             );
-            drawText(context, button.getNextValue(state, button), rightText, y,
+            drawText(context, getDisplayValue(button.getNextValue(state, button)), rightText, y,
                 {fillStyle: COLOR_GOOD, textAlign: 'left', textBaseline, size}
             );
         } else if (button === explosionProtectionButton) {
@@ -595,10 +599,10 @@ const shopButton = {
                         {fillStyle: 'white', textAlign: 'left', textBaseline, size}
                     );
                     drawArrow(x, y);
-                    drawText(context, currentValue, leftText, y,
+                    drawText(context, getDisplayValue(currentValue), leftText, y,
                         {fillStyle: 'white', textAlign: 'right', textBaseline, size}
                     );
-                    drawText(context, nextValue, rightText, y,
+                    drawText(context, getDisplayValue(nextValue), rightText, y,
                         {fillStyle: COLOR_GOOD, textAlign: 'left', textBaseline, size}
                     );
                     y += rowHeight;
@@ -606,10 +610,10 @@ const shopButton = {
             }
         } else {
             drawArrow(x, y);
-            drawText(context, button.getCurrentValue(state, button), leftText, y,
+            drawText(context, getDisplayValue(button.getCurrentValue(state, button)), leftText, y,
                 {fillStyle: 'white', textAlign: 'right', textBaseline, size}
             );
-            drawText(context, button.getNextValue(state, button), rightText, y,
+            drawText(context, getDisplayValue(button.getNextValue(state, button)), rightText, y,
                 {fillStyle: COLOR_GOOD, textAlign: 'left', textBaseline, size}
             );
         }
@@ -679,10 +683,10 @@ const fuelButton = {
         return 'Max Fuel';
     },
     getCurrentValue(state) {
-        return state.saved.maxFuel.abbreviate();
+        return state.saved.maxFuel;
     },
     getNextValue(state) {
-        return Math.round(state.saved.maxFuel * 1.2 + 50).abbreviate();
+        return Math.round(state.saved.maxFuel * 1.2 + 50);
     },
     onPurchase(state, button) {
         const maxFuel = this.getNextValue(state, button);
