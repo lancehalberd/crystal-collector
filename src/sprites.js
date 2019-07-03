@@ -160,7 +160,6 @@ const lavaBubbleSprite = {
         const lavaIsLowering = state.displayLavaDepth < state.saved.lavaDepth;
         if (lavaIsLowering) {
             const animationIndex = lavaBubbleAnimations.indexOf(animation);
-            console.log({animationIndex});
             animation = magicParticleAnimations[animationIndex];
         }
         if (frameIndex >= animation.frames.length) return;
