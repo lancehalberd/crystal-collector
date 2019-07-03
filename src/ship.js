@@ -161,7 +161,7 @@ function renderShipScene(context, state) {
     renderShip(context, state);
     let frame = getFrame(warpdriveAnimation, 0);
     const scale = 2;
-    const { portraitMode } = getLayoutProperties(context, state);
+    const { portraitMode } = getLayoutProperties(state);
     const left = Math.round((portraitMode ? canvas.width / 2 : canvas.width / 4) - scale * frame.width / 2);
     const top = Math.round((portraitMode ? canvas.height / 4 : canvas.height / 2) - scale * frame.height / 2);
     drawImage(context, frame.image, frame,

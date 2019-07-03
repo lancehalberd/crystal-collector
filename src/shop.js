@@ -12,7 +12,7 @@ function renderShop(context, state) {
     renderShipBackground(context, state);
     renderShip(context, state);
 
-    const { shopRectangle } = getLayoutProperties(context, state);
+    const { shopRectangle } = getLayoutProperties(state);
     drawImage(context, robotFrame.image, robotFrame,
         new Rectangle(robotFrame).moveCenterTo(
             shopRectangle.left + shopRectangle.width / 2,

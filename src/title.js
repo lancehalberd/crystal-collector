@@ -294,7 +294,7 @@ function drawShipPanels(context, state, zoom = 0) {
 function renderLoadScreen(context, state) {
     drawShipPanels(context, state, Math.min(1, (state.time - state.loadScreen) / loadButtonAnimationTime));
     if (state.deleteSlot !== false) {
-        const { buttonWidth, buttonHeight } = getLayoutProperties(context, state);
+        const { buttonWidth, buttonHeight } = getLayoutProperties(state);
         const rectangle = {
             left: canvas.width / 2 - 2 * buttonWidth,
             top: canvas.height / 2 - 2 * buttonHeight,

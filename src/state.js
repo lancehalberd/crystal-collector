@@ -35,9 +35,10 @@ function playTrackWithState(state, bgm, bgmTime) {
 
 const { areImagesLoaded } = require('animations');
 const { getHUDButtons } = require('hud');
+const { shouldShowHelp, showIncomingHint } = require('help');
 
 const { advanceDigging, getOverCell, getTopTarget } = require('digging');
-const { arriveAnimation } = require('ship');
+const { arriveAnimation, shipPartDepths } = require('ship');
 
 const {
     advanceAchievements,
@@ -88,6 +89,7 @@ function getNewSaveSlot() {
         lavaDepth: INITIAL_LAVA_DEPTH,
         shipPart: 0,
         finishedIntro: false,
+        nextHint: 0,
     };
 }
 
@@ -111,6 +113,7 @@ function getNewState() {
         deleteSlot: false, // indicates file to delete in the delete modal.
         saved: {},
         outroTime: false,
+        instructionsAlpha: 0,
     };
 }
 
@@ -142,7 +145,7 @@ function nextDay(state) {
 
 // Continue digging on the current day.
 function resumeDigging(state) {
-    return {
+    state = {
         ...state,
         usingBombDiffuser: false,
         displayLavaDepth: state.saved.lavaDepth,
@@ -164,6 +167,7 @@ function resumeDigging(state) {
         bgmTime: state.time,
         selected: null,
     };
+    return showIncomingHint(state);
 }
 
 function restart(state) {
@@ -194,7 +198,16 @@ function restart(state) {
 function getOverButton(state, coords = {}) {
     const {x, y} = coords;
     if (!(x >= 0 && x <= canvas.width && y >= 0 && y <= canvas.height)) return null;
-    for (const hudButton of getHUDButtons(state).reverse()) {
+    let allButtons = getHUDButtons(state).reverse();
+    // Only the button set by the hint can be used while instructions are displayed.
+    if (state.instructionsAlpha > 0) {
+        allButtons = [];
+        if (state.hintButton && new Rectangle(state.hintButton).containsPoint(x, y)) {
+            return state.hintButton;
+        }
+        return null;
+    }
+    for (const hudButton of allButtons) {
         if (new Rectangle(hudButton).containsPoint(x, y)) {
             return hudButton;
         }
@@ -213,6 +226,8 @@ function setButtonState(state) {
         // prevent clicking a cell.
         const dragIsBlocking = state.mouseDragged && state.dragDistance >= 10;
         if (buttonsMatch && !(dragIsBlocking && lastButton.cell)) {
+            state = {...state, clicked: true};
+        } else if (state.instructionsAlpha && !dragIsBlocking) {
             state = {...state, clicked: true};
         }
         state = {...state, mouseDragged: false, mouseDownCoords: false};
@@ -233,6 +248,14 @@ function advanceState(state) {
     // Turn off the collecting part (and enable buttons again) after the part teleports in.
     if (state.collectingPart && state.ship && state.time - state.ship > arriveAnimation.duration) {
         state = {...state, collectingPart: false};
+    }
+    // Go beyond 1 alpha as a hack to make it take longer to fade.
+    const maxAlpha = 1 + (state.saved.hideHelp ? 0.5 : 2);
+    const showHelp = shouldShowHelp(state);
+    if (state.instructionsAlpha < maxAlpha && showHelp) {
+        state.instructionsAlpha += 0.1;
+    } else if (state.instructionsAlpha > 0 && !showHelp) {
+        state.instructionsAlpha -= 0.05;
     }
     const disableDragging = state.title || state.collectingPart || state.incoming || state.leaving
         || state.ship || state.shop || state.showAchievements || state.showOptions || !state.saved.finishedIntro;
@@ -258,6 +281,14 @@ function advanceState(state) {
     const disableButtons = state.leaving || state.incoming || state.collectingPart;
     if (!disableButtons && state.clicked && state.overButton && state.overButton.onClick) {
         state = state.overButton.onClick(state, state.overButton);
+    } else if (state.clicked && state.instructionsAlpha > 0) {
+        state = {...state,
+            instructionsAlpha: Math.min(1, state.instructionsAlpha),
+            showHint: false,
+            showHintIncoming: false,
+            showHintLeaving: false,
+        };
+        delete state.hintButton;
     }
     if (state.outroTime !== false) {
         if (state.outroTime === 2300) playSoundWithState(state, 'shipWarp');

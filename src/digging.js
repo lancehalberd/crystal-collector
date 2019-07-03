@@ -73,6 +73,8 @@ const { collectTreasure } = require('treasures');
 
 const { collectShipPart, getShipPartLocation } = require('ship');
 const { teleportInAnimationFinish, teleportOutAnimationStart, teleportOutAnimationFinish } = require('renderRobot');
+const { showLeavingHint, showSpecialHint } = require('help');
+const { getSleepButton } = require('hud');
 
 // Injects indexes from the integers into non-negative integers.
 function z(i) {
@@ -87,12 +89,13 @@ function getCellColor(state, row, column) {
     if (row === shipCell.row && column === shipCell.column) return 'treasure';
     const depth = getDepth(state, row, column);
     let roll = random.normSeed(state.saved.seed + Math.cos(row) + Math.sin(column));
-    if (roll < Math.min(0.01, 0.005 + depth / 10000)) return 'treasure';
+    if (roll < Math.min(0.01, 0.005 + depth * 0.0001)) return 'treasure';
     roll = random.normSeed(roll);
-    if (roll < Math.max(0.15, 0.4 - depth / 500)) return 'green';
+    if (roll < Math.max(0.15, 0.4 - depth * 0.002)) return 'green';
     if (Math.abs(row - startingCell.row) + Math.abs(column - startingCell.column) <= 1) return 'black';
     roll = random.normSeed(roll);
-    if (roll < Math.min(0.4, 0.01 + depth / 500)) return 'red';
+    // Bombs will not appear until depth 6.
+    if (roll < Math.min(0.4, Math.max(0, -0.01 + depth * 0.002))) return 'red';
     return 'black';
 }
 function getRangeAtDepth(state, depth, rangeOffset = 0) {
@@ -419,11 +422,11 @@ function getStartingCell(state) {
 
 function teleportOut(state) {
     playSound(state, 'teleport');
-    return  {
+    return showLeavingHint({
         ...state,
         leaving: true,
         robot: {...state.robot, teleporting: true, finishingTeleport: false, animationTime: state.time},
-    }
+    });
 }
 function getTopTarget() {
     return Math.min(-canvas.height * 3, -2000);
@@ -506,7 +509,9 @@ function advanceDigging(state) {
         }
         return state;
     }
-    if ((state.rightClicked || (state.clicked && state.usingBombDiffuser)) && state.overButton && state.overButton.cell) {
+    // This flag will be used to show hints to the user if they fail to dig somewhere.
+    let failedToExplore = false;
+    if (state.instructionsAlpha <= 0 && (state.rightClicked || (state.clicked && state.usingBombDiffuser)) && state.overButton && state.overButton.cell) {
         const {row, column} = state.overButton;
         const fuelCost = getFuelCost(state, row, column);
         if (canExploreCell(state, row, column) && fuelCost <= state.saved.fuel) {
@@ -548,17 +553,31 @@ function advanceDigging(state) {
                 state = {...state, flags};
             }
             state = {...state, selected: state.overButton};
+        } else if (canExploreCell(state, row, column) && fuelCost > state.saved.fuel) {
+            failedToExplore = true;
         }
         state = {...state, usingBombDiffuser: false, clicked: false, rightClicked: false};
     }
-    if (!state.rightClicked && state.clicked && state.overButton && state.overButton.cell) {
+    if (state.instructionsAlpha <= 0 && !state.rightClicked && state.clicked && state.overButton && state.overButton.cell) {
         const {row, column} = state.overButton;
         const fuelCost = getFuelCost(state, row, column);
-        if (canExploreCell(state, row, column) && getFlagValue(state, row, column) !== 2 && fuelCost <= state.saved.fuel) {
-            state = exploreCell(state, row, column);
+        if (canExploreCell(state, row, column) && getFlagValue(state, row, column) !== 2) {
+            if (fuelCost <= state.saved.fuel) {
+                state = exploreCell(state, row, column);
+            } else {
+                failedToExplore = true;
+            }
         }
         if (isCellRevealed(state, row, column) || getFlagValue(state, row, column)) {
             state.selected = state.overButton;
+        }
+    }
+    if (failedToExplore) {
+        if (state.saved.fuel === 0 || (state.saved.day <= 5 && state.saved.fuel <= 5)) {
+            state = showSpecialHint(state, ['Click the teleport button to', 'return to the ship and recharge']);
+            state.hintButton = getSleepButton();
+        } else {
+            state = showSpecialHint(state, ['You need more energy to dig this deep,', 'try digging higher up.']);
         }
     }
     if (state.targetCell) {

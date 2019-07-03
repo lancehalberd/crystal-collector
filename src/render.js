@@ -15,6 +15,7 @@ const { renderShop } = require('shop');
 const { renderTitle } = require('title');
 const { renderAchievements } = require('achievements');
 const { renderIntro, renderOutro } = require('scenes');
+const { renderHelp } = require('help');
 const loadTime = Date.now();
 
 function render(context, state) {
@@ -62,6 +63,10 @@ function render(context, state) {
 
     // Render HUD on top of the screen fading to black.
     renderHUD(context, state);
+
+    if (state.instructionsAlpha > 0) {
+        renderHelp(context, state);
+    }
 
     if (state.interacted) {
         for (const sfx in state.sfx) {

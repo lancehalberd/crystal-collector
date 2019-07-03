@@ -11,6 +11,8 @@ module.exports = {
     getHUDButtons,
     getLayoutProperties,
     getButtonColor,
+    getSleepButton,
+    getHelpButton,
 };
 
 Number.prototype.abbreviate = function () {
@@ -49,6 +51,7 @@ const {
 } = require('achievements');
 const { muteSounds, unmuteSounds, muteTrack, unmuteTrack } = require('sounds');
 const { getTitleHUDButtons } = require('title');
+const { showNextHint } = require('help');
 
 function renderBasicButton(context, state, button) {
     let label = button.label;
@@ -62,7 +65,7 @@ function renderBasicButton(context, state, button) {
         {fillStyle: 'white', textAlign: 'center', textBaseline: 'middle', size }
     );
 }
-function getLayoutProperties(context, state) {
+function getLayoutProperties(state) {
     const padding = Math.round(Math.min(canvas.width, canvas.height) / 40);
     const buttonHeight = Math.round(Math.min(canvas.height / 8, canvas.width / 6 / 2.5));
     const buttonWidth = Math.round(Math.min(2.5 * canvas.height / 8, canvas.width / 6));
@@ -84,7 +87,6 @@ function getLayoutProperties(context, state) {
     return {
         portraitMode,
         shopRectangle: new Rectangle(shopLeft, shopTop, shopWidth, shopHeight),
-        context,
         animationTime: state.loadScreen ? state.time - state.loadScreen : state.time - state.shop,
         padding,
         width: canvas.width,
@@ -95,10 +97,9 @@ function getLayoutProperties(context, state) {
     };
 }
 
-const sleepButtonAnimation = createAnimation('gfx/teleportnew.png', r(30, 30), {x: 0, cols: 1, duration: 20});
+const sleepButtonAnimation = createAnimation('gfx/teleportnew.png', r(30, 30));
 const sleepButtonActiveAnimation = createAnimation('gfx/teleportnew.png', r(30, 30), {x: 0, cols: 10, duration: 6});
 const sleepButton = {
-    label: 'Sleep',
     render(context, state, button) {
         let frame;
         // Play the teleport animation when over the button or fuel is low.
@@ -116,16 +117,20 @@ const sleepButton = {
         playSound(state, 'select');
         return teleportOut(state);
     },
-    resize({buttonHeight, padding}) {
+    resize({buttonHeight, padding, width}) {
         this.height = sleepButtonAnimation.frames[0].height;
         this.width = sleepButtonAnimation.frames[0].width;
         this.scale = Math.floor(2 * buttonHeight / this.width) / 2;
         this.height *= this.scale;
         this.width *= this.scale;
         this.top = padding;
-        this.left = padding;
+        this.left = Math.floor(width / 2 - this.width / 2);
     },
 };
+function getSleepButton() {
+    return sleepButton;
+}
+
 const continueButton = {
     label: 'Continue',
     onClick(state) {
@@ -140,9 +145,11 @@ const continueButton = {
     },
 };
 const optionsAnimation = createAnimation('gfx/options.png', r(24, 24));
+const optionsOverAnimation = createAnimation('gfx/gearmouseover.png',  r(24, 24));
 const optionsButton = {
     render(context, state, button) {
-        const frame = getFrame(optionsAnimation, 0);
+        const animation = state.overButton === button ? optionsOverAnimation : optionsAnimation;
+        const frame = getFrame(animation, 0);
         drawImage(context, frame.image, frame, new Rectangle(button).pad(-1));
     },
     onClick(state) {
@@ -185,6 +192,33 @@ const achievementButton = {
         this.left = optionsButton.left - padding - this.width;
     },
 };
+// Help Button is modified '?' character from google fonts Work Sans Extra-Bold 800 20px.
+const helpButtonAnimation = createAnimation('gfx/help.png', r(32, 32));
+const helpButtonOverAnimation = createAnimation('gfx/helpOver.png', r(32, 32));
+const helpButton = {
+    render(context, state, button) {
+        const animation = state.overButton === button ? helpButtonOverAnimation : helpButtonAnimation;
+        let frame = getFrame(animation, state.time);
+        drawImage(context, frame.image, frame, button);
+    },
+    onClick(state) {
+        return showNextHint(state);
+    },
+    resize(layoutProperties) {
+        const {buttonHeight, padding} = layoutProperties;
+        achievementButton.resize(layoutProperties);
+        this.height = helpButtonAnimation.frames[0].height;
+        this.width = helpButtonAnimation.frames[0].width;
+        this.scale = Math.floor(2 * buttonHeight / this.width) / 2;
+        this.height *= this.scale;
+        this.width *= this.scale;
+        this.top = achievementButton.top + (achievementButton.height - this.height) / 2;
+        this.left = achievementButton.left - padding - this.width;
+    },
+};
+function getHelpButton() {
+    return helpButton;
+}
 
 const playButton = {
     getLabel(/*state, button*/) {
@@ -271,8 +305,6 @@ const muteMusicButton = {
     render: renderBasicButton,
     onClick(state) {
         const muteMusic = !state.saved.muteMusic;
-        // Set collectingPart to false so we don't show the part teleport in again if the
-        // user switched to the shop and back.
         if (muteMusic) muteTrack();
         else unmuteTrack();
         return updateSave(state, {muteMusic});
@@ -281,6 +313,23 @@ const muteMusicButton = {
         this.height = buttonHeight;
         this.width =  buttonWidth * 1.5;
         this.top = height / 2 - this.height * 1.5;
+        this.left =  Math.round((width - this.width) / 2);
+    },
+};
+const showHelpButton = {
+    getLabel(state) {
+        if (state.saved.hideHelp) return 'Hints Off';
+        return 'Hints On';
+    },
+    render: renderBasicButton,
+    onClick(state) {
+        const hideHelp = !state.saved.hideHelp;
+        return updateSave(state, {hideHelp});
+    },
+    resize({padding, height, width, buttonWidth, buttonHeight}) {
+        this.height = buttonHeight;
+        this.width =  buttonWidth * 1.5;
+        this.top = height / 2;
         this.left =  Math.round((width - this.width) / 2);
     },
 };
@@ -297,7 +346,7 @@ const titleButton = {
     resize({padding, height, width, buttonWidth, buttonHeight}) {
         this.height = buttonHeight;
         this.width =  buttonWidth * 1.5;
-        this.top = height / 2;
+        this.top = height / 2 + this.height * 1.5;
         this.left =  Math.round((width - this.width) / 2);
     },
 };
@@ -765,6 +814,7 @@ const explosionProtectionButton = {
     row: 1, column: 1, delay: 3 * shopButtonAnimationStagger,
 };
 
+const standardButtons = [helpButton, achievementButton, optionsButton];
 function getHUDButtons(state) {
     if (state.saveSlot !== false && !state.saved.finishedIntro) {
         return [skipIntroButton];
@@ -773,14 +823,14 @@ function getHUDButtons(state) {
         return state.outroTime > 5000 ? [continueButton] : [];
     }
     if (state.showAchievements) {
-        const buttons = [closeButton, achievementButton, optionsButton];
+        const buttons = [closeButton, ...standardButtons];
         if (getAchievementStat(state, ACHIEVEMENT_EXPLORE_DEPTH_X) >= 200) {
             buttons.push(restartButton);
         }
         return buttons;
     }
     if (state.showOptions) {
-        const buttons = [muteSoundsButton, muteMusicButton, titleButton, closeButton, achievementButton, optionsButton];
+        const buttons = [muteSoundsButton, muteMusicButton, showHelpButton, titleButton, closeButton, ...standardButtons];
         return buttons;
     }
     if (state.title) {
@@ -789,8 +839,7 @@ function getHUDButtons(state) {
     if (state.ship) {
         return [
             upgradeButton,
-            achievementButton,
-            optionsButton,
+            ...standardButtons,
         ];
     }
     if (state.shop) {
@@ -805,8 +854,7 @@ function getHUDButtons(state) {
             rangeButton,
             bombDiffuserButton,
             explosionProtectionButton,
-            achievementButton,
-            optionsButton,
+            ...standardButtons,
         ];
         if (maxStartingDepth >= 20) buttons.push(depth20Button);
         if (maxStartingDepth >= 50) buttons.push(depth50Button);
@@ -817,15 +865,14 @@ function getHUDButtons(state) {
     return [
         sleepButton,
         diffuserButton,
-        achievementButton,
-        optionsButton,
+        ...standardButtons,
     ];
 }
 
 const fuelFrame = r(44, 44, {left: 3*44, image: requireImage('gfx/energy.png')});
 function renderHUD(context, state) {
     if (state.leaving || state.incoming) return;
-    const layoutProperties = getLayoutProperties(context, state);
+    const layoutProperties = getLayoutProperties(state);
 
     if (!state.title && !state.showOptions && !state.showAchievements && state.saved.finishedIntro && state.outroTime === false) {
         // Draw SCORE indicator
@@ -850,7 +897,7 @@ function renderHUD(context, state) {
         const fuelBarWidth = Math.min(canvas.width / 2.5, 200 * fuelMultiplier);
         const maxFuel = Math.round(state.saved.maxFuel * fuelMultiplier);
         const fuelBarHeight = fuelFrame.height;
-        const fuelBarLeft = 10 + sleepButton.width + 10;
+        const fuelBarLeft = 10;
         context.fillStyle = 'black';
         context.fillRect(fuelBarLeft, 10, fuelBarWidth, fuelBarHeight);
         context.fillStyle = '#080';
@@ -889,9 +936,8 @@ function renderHUD(context, state) {
         const midline = 10 + fuelBarHeight / 2;
         const fuelIconTarget = new Rectangle(fuelFrame).moveTo(fuelBarLeft - 2, 10);
         drawImage(context, fuelFrame.image, fuelFrame, fuelIconTarget);
-        // Render FUEL + DAY #
+        // Render fuel amount.
         drawText(context, state.saved.fuel.abbreviate(), fuelBarLeft + fuelFrame.width - 6, midline, textStyle);
-        drawText(context, `DAY ${state.saved.day}`, fuelBarLeft + fuelBarWidth + 10, midline, textStyle);
     }
 
     // Render buttons
@@ -906,7 +952,7 @@ function renderHUD(context, state) {
 
 }
 function renderPlayButton(context, state) {
-    const layoutProperties = getLayoutProperties(context, state);
+    const layoutProperties = getLayoutProperties(state);
     const button = playButton;
     if (state.lastResized !== button.lastResized) {
         if (button.resize) button.resize(layoutProperties);
