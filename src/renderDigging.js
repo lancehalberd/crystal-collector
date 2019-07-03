@@ -87,10 +87,12 @@ function renderDigging(context, state) {
     }
     const lavaDepthY = state.displayLavaDepth * ROW_HEIGHT / 2 + ROW_HEIGHT / 2 - state.camera.top;
     const waveHeight = ROW_HEIGHT / 3;
+    const lavaIsLowering = state.displayLavaDepth < state.saved.lavaDepth;
     if (lavaDepthY < canvas.height + 200) {
+        const gradientRGB = lavaIsLowering ? '0, 255, 50' : '255, 255, 0';
         let gradient = context.createLinearGradient(0, lavaDepthY - 150, 0, lavaDepthY + ROW_HEIGHT / 2);
-        gradient.addColorStop(0.05 + Math.sin(state.time / 500) * 0.05, "rgba(255, 255, 0, 0.0)");
-        gradient.addColorStop(.90, "rgba(255, 255, 0, 0.8)");
+        gradient.addColorStop(0.05 + Math.sin(state.time / 500) * 0.05, `rgba(${gradientRGB}, 0.0)`);
+        gradient.addColorStop(.90, `rgba(${gradientRGB}, 0.8)`);
         context.fillStyle = gradient;
         context.fillRect(0, lavaDepthY + waveHeight - 200, canvas.width, canvas.height);
     }
@@ -113,7 +115,7 @@ function renderDigging(context, state) {
         context.closePath();
         context.translate(-state.camera.left + state.time / 100, lavaDepthY - state.time / 200);
         context.fill();
-        context.strokeStyle = '#FF0';
+        context.strokeStyle = lavaIsLowering ? '#0a5' : '#FF0';
         context.lineWidth = 2;
         context.stroke();
         context.restore();

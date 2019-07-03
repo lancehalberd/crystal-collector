@@ -132,6 +132,10 @@ const lavaBubbleAnimations = [
     createAnimation('gfx/particles.png', r(10, 10), {x:0, cols:3, frameMap: [0,0,0,1,1,2]}),
     createAnimation('gfx/particles.png', r(10, 10), {x:3, cols:3, frameMap: [0,0,0,1,1,2]}),
 ];
+const magicParticleAnimations = [
+    createAnimation('gfx/magicparticle.png', r(10, 10), {x:0, cols:3, frameMap: [0,0,0,1,1,2]}),
+    createAnimation('gfx/magicparticle.png', r(10, 10), {x:3, cols:3, frameMap: [0,0,0,1,1,2]}),
+]
 const waveHeight = ROW_HEIGHT / 3;
 const lavaBubbleSprite = {
     advance(state, sprite) {
@@ -152,8 +156,15 @@ const lavaBubbleSprite = {
         if (lavaDepthY >= canvas.height + ROW_HEIGHT / 2) return;
         const time = state.time - sprite.spawnTime;
         const frameIndex = Math.floor(time / 160);
-        if (frameIndex >= sprite.animation.frames.length) return;
-        const frame = sprite.animation.frames[frameIndex];
+        let animation = sprite.animation;
+        const lavaIsLowering = state.displayLavaDepth < state.saved.lavaDepth;
+        if (lavaIsLowering) {
+            const animationIndex = lavaBubbleAnimations.indexOf(animation);
+            console.log({animationIndex});
+            animation = magicParticleAnimations[animationIndex];
+        }
+        if (frameIndex >= animation.frames.length) return;
+        const frame = animation.frames[frameIndex];
         // Wrap this bubble to always appear on screen.
         let x = (sprite.x - state.camera.left) % canvas.width;
         while (x+10<=0)x += canvas.width;
