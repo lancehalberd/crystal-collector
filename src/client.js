@@ -23,6 +23,7 @@ try {
     savedState = JSON.parse(window.localStorage.getItem(saveKey));
     if (!savedState) {
         savedState = {
+            disableAutoscroll: false,
             hideHelp: false,
             muteSounds: false,
             muteMusic: false,
@@ -32,6 +33,7 @@ try {
     // Convert legacy saved data to newer format that supports multiple save slots.
     if (!savedState.saveSlots) {
         savedState = {
+            disableAutoscroll: false,
             hideHelp: false,
             muteSounds: false,
             muteMusic: false,
@@ -179,6 +181,10 @@ const update = () => {
     }
     if (!!state.saved.hideHelp !== !!savedState.hideHelp) {
         savedState.hideHelp = !!state.saved.hideHelp;
+        changedLocalStorage = now;
+    }
+    if (!!state.saved.disableAutoscroll !== !!savedState.disableAutoscroll) {
+        savedState.disableAutoscroll = !!state.saved.disableAutoscroll;
         changedLocalStorage = now;
     }
     // Only commit to local storage once every 5 seconds.

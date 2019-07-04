@@ -570,6 +570,9 @@ function advanceDigging(state) {
         }
         if (isCellRevealed(state, row, column) || getFlagValue(state, row, column)) {
             state.selected = state.overButton;
+            if (!state.saved.disableAutoscroll) {
+                state.targetCell = state.selected;
+            }
         }
     }
     if (failedToExplore) {

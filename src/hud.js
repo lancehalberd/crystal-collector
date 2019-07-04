@@ -275,6 +275,16 @@ const shipButton = {
         return {...state, ship: true, shop: state.time, collectingPart: false};
     },
 };
+
+let optionIndex = 0;
+const optionToggleButton = {
+    resize({padding, height, width, buttonWidth, buttonHeight}) {
+        this.height = buttonHeight;
+        this.width =  buttonWidth * 2;
+        this.top = height / 2 - this.height * (4 - 1.2 * this.optionIndex);
+        this.left =  Math.round((width - this.width) / 2);
+    },
+}
 const muteSoundsButton = {
     getLabel(state) {
         if (state.saved.muteSounds) return 'Sounds Off';
@@ -290,12 +300,8 @@ const muteSoundsButton = {
         playSound(state, 'select');
         return state;
     },
-    resize({padding, height, width, buttonWidth, buttonHeight}) {
-        this.height = buttonHeight;
-        this.width =  buttonWidth * 1.5;
-        this.top = height / 2 - this.height * 3;
-        this.left =  Math.round((width - this.width) / 2);
-    },
+    ...optionToggleButton,
+    optionIndex: optionIndex++,
 };
 const muteMusicButton = {
     getLabel(state) {
@@ -309,12 +315,8 @@ const muteMusicButton = {
         else unmuteTrack();
         return updateSave(state, {muteMusic});
     },
-    resize({padding, height, width, buttonWidth, buttonHeight}) {
-        this.height = buttonHeight;
-        this.width =  buttonWidth * 1.5;
-        this.top = height / 2 - this.height * 1.5;
-        this.left =  Math.round((width - this.width) / 2);
-    },
+    ...optionToggleButton,
+    optionIndex: optionIndex++,
 };
 const showHelpButton = {
     getLabel(state) {
@@ -326,12 +328,21 @@ const showHelpButton = {
         const hideHelp = !state.saved.hideHelp;
         return updateSave(state, {hideHelp});
     },
-    resize({padding, height, width, buttonWidth, buttonHeight}) {
-        this.height = buttonHeight;
-        this.width =  buttonWidth * 1.5;
-        this.top = height / 2;
-        this.left =  Math.round((width - this.width) / 2);
+    ...optionToggleButton,
+    optionIndex: optionIndex++,
+};
+const autoscrollButton = {
+    getLabel(state) {
+        if (state.saved.disableAutoscroll) return 'Autoscroll Off';
+        return 'Autoscroll On';
     },
+    render: renderBasicButton,
+    onClick(state) {
+        const disableAutoscroll = !state.saved.disableAutoscroll;
+        return updateSave(state, {disableAutoscroll});
+    },
+    ...optionToggleButton,
+    optionIndex: optionIndex++,
 };
 const titleButton = {
     label: 'Title',
@@ -343,12 +354,8 @@ const titleButton = {
             robot: false
         };
     },
-    resize({padding, height, width, buttonWidth, buttonHeight}) {
-        this.height = buttonHeight;
-        this.width =  buttonWidth * 1.5;
-        this.top = height / 2 + this.height * 1.5;
-        this.left =  Math.round((width - this.width) / 2);
-    },
+    ...optionToggleButton,
+    optionIndex: optionIndex++,
 };
 
 const diffuserFrame = r(25, 16, {left: 25, top: 9, image: requireImage('gfx/diffuse.png')});
@@ -356,12 +363,12 @@ const diffuserOpenFrame = r(25, 25, {image: requireImage('gfx/diffuse.png')});
 class DiffuserButton {
     render(context, state) {
         renderButtonBackground(context, state, this);
-        drawText(context, state.saved.bombDiffusers, this.left + this.width - 15, this.top + this.height / 2,
+        drawText(context, state.saved.bombDiffusers, this.left + this.width - 10, this.top + this.height / 2,
             {fillStyle: '#A40', strokeStyle: '#FA4', size: 36, textBaseline: 'middle', textAlign: 'right'});
         const frame = this.isActive(state) ? diffuserOpenFrame : diffuserFrame;
         const iconRectangle = new Rectangle(frame).scale(2);
         drawImage(context, frame.image, frame,
-            iconRectangle.moveCenterTo(this.left + 15 + iconRectangle.width / 2, this.top + this.height / 2)
+            iconRectangle.moveCenterTo(this.left + 10 + iconRectangle.width / 2, this.top + this.height / 2)
         );
     }
     isActive(state) {
@@ -830,7 +837,7 @@ function getHUDButtons(state) {
         return buttons;
     }
     if (state.showOptions) {
-        const buttons = [muteSoundsButton, muteMusicButton, showHelpButton, titleButton, closeButton, ...standardButtons];
+        const buttons = [muteSoundsButton, muteMusicButton, showHelpButton, autoscrollButton, titleButton, closeButton, ...standardButtons];
         return buttons;
     }
     if (state.title) {
