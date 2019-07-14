@@ -427,9 +427,9 @@ function getPipPoints(state, row, column) {
     return [
         [x + HEX_WIDTH / 4 + HEX_WIDTH / 4 * c, y + ROW_HEIGHT / 2 * c],
         [x + 3 * HEX_WIDTH / 4 - HEX_WIDTH / 4 * c, y + ROW_HEIGHT / 2 * c],
-        [x + HEX_WIDTH / 2 * c, y + ROW_HEIGHT / 2 * c],
-        [x + HEX_WIDTH * c/ 2, y + ROW_HEIGHT / 2 * c],
-        [x + HEX_WIDTH - HEX_WIDTH / 2 * c, y + ROW_HEIGHT / 2 * c],
+        [x + HEX_WIDTH / 2 * c, y + ROW_HEIGHT / 2],
+        [x + HEX_WIDTH / 2, y + ROW_HEIGHT / 2],
+        [x + HEX_WIDTH - HEX_WIDTH / 2 * c, y + ROW_HEIGHT / 2],
         [x + HEX_WIDTH / 4 + HEX_WIDTH / 4 * c, y + ROW_HEIGHT - ROW_HEIGHT / 2 * c],
         [x + 3 * HEX_WIDTH / 4 - HEX_WIDTH / 4 * c, y + ROW_HEIGHT - ROW_HEIGHT / 2 * c],
     ];
