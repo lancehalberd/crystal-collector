@@ -423,14 +423,15 @@ function getPipPoints(state, row, column) {
     const x = column * COLUMN_WIDTH - state.camera.left;
     const y = row * ROW_HEIGHT - state.camera.top + ((column % 2) ? LONG_EDGE : 0);
     const pad = 5;
+    const c = 0.4;
     return [
-        [x + HEX_WIDTH / 2, y + ROW_HEIGHT / 6 + pad * 1.5],
-        [x + SHORT_EDGE + pad, y + ROW_HEIGHT / 3 + pad],
-        [x + HEX_WIDTH - SHORT_EDGE - pad, y + ROW_HEIGHT / 3 + pad],
+        [x + HEX_WIDTH / 4 + HEX_WIDTH / 4 * c, y + ROW_HEIGHT / 2 * c],
+        [x + 3 * HEX_WIDTH / 4 - HEX_WIDTH / 4 * c, y + ROW_HEIGHT / 2 * c],
+        [x + HEX_WIDTH / 2 * c, y + ROW_HEIGHT / 2],
         [x + HEX_WIDTH / 2, y + ROW_HEIGHT / 2],
-        [x + SHORT_EDGE + pad, y + 2 * ROW_HEIGHT / 3 - pad],
-        [x + HEX_WIDTH - SHORT_EDGE - pad, y + 2 * ROW_HEIGHT / 3 - pad],
-        [x + HEX_WIDTH / 2, y + 5 * ROW_HEIGHT / 6 - pad * 1.5],
+        [x + HEX_WIDTH - HEX_WIDTH / 2 * c, y + ROW_HEIGHT / 2],
+        [x + HEX_WIDTH / 4 + HEX_WIDTH / 4 * c, y + ROW_HEIGHT - ROW_HEIGHT / 2 * c],
+        [x + 3 * HEX_WIDTH / 4 - HEX_WIDTH / 4 * c, y + ROW_HEIGHT - ROW_HEIGHT / 2 * c],
     ];
 }
 function getTrashPoints(state, row, column) {
