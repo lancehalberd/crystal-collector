@@ -189,7 +189,7 @@ const achievementButton = {
         this.height *= this.scale;
         this.width *= this.scale;
         this.top = optionsButton.top + (optionsButton.height - this.height) / 2;
-        this.left = optionsButton.left - padding - this.width;
+        this.left = optionsButton.left - padding / 2 - this.width;
     },
 };
 // Help Button is modified '?' character from google fonts Work Sans Extra-Bold 800 20px.
@@ -213,7 +213,7 @@ const helpButton = {
         this.height *= this.scale;
         this.width *= this.scale;
         this.top = achievementButton.top + (achievementButton.height - this.height) / 2;
-        this.left = achievementButton.left - padding - this.width;
+        this.left = achievementButton.left - padding / 2 - this.width;
     },
 };
 function getHelpButton() {
@@ -784,7 +784,7 @@ const bombDiffuserButton = {
         return Math.round(25 * Math.pow(2, state.saved.maxBombDiffusers));
     },
     getLabel(){
-        return 'Bomb Diffusers';
+        return 'Energy Extractors';
     },
     getCurrentValue(state) {
         const bonuses = getAchievementBonus(state, ACHIEVEMENT_DIFFUSE_X_BOMBS_IN_ONE_DAY);

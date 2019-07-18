@@ -83,23 +83,23 @@ const achievementsData = {
     [ACHIEVEMENT_DIFFUSE_X_BOMBS]: {
         goals: [5, 20, 100, 200],
         bonusValues: [50, 100, 150, 200],
-        getAchievementLabel: goal => `Diffuse ${goal} bombs`,
-        getBonusLabel: bonusValue => `Gain ${bonusValue}% extra fuel from diffused bombs`,
+        getAchievementLabel: goal => `Extract energy from debris ${goal} times`,
+        getBonusLabel: bonusValue => `Gain ${bonusValue}% extra energy extracted from debris`,
         getValue: state => getAchievementStat(state, ACHIEVEMENT_DIFFUSE_X_BOMBS),
         valueIsBetter: (value, goal) => value > goal,
     },
     [ACHIEVEMENT_DIFFUSE_X_BOMBS_IN_ONE_DAY]: {
         goals: [5, 10, 15, 20],
         bonusValues: [1, 2, 3, 5],
-        getAchievementLabel: goal => `Diffuse ${goal} bombs in one day`,
-        getBonusLabel: bonusValue => `${bonusValue} extra bomb diffusers`,
+        getAchievementLabel: goal => `Extract energy from debris ${goal} times in one day`,
+        getBonusLabel: bonusValue => `${bonusValue} extra Energy Extractors`,
         getValue: state => state.saved.bombsDiffusedToday,
         valueIsBetter: (value, goal) => value > goal,
     },
     [ACHIEVEMENT_PREVENT_X_EXPLOSIONS]: {
         goals: [10, 50, 100, 200],
         bonusValues: [10, 20, 25, 30],
-        getAchievementLabel: goal => `Prevent ${goal} bomb explosions`,
+        getAchievementLabel: goal => `Shield yourself from ${goal} debris explosions`,
         getBonusLabel: bonusValue => `${bonusValue}% increased maximum explosion protection`,
         getValue: state => getAchievementStat(state, ACHIEVEMENT_PREVENT_X_EXPLOSIONS),
         valueIsBetter: (value, goal) => value > goal,
@@ -262,7 +262,7 @@ function renderAchievements(context, state) {
     const achievementKeys = Object.keys(achievementsData);
     const padding = Math.round(Math.min(canvas.width, canvas.height) / 40);
     const rowHeight = Math.round((canvas.height - 40 - 4 * padding) / achievementKeys.length);
-    const size = Math.round(Math.min(rowHeight * 0.5, canvas.width / 25));
+    const size = Math.round(Math.min(rowHeight * 0.5, canvas.width / 35));
     const smallSize = Math.round(size * 0.8);
     let iconScale = 0.5;
     if (rowHeight >= 30) iconScale += 0.25;
@@ -278,7 +278,7 @@ function renderAchievements(context, state) {
             context.globalAlpha = (i <= bonusLevel) ? 1 : 0.25 - 0.05 * i;
             const target = new Rectangle(iconFrame).scale(iconScale);
             drawImage(context, iconFrame.image, iconFrame,
-                target.moveCenterTo(middle - (4-i) * (target.width + 2) + target.width / 2, top + rowHeight / 3)
+                target.moveCenterTo(middle - (4-i) * (target.width + 2) + target.width / 2, top + rowHeight / 2)
             );
         }
         context.restore();
@@ -286,11 +286,13 @@ function renderAchievements(context, state) {
         if (bonusLevel + 1 < data.goals.length) {
             goalValue += ' / ' + data.goals[bonusLevel + 1];
         }
-        drawText(context, data.getAchievementLabel(goalValue), middle + 10, top + rowHeight / 4,
+        const textHeight = size + smallSize;
+        const textTop = top + rowHeight / 2 - textHeight / 2;
+        drawText(context, data.getAchievementLabel(goalValue), middle + 10, textTop + size / 2,
             {fillStyle: 'white', textAlign: 'left', textBaseline: 'middle', size}
         );
         if (bonusLevel >= 0) {
-            drawText(context, data.getBonusLabel(data.bonusValues[bonusLevel]), middle + 10, top + 3 * rowHeight / 4 - 3,
+            drawText(context, data.getBonusLabel(data.bonusValues[bonusLevel]), middle + 10, textTop + size + smallSize / 2,
                 {fillStyle: '#F84', textAlign: 'left', textBaseline: 'middle', size: smallSize}
             );
         }

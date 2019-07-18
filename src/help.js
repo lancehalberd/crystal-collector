@@ -15,8 +15,9 @@ const { updateSave } = require('state');
 const incomingAdvice = [
     {label: 'You can keep digging for crystals until you run out of energy.'},
     {label: 'Each blue diamond means crystals can be found in or next to that area.'},
-    {label: 'Unstable ship debris marked by nearby red squares will explode.'},
+    {label: 'Energy Extractors can convert dangerous debris into valuable energy.'},
     {label: 'Digging deeper uses more energy, but you will also find more crystals.'},
+    {label: 'Crystals have absorbed energy from the fallen ship debris.'},
     {label: 'When you find crystals you will gain energy instead of losing it.'},
     {label: 'Exclamation points mark special cargo and ship parts that survived the impact.'},
     {label: 'There is a way to tell when a stable ship part is nearby.'},
@@ -24,15 +25,21 @@ const incomingAdvice = [
 
 const leavingAdvice = [
     {label: 'Spend crystals to upgrade Dig Bot when you return to the ship.'},
-    {label: 'Recycling Units will convert unstable ship debris and crystals into energy.'},
-    {label: 'Crystals have absorbed energy from the fallen ship debris.'},
+    {label: 'Unstable ship debris marked by nearby red squares will explode.'},
+    {label: 'Energy Extractors will also convert crystals into energy.'},
     {label: 'Most of the unstable ship debris is buried deep beneath the surface.'},
     {label: 'Unlocking achievements will improve Dig Bots capabilities.'},
     {label: 'You will need to find five stable ship parts to repair your warp drive.'},
     {label: 'You can start over from day 1 with all of your achievements after repairing your ship.'},
 ];
 
-const allAdvice = [...incomingAdvice, ...leavingAdvice];
+const incomingStack = [...incomingAdvice];
+const leavingStack = [...leavingAdvice];
+const allAdvice = [];
+while (incomingStack.length || leavingStack.length) {
+    if (incomingStack.length) allAdvice.unshift(incomingStack.pop());
+    if (leavingStack.length) allAdvice.unshift(leavingStack.pop());
+}
 
 function shouldShowHelp(state) {
     //if (state.incoming) console.log(state.hintLines, state.showHintIncoming);

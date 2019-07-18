@@ -442,7 +442,8 @@ function advanceDigging(state) {
         }
         const targetTop = getTopTarget(state);
         let dy = Math.round((state.camera.top * 5 + targetTop) / 6) - state.camera.top;
-        dy = Math.max(-MAX_TELEPORT_SPEED, Math.min(-5, dy));
+        const multiplier = state.selected && state.selected.row >= 25 ? 2 : 1;
+        dy = Math.max(-MAX_TELEPORT_SPEED * multiplier, Math.min(-5, dy));
         state = {...state, camera: {...state.camera,
             top: Math.max(targetTop, state.camera.top + dy),
         }};
@@ -477,7 +478,8 @@ function advanceDigging(state) {
         const targetTop = Math.max(-200, (startingCell.row + 0.5) * ROW_HEIGHT + rowOffset - canvas.height / 2);
         if (Math.abs(targetTop - state.camera.top) >= 5) {
             let dy = Math.round((state.camera.top * 5 + targetTop) / 6) - state.camera.top;
-            dy = Math.min(MAX_TELEPORT_SPEED, Math.max(5, dy));
+            const multiplier = startingCell.row >= 25 ? 2 : 1;
+            dy = Math.min(multiplier * MAX_TELEPORT_SPEED, Math.max(5, dy));
             state = {...state, camera: {...state.camera,
                 top: state.camera.top + dy,
                 left: Math.round((state.camera.left * 20 + targetLeft) / 21)
