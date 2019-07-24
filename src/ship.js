@@ -212,7 +212,7 @@ const shipPartSprite = {
     },
     render(context, state, sprite) {
         const animationTime = state.time - sprite.time;
-        let frame = shipPartAnimations[state.saved.shipPart].frames[0];
+        let frame = shipPartAnimations[Math.min(shipPartDepths.length - 1, state.saved.shipPart)].frames[0];
         if (animationTime >= 0) frame = getFrame(teleportAnimation, animationTime);
         if (animationTime >= teleportAnimation.duration) return;
         drawImage(context, frame.image, frame,

@@ -9,10 +9,12 @@ const COLOR_BAD = '#c44e33';
 const canvas = document.createElement('canvas');
 canvas.width = 800;
 canvas.height = 550;
+const context = canvas.getContext('2d');
 document.body.appendChild(canvas);
 
 module.exports = {
     canvas,
+    context,
     FRAME_LENGTH: 20,
     EDGE_LENGTH,
     COLUMN_WIDTH,

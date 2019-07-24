@@ -423,7 +423,8 @@ function getPipPoints(state, row, column) {
     const x = column * COLUMN_WIDTH - state.camera.left;
     const y = row * ROW_HEIGHT - state.camera.top + ((column % 2) ? LONG_EDGE : 0);
     const pad = 5;
-    const c = 0.4;
+    //const c = (Math.sin(Date.now() / 1000) + 1 ) / 2;
+    const c = 0.6;
     return [
         [x + HEX_WIDTH / 4 + HEX_WIDTH / 4 * c, y + ROW_HEIGHT / 2 * c],
         [x + 3 * HEX_WIDTH / 4 - HEX_WIDTH / 4 * c, y + ROW_HEIGHT / 2 * c],

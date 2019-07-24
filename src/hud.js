@@ -1,6 +1,6 @@
-const { canvas, COLOR_GOOD, COLOR_BAD } = require('gameConstants');
+const { canvas, context, COLOR_GOOD, COLOR_BAD } = require('gameConstants');
 const Rectangle = require('Rectangle');
-const { drawImage, drawText } = require('draw');
+const { drawImage, drawRectangle, drawText } = require('draw');
 const { areImagesLoaded, createAnimation, getFrame, requireImage, r } = require('animations');
 
 module.exports = {
@@ -486,9 +486,9 @@ const restartButton = {
     render: renderBasicButton,
     onClick(state) {
         playSound(state, 'select');
-        return restart(state);
+        return {...state, restart: true};
     },
-    resize({context, padding, height, width, buttonHeight}) {
+    resize({padding, height, width, buttonHeight}) {
         this.height = buttonHeight;
         this.fontSize = Math.min(
             this.height - 20,
@@ -499,7 +499,33 @@ const restartButton = {
         );
         this.width = textWidth + 20;
         this.top = height - this.height - padding;
-        this.left = padding;
+        this.left = (width - this.width) / 2;
+    },
+};
+const confirmRestartButton = {
+    label: 'Restart',
+    onClick(state) {
+        return restart({...state, restart: false});
+    },
+    render: renderBasicButton,
+    resize({buttonWidth, buttonHeight, width, height}) {
+        this.width = buttonWidth;
+        this.height = buttonHeight;
+        this.top = height / 2 + 10;
+        this.left = width / 2 - 10 - this.width;
+    },
+};
+const cancelRestartButton = {
+    label: 'Cancel',
+    onClick(state) {
+        return {...state, restart: false};
+    },
+    render: renderBasicButton,
+    resize({buttonWidth, buttonHeight, width, height}) {
+        this.width = buttonWidth;
+        this.height = buttonHeight;
+        this.top = height / 2 + 10;
+        this.left = width / 2 + 10;
     },
 };
 
@@ -830,11 +856,7 @@ function getHUDButtons(state) {
         return state.outroTime > 5000 ? [continueButton] : [];
     }
     if (state.showAchievements) {
-        const buttons = [closeButton, ...standardButtons];
-        if (getAchievementStat(state, ACHIEVEMENT_EXPLORE_DEPTH_X) >= 200) {
-            buttons.push(restartButton);
-        }
-        return buttons;
+        return [closeButton, ...standardButtons];
     }
     if (state.showOptions) {
         const buttons = [muteSoundsButton, muteMusicButton, showHelpButton, autoscrollButton, titleButton, closeButton, ...standardButtons];
@@ -844,10 +866,17 @@ function getHUDButtons(state) {
         return getTitleHUDButtons(state);
     }
     if (state.ship) {
-        return [
+        if (state.restart) {
+            return [confirmRestartButton, cancelRestartButton];
+        }
+        const buttons = [
             upgradeButton,
             ...standardButtons,
         ];
+        if (state.saved.shipPart >= 5) {
+            buttons.push(restartButton);
+        }
+        return buttons;
     }
     if (state.shop) {
         const maxStartingDepth = Math.min(
@@ -945,6 +974,23 @@ function renderHUD(context, state) {
         drawImage(context, fuelFrame.image, fuelFrame, fuelIconTarget);
         // Render fuel amount.
         drawText(context, state.saved.fuel.abbreviate(), fuelBarLeft + fuelFrame.width - 6, midline, textStyle);
+    }
+
+    if (state.ship && state.restart) {
+        const { buttonWidth, buttonHeight } = getLayoutProperties(state);
+        const rectangle = {
+            left: canvas.width / 2 - 2 * buttonWidth,
+            top: canvas.height / 2 - 2 * buttonHeight,
+            width: 4 * buttonWidth,
+            height: 4 * buttonHeight,
+        };
+        drawRectangle(context, rectangle, {fillStyle: '#000', strokeStyle: '#FFF'});
+        drawText(context, 'Restart progress from day 1?', canvas.width / 2, canvas.height / 2 - 30,
+            {fillStyle: 'white', textAlign: 'center', textBaseline: 'bottom', size: 24}
+        );
+        drawText(context, '(You will keep your achievements)', canvas.width / 2, canvas.height / 2,
+            {fillStyle: 'white', textAlign: 'center', textBaseline: 'bottom', size: 24}
+        );
     }
 
     // Render buttons

@@ -192,7 +192,7 @@ function restart(state) {
             shipPart: 0,
         }
     });
-    return {...state, shop: false};
+    return updateSave({...state, shop: false, ship: false}, {finishedIntro: false});
 }
 
 function getOverButton(state, coords = {}) {

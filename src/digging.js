@@ -457,7 +457,7 @@ function advanceDigging(state) {
                         ...state,
                         ship: state.time,
                         bgmTime: state.time,
-                        outroTime: state.saved.shipPart >= 5 ? 0 : false,
+                        outroTime: state.saved.shipPart >= 5 ? -2000 : false,
                     }, {playedToday: false});
                 } else state = nextDay({...state, shop: state.time, ship: false, bgmTime: state.time});
             }
