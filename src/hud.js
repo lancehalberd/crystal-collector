@@ -281,7 +281,7 @@ const optionToggleButton = {
     resize({padding, height, width, buttonWidth, buttonHeight}) {
         this.height = buttonHeight;
         this.width =  buttonWidth * 2;
-        this.top = height / 2 - this.height * (4 - 1.2 * this.optionIndex);
+        this.top = height / 2 - this.height * (3.5 - 1.2 * this.optionIndex);
         this.left =  Math.round((width - this.width) / 2);
     },
 }
