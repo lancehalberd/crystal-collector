@@ -222,6 +222,33 @@ const diffuserSprite = {
         );
     }
 };
+
+const shipDebrisAnimation = createAnimation('gfx/bomb.png', r(20, 20), {cols: 6}, {loop: false});
+const shipDebrisElectricityAnimation = createAnimation('gfx/bomb.png', r(20, 20), {x: 6, cols: 4}, {loop: false});
+const shipDebrisSprite = {
+    advance(state, sprite) {
+        const animationTime = state.time - sprite.time;
+        const animation = shipDebrisElectricityAnimation;
+        if (animationTime >= animation.duration) {
+            state = detonateDebris(state, sprite.row, sprite.column);
+            return deleteSprite(state, sprite);
+        }
+        return state;
+    },
+    render(context, state, sprite) {
+        let frame = shipDebrisAnimation.frames[sprite.index];
+        drawImage(context, frame.image, frame,
+            new Rectangle(frame).scale(2).moveCenterTo(sprite.x - state.camera.left, sprite.y - state.camera.top)
+        );
+        const animationTime = state.time - sprite.time;
+        // Don't draw electricity until animationTime is not negative.
+        if (animationTime < 0) return;
+        frame = getFrame(shipDebrisElectricityAnimation, animationTime);
+        drawImage(context, frame.image, frame,
+            new Rectangle(frame).scale(2).moveCenterTo(sprite.x - state.camera.left, sprite.y - state.camera.top)
+        );
+    }
+};
 const explosionSprite = {
     advance(state, sprite) {
         let {frame = 0} = sprite;
@@ -249,6 +276,7 @@ module.exports = {
     crystalSprite,
     shieldSprite,
     debrisSprite,
+    shipDebrisSprite,
     explosionAnimation,
     explosionSprite,
     particleAnimations,
@@ -256,4 +284,4 @@ module.exports = {
     lavaBubbleAnimations,
 };
 
-const { gainBonusFuel, CRYSTAL_SIZES, gainCrystals } = require('digging');
+const { gainBonusFuel, CRYSTAL_SIZES, gainCrystals, detonateDebris } = require('digging');

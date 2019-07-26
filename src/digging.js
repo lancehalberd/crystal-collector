@@ -39,6 +39,7 @@ module.exports = {
     CRYSTAL_SIZES,
     gainCrystals,
     spawnCrystals,
+    detonateDebris,
     teleportOut,
     getTopTarget,
 };
@@ -51,6 +52,7 @@ const {
     crystalSprite,
     debrisSprite,
     diffuserSprite,
+    shipDebrisSprite,
     explosionSprite,
     shieldSprite,
     particleAnimations,
@@ -323,52 +325,65 @@ function blowUpCell(state, firstCell, row, column, frameDelay = 0) {
     return updateSave(state, { fuel });
 }
 
+function detonateDebris(state, row, column) {
+    const depth = getDepth(state, row, column);
+    const explosionRange = Math.floor(Math.min(3, 1 + depth / 40));
+    let frameDelay = 0;
+    const cellsInRange = getCellsInRange(state, row, column, explosionRange).sort(
+        (A, B) => A.distance - B.distance
+    );
+    let firstCell = true;
+    for (const cellCoords of cellsInRange) {
+        const depth = getDepth(state, cellCoords.row, cellCoords.column);
+        if (firstCell || Math.random() >= getExplosionProtectionAtDepth(state, depth)) {
+            state = blowUpCell(state, firstCell, cellCoords.row, cellCoords.column, frameDelay += 2);
+        } else {
+            const columnz = z(cellCoords.column);
+            const explored = state.rows[cellCoords.row] && state.rows[cellCoords.row][columnz] &&
+                                state.rows[cellCoords.row][columnz].explored;
+            if (cellCoords.row >= 0 && !explored) {
+                state = incrementAchievementStat(state, ACHIEVEMENT_PREVENT_X_EXPLOSIONS, 1);
+                const {x, y} = getCellCenter(state, cellCoords.row, cellCoords.column);
+                state = addSprite(state, {...shieldSprite, x, y, time: state.time + FRAME_LENGTH * frameDelay});
+                frameDelay += 2;
+            }
+        }
+        firstCell = false;
+    }
+    for (const coordsToUpdate of state.rows[row][z(column)].cellsToUpdate) {
+        const cellToUpdate = state.rows[coordsToUpdate.row][z(coordsToUpdate.column)];
+        const traps = cellToUpdate.traps - 1;
+        // Mark cells with no nearby traps/crystals explored since numbers are already revealed.
+        let explored = cellToUpdate.explored || (!traps && !cellToUpdate.crystals && !cellToUpdate.treasures);
+        state = updateCell(state, coordsToUpdate.row, coordsToUpdate.column, {traps, explored});
+    }
+    state = {...state, waitingForExplosion: false};
+    return state;
+}
+
 function exploreCell(state, row, column) {
     let foundTreasure = false;
     state = revealCell(state, row, column);
     const fuelCost = getFuelCost(state, row, column);
     // const cellColor = 'treasure' || getCellColor(state, row, column);
     const cellColor = getCellColor(state, row, column);
-    if (cellColor === 'red') {
-        const depth = getDepth(state, row, column);
-        const explosionRange = Math.floor(Math.min(3, 1 + depth / 40));
-        let frameDelay = 0;
-        const cellsInRange = getCellsInRange(state, row, column, explosionRange).sort(
-            (A, B) => A.distance - B.distance
-        );
-        let firstCell = true;
-        for (const cellCoords of cellsInRange) {
-            const depth = getDepth(state, cellCoords.row, cellCoords.column);
-            if (firstCell || Math.random() >= getExplosionProtectionAtDepth(state, depth)) {
-                state = blowUpCell(state, firstCell, cellCoords.row, cellCoords.column, frameDelay += 2);
-            } else {
-                const columnz = z(cellCoords.column);
-                const explored = state.rows[cellCoords.row] && state.rows[cellCoords.row][columnz] &&
-                                    state.rows[cellCoords.row][columnz].explored;
-                if (cellCoords.row >= 0 && !explored) {
-                    state = incrementAchievementStat(state, ACHIEVEMENT_PREVENT_X_EXPLOSIONS, 1);
-                    const {x, y} = getCellCenter(state, cellCoords.row, cellCoords.column);
-                    state = addSprite(state, {...shieldSprite, x, y, time: state.time + FRAME_LENGTH * frameDelay});
-                    frameDelay += 2;
-                }
-            }
-            firstCell = false;
-        }
-        for (const coordsToUpdate of state.rows[row][z(column)].cellsToUpdate) {
-            const cellToUpdate = state.rows[coordsToUpdate.row][z(coordsToUpdate.column)];
-            const traps = cellToUpdate.traps - 1;
-            // Mark cells with no nearby traps/crystals explored since numbers are already revealed.
-            let explored = cellToUpdate.explored || (!traps && !cellToUpdate.crystals && !cellToUpdate.treasures);
-            state = updateCell(state, coordsToUpdate.row, coordsToUpdate.column, {traps, explored});
-        }
-    }
     const {x, y} = getCellCenter(state, row, column);
-    // const shipPartLocation = {row, column} || getShipPartLocation(state);
-    const shipPartLocation = getShipPartLocation(state);
-    // state = updateSave(state, {shipPart: 4});
     state = spawnDebris(state, x, y, row, column);
-    if (cellColor === 'treasure') {
+    if (cellColor === 'red') {
+        state = addSprite(state, {
+            ...shipDebrisSprite, x, y,
+            row, column,
+            index: random.range(0, 5),
+            time: state.time + 200,
+        });
+        state = {...state, waitingForExplosion: true};
+        // state = detonateDebris(state, row, column);
+        state = updateSave(state, { fuel: Math.max(0, state.saved.fuel - fuelCost) })
+    } else if (cellColor === 'treasure') {
         foundTreasure = true;
+        // const shipPartLocation = {row, column} || getShipPartLocation(state);
+        const shipPartLocation = getShipPartLocation(state);
+        // state = updateSave(state, {shipPart: 4});
         state = gainBonusFuel(state, 0.1 * fuelCost);
         if (shipPartLocation.row === row && shipPartLocation.column === column) {
             state = collectShipPart(state, row, column);
@@ -435,6 +450,9 @@ const MAX_TELEPORT_SPEED = 25;
 
 function advanceDigging(state) {
     const startingCell = getStartingCell(state);
+    if (state.waitingForExplosion) {
+        return state;
+    }
     if (state.leaving) {
         // Don't start moving the camera until the robot has reached the end of the start animtion (the narrow beam).
         if (state.time - state.robot.animationTime < teleportOutAnimationStart.duration) {
