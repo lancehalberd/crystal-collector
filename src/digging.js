@@ -361,7 +361,7 @@ function detonateDebris(state, row, column) {
     return state;
 }
 
-function exploreCell(state, row, column) {
+function exploreCell(state, row, column, usingExtractor = false) {
     let foundTreasure = false;
     state = revealCell(state, row, column);
     const fuelCost = getFuelCost(state, row, column);
@@ -380,6 +380,9 @@ function exploreCell(state, row, column) {
         // state = detonateDebris(state, row, column);
         state = updateSave(state, { fuel: Math.max(0, state.saved.fuel - fuelCost) })
     } else if (cellColor === 'treasure') {
+        if (usingExtractor) {
+            state = addSprite(state, {...diffuserSprite, x, y, time: state.time + 200});
+        }
         foundTreasure = true;
         // const shipPartLocation = {row, column} || getShipPartLocation(state);
         const shipPartLocation = getShipPartLocation(state);
@@ -399,12 +402,24 @@ function exploreCell(state, row, column) {
         }
     } else if (cellColor === 'green') {
         const depth = getDepth(state, row, column);
-        state = gainBonusFuel(state, 0.1 * fuelCost);
 
         const multiplier = getAchievementBonus(state, ACHIEVEMENT_COLLECT_X_CRYSTALS) / 100;
         const amount = Math.round((depth + 1) * Math.pow(1.05, depth) * (1 + multiplier));
 
-        state = spawnCrystals(state, x, y, amount);
+        if (usingExtractor) {
+            // Bonus fuel from crystals is just twice what collecting crystals would normally
+            // grant, multiplied by the extractor perk.
+            const bombDiffusionMultiplier = 1 + getAchievementBonus(state, ACHIEVEMENT_DIFFUSE_X_BOMBS) / 100;
+            const bonusFuel = 0.2 * fuelCost * bombDiffusionMultiplier;
+            const extractorSprite = {...bombSprite, x, y, bonusFuel, time: state.time + 400};
+            state = addSprite(state, extractorSprite);
+            // Crystals spawn closer together and are not collected.
+            state = spawnCrystals(state, x, y, amount, EDGE_LENGTH / 4, {extractorTime: state.time + 400});
+        } else {
+            state = gainBonusFuel(state, 0.1 * fuelCost);
+            state = spawnCrystals(state, x, y, amount);
+        }
+
         for (const coordsToUpdate of state.rows[row][z(column)].cellsToUpdate) {
             const cellToUpdate = state.rows[coordsToUpdate.row][z(coordsToUpdate.column)];
             const crystals = cellToUpdate.crystals - 1;
@@ -420,7 +435,12 @@ function exploreCell(state, row, column) {
             }
         }
     } else {
-        state = updateSave(state, { fuel: Math.max(0, state.saved.fuel - fuelCost) })
+        // Using an energy extractor does not consume fuel.
+        if (usingExtractor) {
+            state = addSprite(state, {...diffuserSprite, x, y, time: state.time + 200});
+        } else {
+            state = updateSave(state, { fuel: Math.max(0, state.saved.fuel - fuelCost) })
+        }
     }
     if (!state.saved.playedToday) {
         state = updateSave(state, { playedToday: true });
@@ -554,10 +574,15 @@ function advanceDigging(state) {
                         let explored = cellToUpdate.explored || (!traps && !cellToUpdate.crystals && !cellToUpdate.treasures);
                         state = updateCell(state, coordsToUpdate.row, coordsToUpdate.column, {traps, explored});
                     }
-                    state = addSprite(state, {...bombSprite, x, y, bonusFuel, time: state.time});
+                    state = addSprite(state, {...bombSprite, x, y, bonusFuel, time: state.time + 400});
+                    state = addSprite(state, {
+                        ...shipDebrisSprite,
+                        defuseIn: 400,
+                        index: random.range(0, 5), x, y,
+                        time: state.time,
+                    });
                 } else {
-                    state = exploreCell(state, row, column);
-                    state = addSprite(state, {...diffuserSprite, x, y, time: state.time + 200});
+                    state = exploreCell(state, row, column, true);
                 }
             } else {
                 const selectedRow = [...(state.flags[row] || [])];
@@ -621,7 +646,7 @@ function advanceDigging(state) {
     if (displayLavaDepth > state.saved.lavaDepth) displayLavaDepth = Math.max(displayLavaDepth - 0.01, state.saved.lavaDepth);
     return {...state, displayFuel, displayLavaDepth, saved };
 }
-function spawnCrystals(state, x, y, amount, radius = EDGE_LENGTH - EDGE_LENGTH / 2) {
+function spawnCrystals(state, x, y, amount, radius = EDGE_LENGTH - EDGE_LENGTH / 2, props = {}) {
     const crystalValues = [];
     for (let sizeIndex = CRYSTAL_SIZES.length - 1; sizeIndex >= 0; sizeIndex--) {
         const crystalSize = CRYSTAL_SIZES[sizeIndex];
@@ -639,6 +664,7 @@ function spawnCrystals(state, x, y, amount, radius = EDGE_LENGTH - EDGE_LENGTH /
             y: y + Math.random() * radius,
             frame: frame += 2,
             crystals: crystalValue,
+            ...props,
         });
     }
     return state;

@@ -39,7 +39,7 @@ const {
     getMaxExplosionProtection,
     teleportOut,
 } = require('digging');
-const { crystalFrame } = require('sprites');
+const { crystalFrame, diffuserAnimation } = require('sprites');
 const {
     achievementAnimation,
     getAchievementBonus,
@@ -72,7 +72,7 @@ function getLayoutProperties(state) {
     const landscapeShopWidth = canvas.width - 3 * padding - buttonWidth;
     const landscapeShopHeight = canvas.height - 2 * padding - buttonHeight;
     const portraitShopWidth = canvas.width - 2 * padding;
-    const portraitShopHeight = canvas.height - 6 * padding - 3 * buttonHeight;
+    const portraitShopHeight = canvas.height - 6 * padding - 4 * buttonHeight;
     const landscapeShopSize = Math.min(landscapeShopWidth, portraitShopHeight);
     const portraitShopSize = Math.min(portraitShopWidth, portraitShopHeight);
     const portraitMode = portraitShopSize > landscapeShopSize;
@@ -82,7 +82,7 @@ function getLayoutProperties(state) {
     //const shopSize = Math.max(landscapeShopSize, portraitShopSize);
     const shopLeft = portraitMode ? Math.round((canvas.width - shopWidth) / 2)
         : Math.round((canvas.width - padding - buttonWidth - shopWidth) / 2);
-    const shopTop = portraitMode ? Math.round((canvas.height - 5 * padding - 3 * buttonHeight - shopHeight) / 2)
+    const shopTop = portraitMode ? Math.round((canvas.height - 5 * padding - 2 * buttonHeight - shopHeight) / 2)
         : Math.round((canvas.height - padding - buttonHeight - shopHeight) / 2);
     return {
         portraitMode,
@@ -634,6 +634,13 @@ const shopButton = {
         let rightText = middle + 7;
         let y = 2.5 * rowHeight + halfHeight;
 
+        if (button === bombDiffuserButton) {
+            const frame = diffuserAnimation.frames[diffuserAnimation.frames.length - 1];
+            const scale = Math.max(1, Math.floor(3 * 2 * rowHeight / frame.height)) / 2;
+            drawImage(context, frame.image, frame,
+                new Rectangle(frame).scale(scale).moveCenterTo(width / 2, y - scale * frame.height / 3)
+            );
+        }
         if (button === rangeButton) {
             y = rowHeight + halfHeight;
             const greatNextValue = button.getGreatNextValue(state, button);
@@ -699,7 +706,6 @@ const shopButton = {
                 {fillStyle: COLOR_GOOD, textAlign: 'left', textBaseline, size}
             );
         }
-
 
         x = width - 5;
         y = height - rowHeight + halfHeight;

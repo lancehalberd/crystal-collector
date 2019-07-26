@@ -42,23 +42,32 @@ function updateSprite(state, sprite, props) {
 }
 const crystalSprite = {
     advance(state, sprite) {
+        if (sprite.extractorTime) {
+            // We delete the crystals as the extractor box closes, which happens on the first
+            // frame of the diffuser(extractor) animation.
+            const animationTime = state.time - sprite.extractorTime;
+            if (animationTime >= FRAME_LENGTH * diffuserAnimation.frameDuration) {
+                return deleteSprite(state, sprite);
+            }
+            return state;
+        }
+        let {x = 0, y = 0, vx = 0, vy = 0, frame = 0, animationFrame = 0} = sprite;
+        frame++;
+        animationFrame++;
         if (sprite.y > state.camera.top + canvas.height - 60) {
             state = gainCrystals(state, sprite.crystals);
             playSound(state, 'money');
             return deleteSprite(state, sprite);
         }
-        let {x = 0, y = 0, vx = 0, vy = 0, frame = 0, animationFrame = 0} = sprite;
         x += vx;
         y += vy;
-        frame++;
-        animationFrame++;
         if (frame > 0) {
             // This assumes each character in the score is about 20 pixels wide.
             const targetX = canvas.width - x - 80 - 20 * Math.floor(Math.log10(state.saved.score + 1));
             vx += (state.camera.left + targetX) / 300;
             vy += (state.camera.top + canvas.height - y - 50) / 300;
         }
-        return updateSprite(state, sprite, {frame, x, y, vx, vy, animationFrame});
+        return updateSprite(state, sprite, {x, y, vx, vy, animationFrame, frame});
     },
     render(context, state, sprite) {
         const { animationFrame = 0 } = sprite;
@@ -195,11 +204,14 @@ const bombSprite = {
         return updateSprite(state, sprite, {x, y, vx, vy});
     },
     render(context, state, sprite) {
-        const animationTime = Math.max(0, state.time - sprite.time);
-        const frame = getFrame(diffuserAnimation, animationTime);
+        const animationTime = state.time - sprite.time;
+        const frame = getFrame(diffuserAnimation, Math.max(0, animationTime));
+        context.save();
+        context.globalAlpha = Math.max(0, Math.min(1, 1 + animationTime / 200));
         drawImage(context, frame.image, frame,
             new Rectangle(frame).scale(2).moveCenterTo(sprite.x - state.camera.left, sprite.y - state.camera.top)
         );
+        context.restore();
     }
 };
 const diffuserSprite = {
@@ -229,6 +241,9 @@ const shipDebrisSprite = {
     advance(state, sprite) {
         const animationTime = state.time - sprite.time;
         const animation = shipDebrisElectricityAnimation;
+        if (sprite.defuseIn && sprite.defuseIn < animationTime) {
+            return deleteSprite(state, sprite);
+        }
         if (animationTime >= animation.duration) {
             state = detonateDebris(state, sprite.row, sprite.column);
             return deleteSprite(state, sprite);
@@ -271,6 +286,7 @@ module.exports = {
     deleteSprite,
     updateSprite,
     bombSprite,
+    diffuserAnimation,
     diffuserSprite,
     crystalFrame,
     crystalSprite,
