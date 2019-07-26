@@ -358,7 +358,7 @@ const titleButton = {
     optionIndex: optionIndex++,
 };
 
-const diffuserFrame = r(25, 16, {left: 25, top: 9, image: requireImage('gfx/diffuse.png')});
+const diffuserFrame = r(25, 16, {left: 100, top: 9, image: requireImage('gfx/diffuse.png')});
 const diffuserOpenFrame = r(25, 25, {image: requireImage('gfx/diffuse.png')});
 class DiffuserButton {
     render(context, state) {

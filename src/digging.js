@@ -427,7 +427,7 @@ function exploreCell(state, row, column, usingExtractor = false) {
             let explored = cellToUpdate.explored || (!crystals && !cellToUpdate.traps && !cellToUpdate.treasures);
             state = updateCell(state, coordsToUpdate.row, coordsToUpdate.column, {crystals, explored});
         }
-        if (depth > state.saved.lavaDepth - 11 && depth < Math.floor(state.saved.lavaDepth)) {
+        if (!usingExtractor && depth > state.saved.lavaDepth - 11 && depth < Math.floor(state.saved.lavaDepth)) {
             const delta = Math.floor(state.saved.lavaDepth) - depth;
             state.saved.lavaDepth += 1.5 / delta;
             if (1.5 / delta >= 0.1) {
