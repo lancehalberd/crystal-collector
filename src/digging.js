@@ -656,15 +656,21 @@ function spawnCrystals(state, x, y, amount, radius = EDGE_LENGTH - EDGE_LENGTH /
         }
     }
     crystalValues.reverse();
-    let frame = -10 - 2 * crystalValues.length;
-    for (const crystalValue of crystalValues) {
+    const theta = Math.random() * Math.PI / 2;
+    const stagger = 6;
+    let frame = -5 - stagger * crystalValues.length;
+    for (let i = 0; i < crystalValues.length; i++) {
+        const crystalValue = crystalValues[i];
+        const t = theta + Math.PI * 2 * 2 * i / 7;
+        const r = 0.3 * EDGE_LENGTH * Math.cos(Math.PI / 2 * i / 10);
         state = addSprite(state, {
             ...crystalSprite,
-            x: x + Math.random() * radius,
-            y: y + Math.random() * radius,
-            frame: frame += 2,
+            x: x + r * Math.cos(t),
+            y: y + r * Math.sin(t),
+            frame: frame += stagger,
             crystals: crystalValue,
             ...props,
+            i,
         });
     }
     return state;

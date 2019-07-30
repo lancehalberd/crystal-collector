@@ -40,6 +40,7 @@ function updateSprite(state, sprite, props) {
     if (!sprite || !sprite.id || !state.spriteMap[sprite.id]) return state;
     return {...state, spriteMap: {...state.spriteMap, [sprite.id]: {...state.spriteMap[sprite.id], ...props}}};
 }
+const crystalTeleportAnimation = createAnimation('gfx/teleport.png', r(30, 30), {x: 1, cols: 4}, {loop: false});
 const crystalSprite = {
     advance(state, sprite) {
         if (sprite.extractorTime) {
@@ -51,32 +52,37 @@ const crystalSprite = {
             }
             return state;
         }
-        let {x = 0, y = 0, vx = 0, vy = 0, frame = 0, animationFrame = 0} = sprite;
+        let {x = 0, y = 0, frame = 0, animationFrame = 0} = sprite;
         frame++;
         animationFrame++;
-        if (sprite.y > state.camera.top + canvas.height - 60) {
+        if (frame >= 0) {
+            let vy = (0.8 + Math.cos(2 * Math.PI * (8 + frame / 36))) * 2.5;
+            y -= vy;
+        }
+        if (frame > 30) {
             state = gainCrystals(state, sprite.crystals);
             playSound(state, 'money');
             return deleteSprite(state, sprite);
         }
-        x += vx;
-        y += vy;
-        if (frame > 0) {
-            // This assumes each character in the score is about 20 pixels wide.
-            const targetX = canvas.width - x - 80 - 20 * Math.floor(Math.log10(state.saved.score + 1));
-            vx += (state.camera.left + targetX) / 300;
-            vy += (state.camera.top + canvas.height - y - 50) / 300;
-        }
-        return updateSprite(state, sprite, {x, y, vx, vy, animationFrame, frame});
+        return updateSprite(state, sprite, {x, y, animationFrame, frame});
     },
     render(context, state, sprite) {
+        if (sprite.frame < 0 && !sprite.extractorTime) return;
         const { animationFrame = 0 } = sprite;
         const size = CRYSTAL_SIZES.indexOf(sprite.crystals);
         const index = Math.min(Math.floor(size / 2), crystalAnimations.length - 1);
-        const scale = 1 + 0.5 * (size%2);
+        let scale = 1 + 0.5 * (size % 2);
         const animation = crystalAnimations[index];
         const frameIndex = Math.floor(animationFrame / 5) % animation.frames.length;
-        const frame = animation.frames[frameIndex];
+        let frame = animation.frames[frameIndex];
+        // Draw a little teleport animation as each crystal gets picked up.
+        if (sprite.frame > 20) {
+            scale *= 0.5;
+            frame = crystalTeleportAnimation.frames[Math.floor((sprite.frame - 20 ) / 2)];
+            if (!frame) {
+                return;
+            }
+        }
         if (!frame) debugger;
         drawImage(context, frame.image, frame,
             new Rectangle(frame).scale(scale).moveCenterTo(sprite.x - state.camera.left, sprite.y - state.camera.top)
