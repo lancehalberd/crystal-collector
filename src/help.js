@@ -100,11 +100,14 @@ function showLeavingHint(state) {
     let hintLines;
     // Show a message when the player collects a stable ship part.
     if (state.collectingPart) {
-        hintLines = ['Stable Ship Part Acquired!']
+        // Acquiring a ship part doesn't advance the day, so say "day" instead of "night"
+        // when returning to the ship.
+        hintLines = ['Stable Ship Part Acquired!'];
+        hintLines = [`DAY ${state.saved.day}`, ...hintLines];
     } else if (!state.saved.hideHelp) {
         hintLines = splitHint(leavingAdvice[(state.saved.day - 1) % leavingAdvice.length].label);
+        hintLines = [`NIGHT ${state.saved.day}`, ...hintLines];
     }
-    hintLines = [`NIGHT ${state.saved.day}`, ...hintLines];
     return {
         ...state,
         hintLines,
