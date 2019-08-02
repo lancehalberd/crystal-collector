@@ -69,6 +69,8 @@ function getLayoutProperties(state) {
     const padding = Math.round(Math.min(canvas.width, canvas.height) / 40);
     const buttonHeight = Math.round(Math.min(canvas.height / 8, canvas.width / 6 / 2.5));
     const buttonWidth = Math.round(Math.min(2.5 * canvas.height / 8, canvas.width / 6));
+    const primaryButtonHeight = Math.round(Math.min(canvas.height / 6, canvas.width * 0.75 / 3));
+    const primaryButtonWidth = Math.round(Math.min(3 * canvas.height / 6, canvas.width * 0.75));
     const landscapeShopWidth = canvas.width - 3 * padding - buttonWidth;
     const landscapeShopHeight = canvas.height - 2 * padding - buttonHeight;
     const portraitShopWidth = canvas.width - 2 * padding;
@@ -94,6 +96,8 @@ function getLayoutProperties(state) {
         buttonHeight,
         buttonWidth,
         buttonFontSize: Math.min(buttonHeight - 20, Math.round(canvas.width / 32)),
+        primaryButtonHeight,
+        primaryButtonWidth
     };
 }
 
@@ -229,9 +233,9 @@ const playButton = {
         // This actually does nothing.
         return state;
     },
-    resize({width, height, buttonWidth, buttonHeight}) {
-        this.height = buttonHeight;
-        this.width = buttonWidth;
+    resize({width, height, primaryButtonWidth, primaryButtonHeight}) {
+        this.height = primaryButtonHeight;
+        this.width = primaryButtonWidth;
         this.top = (height - this.height) / 2;
         this.left = (width - this.width) / 2;
     },
