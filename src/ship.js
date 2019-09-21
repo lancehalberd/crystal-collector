@@ -2,7 +2,7 @@ const Rectangle = require('rectangle');
 const random = require('random');
 const { drawImage, drawRectangle } = require('draw');
 const { canvas, EDGE_LENGTH, FRAME_LENGTH } = require('gameConstants');
-const { r, createAnimation, getFrame } = require('animations');
+const { r, createAnimation, getFrame, requireImage } = require('animations');
 
 const warpDriveSlots = [
     [16, 23],
@@ -22,6 +22,7 @@ const shipPartAnimations = [
     createAnimation('gfx/warppieces.png', r(20, 20), {x: 14, cols: 3, duration}),
 ];
 const shipPartDepths = [10, 40, 80, 150, 200];
+const shipAnimation = createAnimation('gfx/mothershipwarp.png', r(170, 57));
 
 module.exports = {
     arriveAnimation,
@@ -32,6 +33,7 @@ module.exports = {
     renderShipBackground,
     renderSpaceBackground,
     renderTransitionShipBackground,
+    shipAnimation,
     shipPartAnimations,
     shipPartDepths,
     warpDriveSlots,
@@ -70,10 +72,17 @@ const nightAnimation = createAnimation('gfx/nightskysleepanim.png', r(800, 1100)
     frameMap: [0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 2, 2, 2, 2, 2, 2, 1],
 });
 const nightAnimationEmpty = createAnimation('gfx/nightskysleepanim.png', r(800, 1100), {x: 3});
-const shipAnimation = createAnimation('gfx/mothershipwarp.png', r(170, 57));
 const shipWarpStartAnimation = createAnimation('gfx/mothershipwarp.png', r(170, 57), {x: 1, cols: 3, duration: 20}, {loop: false});
 const shipWarpAnimation = createAnimation('gfx/mothershipwarp.png', r(170, 57), {x: 4, cols: 6, duration: 4}, {loop: false});
 const warpdriveAnimation = createAnimation('gfx/warpdrive.png', r(100, 100));
+
+const shipEmergencyAnimation = {
+    frames: [
+        r(110, 110, {image: requireImage('gfx/cutscene/mothership_orange.png')}),
+        r(110, 110, {image: requireImage('gfx/cutscene/mothership_red.png')}),
+    ],
+    frameDuration: 10, duration: 10 * 2,
+};
 function renderSpaceBackground(context, state) {
     let frame = getFrame(nightAnimation, state.time);
     // Fill the whole canvas with black, in case somehow it is too tall in portrait mode.
@@ -147,6 +156,11 @@ function renderShip(context, state) {
         }
     } else {
         let ty = Math.round(shipBaseHeight + dy);
+        if (state.introTime !== false && state.introTime >= 4000) {
+            frame = getFrame(shipEmergencyAnimation, state.introTime - 4000);
+            tx -= 14;
+            ty += 2;
+        }
         drawImage(context, frame.image, frame, new Rectangle(frame).moveCenterTo(tx, ty));
     }
     // Testing warp animation. Note that starting on frame 3, the ship shouldn't be drawn underneath.

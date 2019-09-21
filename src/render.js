@@ -19,13 +19,21 @@ const { renderHelp } = require('help');
 const loadTime = Date.now();
 
 function render(context, state) {
-    const bgm = (
-        state.title || state.ship || state.shop ||
-        !state.saved.finishedIntro || state.outroTime !== false
-    ) ? 'ship' : 'title';
-    const bgmTime = state.time - (state.bgmTime || 0);
+    let bgmTime = state.time - (state.bgmTime || 0);
+    let bgm = 'digging';
+    // The intro is 4 seconds longer than the intro music, so we just keep playing the
+    // title(ship) music for the initial 4 seconds.
+    if (!state.title && !state.saved.finishedIntro && state.introTime > 4000) {
+        bgm = 'intro';
+        bgmTime = state.introTime - 4000;
+    } else if (state.outroTime !== false) {
+        bgm = 'victory';
+    } else if (state.title || state.ship || state.shop || !state.saved.finishedIntro) {
+        bgm = 'ship';
+    }
     if (areImagesLoaded()) {
         if (bgm && getCurrentTrackSource() !== bgm) {
+            // console.log(bgm, '!=', getCurrentTrackSource());
             playTrack(state, bgm, bgmTime);
         }
         if (!state.interacted && getCurrentTrackSource() === bgm && isPlayingTrack()) {

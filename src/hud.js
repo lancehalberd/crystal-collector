@@ -2,6 +2,7 @@ const { canvas, context, COLOR_GOOD, COLOR_BAD } = require('gameConstants');
 const Rectangle = require('Rectangle');
 const { drawImage, drawRectangle, drawText } = require('draw');
 const { areImagesLoaded, createAnimation, getFrame, requireImage, r } = require('animations');
+const { endingSequenceDuration } = require('scenes');
 
 module.exports = {
     renderButtonBackground,
@@ -863,7 +864,7 @@ function getHUDButtons(state) {
         return [skipIntroButton];
     }
     if (state.outroTime !== false) {
-        return state.outroTime > 5000 ? [continueButton] : [];
+        return state.outroTime > endingSequenceDuration ? [continueButton] : [];
     }
     if (state.showAchievements) {
         return [closeButton, ...standardButtons];

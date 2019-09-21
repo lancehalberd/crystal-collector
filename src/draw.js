@@ -26,19 +26,19 @@ function drawRectangle(context, rectangle, {fillStyle, strokeStyle, lineWidth = 
 }
 
 function drawText(context, text, x, y,
-    {fillStyle = 'black', strokeStyle, lineWidth = 1, textAlign = 'left', textBaseline = 'bottom', size = 20, measure = false}
+    {fillStyle = 'black', maxWidth, strokeStyle, lineWidth = 1, textAlign = 'left', textBaseline = 'bottom', size = 20, measure = false}
 ) {
     context.textAlign = textAlign;
     context.textBaseline = textBaseline;
-    context.font = `${size}px sans-serif`;
+    context.font = `${size}px VT323`;
     if (fillStyle) {
         context.fillStyle = fillStyle;
-        context.fillText(text, x, y);
+        context.fillText(text, x, y, maxWidth);
     }
     if (strokeStyle) {
         context.strokeStyle = strokeStyle;
         context.lineWidth = lineWidth;
-        context.strokeText(text, x, y);
+        context.strokeText(text, x, y, maxWidth);
     }
     if (measure) {
         return context.measureText(text).width;

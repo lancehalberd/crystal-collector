@@ -206,3 +206,18 @@ const renderLoop = () => {
     }
 };
 renderLoop();
+
+/*
+import {Howl, Howler} from 'howler';
+var sound = new Howl({
+  src: ['bgm/victory.ogg'],
+  loop: true,
+  volume: 0.5,
+  onend: function() {
+      sound.seek(4);
+  }
+});
+console.log('calling play');
+sound.play();
+*/
+

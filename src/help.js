@@ -15,7 +15,9 @@ const { updateSave } = require('state');
 const incomingAdvice = [
     {label: 'You can keep digging for crystals until you run out of energy.'},
     {label: 'Each blue diamond means crystals can be found in or next to that area.'},
+    {label: 'Better sensors let you dig further and reveal bonus information.'},
     {label: 'Energy Extractors can convert dangerous debris into valuable energy.'},
+    {label: 'Explosion Protection can prevent some of the explosions from unstable debris.'},
     {label: 'Digging deeper uses more energy, but you will also find more crystals.'},
     {label: 'Crystals have absorbed energy from the fallen ship debris.'},
     {label: 'When you find crystals you will gain energy instead of losing it.'},
@@ -26,7 +28,9 @@ const incomingAdvice = [
 const leavingAdvice = [
     {label: 'Spend crystals to upgrade Dig Bot when you return to the ship.'},
     {label: 'Unstable ship debris marked by nearby red squares will explode.'},
+    {label: 'The range of your sensors decreases as you dig deeper.'},
     {label: 'Energy Extractors will also convert crystals into energy.'},
+    {label: 'Unstable debris will cause even more explosions as you dig deeper.'},
     {label: 'Most of the unstable ship debris is buried deep beneath the surface.'},
     {label: 'Unlocking achievements will improve Dig Bot\'s capabilities.'},
     {label: 'You will need to find five stable ship parts to repair your warp drive.'},
