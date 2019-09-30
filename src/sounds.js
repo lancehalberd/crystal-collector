@@ -1,5 +1,6 @@
 /* globals setTimeout, Set, Map */
 const sounds = new Map();
+window.sounds = sounds;
 
 import {Howl/*, Howler*/} from 'howler';
 
@@ -19,7 +20,7 @@ function requireSound(key) {
     }
     if (sounds.has(key)) return sounds.get(key);
     if (offset) [offset, duration] = String(offset).split(':').map(Number);
-    let newSound;
+    let newSound = {};
     if (type === 'bgm') {
         const howlerProperties = {
             src: [source],
@@ -27,12 +28,14 @@ function requireSound(key) {
             volume: volume / 50,
             // Stop the track when it finishes fading out.
             onfade: function () {
+                //console.log('finished fade', newSound.props.src, newSound.shouldPlay, this.volume());
                 // console.log(id, 'fadein', currentTrackSource, key, this.volume());
                 // Documentation says this only runs when fade completes,
                 // but it seems to run at the start and end of fades.
-                if (currentTrackSource !== key && this.volume() === 0) {
+                if (!newSound.shouldPlay) {
+                    //console.log('Stopping from onFade ', newSound.props.src);
                     this.stop();
-                    this.volume(volume / 50);
+                    // this.volume(volume / 50);
                 }
             },
             onplay: function () {
@@ -44,15 +47,14 @@ function requireSound(key) {
                 // console.log('onend', repeatFrom, currentTrackSource, key);
                 // Only repeat the track on end if it matches
                 // the current track source still.
-                if (currentTrackSource === key) {
-                    this.seek((repeatFrom || 0) / 1000);
-                }
+                // I don't think this was necessary but leaving it in comments in case.
+                //if (playingTracks.includes(newSound)) {
+                this.seek((repeatFrom || 0) / 1000);
+                //}
             };
         }
-        newSound = {
-            howl: new Howl(howlerProperties),
-            props: howlerProperties,
-        };
+        newSound.howl = new Howl(howlerProperties);
+        newSound.props = howlerProperties;
     } else {
         const howlerProperties = {
             src: [source],
@@ -78,12 +80,10 @@ function requireSound(key) {
                 sprite: [offset, duration],
             };
         }
-        newSound = {
-            howl: new Howl(howlerProperties),
-            activeInstances: 0,
-            instanceLimit: limit || 5,
-            props: howlerProperties,
-        };
+        newSound.howl = new Howl(howlerProperties),
+        newSound.activeInstances = 0;
+        newSound.instanceLimit = limit || 5;
+        newSound.props = howlerProperties;
     }
     sounds.set(key, newSound);
     return newSound;
@@ -109,21 +109,21 @@ function playSound(key, muted = false) {
     sound.howl.play();
 }
 
-let previousTrack = null, currentTrackSource = null, trackIsPlaying = false;
-const playTrack = (source, timeOffset, muted = false) => {
+let playingTracks = [], trackIsPlaying = false;
+window.playingTracks = playingTracks;
+function playTrack(source, timeOffset, muted = false, fadeOutOthers = true) {
     const sound = requireSound(source);
     if (!sound.howl || !sound.howl.duration()) {
-        return;
+        return false;
     }
-    //console.log('playTrack', previousTrack, source, sound);
+    // Do nothing if the sound is already playing.
+    if (playingTracks.includes(sound) || sound.howl.playing()) {
+        return sound;
+    }
+    //console.log('playTrack', playingTracks, source, sound);
     trackIsPlaying = false;
-    if (previousTrack) {
-        //previousTrack.stop();
-        // console.log('fade out previous track', previousTrack);
-        previousTrack.howl.fade(previousTrack.howl.volume(), 0, 1000);
-    }
+    if (fadeOutOthers) fadeOutPlayingTracks();
 
-    currentTrackSource = source;
     const volume = sound.props.volume;
     let offset = (timeOffset / 1000);
     if (sound.howl.duration()) {
@@ -133,22 +133,86 @@ const playTrack = (source, timeOffset, muted = false) => {
     sound.howl.seek(offset);
     sound.howl.mute(muted);
     sound.howl.play();
+    sound.shouldPlay = true;
     // console.log({volume});
     // console.log('fade in new track', sound);
+    //console.log('Fade in ' + sound.props.src);
     sound.howl.fade(0, volume, 1000);
-    previousTrack = sound;
-};
+    playingTracks.push(sound);
+    return sound;
+}
+
+function fadeOutPlayingTracks(currentTracks = []) {
+    const keepPlayingTracks = [];
+    for (const trackToFadeOut of playingTracks) {
+        if (currentTracks.includes(trackToFadeOut)) {
+            keepPlayingTracks.push(trackToFadeOut);
+            continue;
+        }
+        trackToFadeOut.shouldPlay = false;
+        if (trackToFadeOut.howl.volume()) {
+            //console.log('Fade out ' + trackToFadeOut.props.src, trackToFadeOut.howl.volume());
+            trackToFadeOut.howl.fade(trackToFadeOut.howl.volume(), 0, 1000);
+        } else {
+            //console.log('Fade directly stop ' + trackToFadeOut.props.src, trackToFadeOut.howl.volume());
+            trackToFadeOut.howl.stop();
+        }
+    }
+    playingTracks = keepPlayingTracks;
+    window.playingTracks = playingTracks;
+}
+
+function playTrackCombination(tracks, timeOffset, muted = false) {
+    const currentTracks = [];
+    // If any tracks are already playing, use the timeOffset of the first
+    // track instead of the given timeOffset, in case there is drift between
+    // the bgm time in state and the actual position of the tracks.
+    for (const { source, volume } of tracks) {
+        let sound = requireSound(source);
+        if (playingTracks.includes(sound)) {
+            timeOffset = sound.howl.seek() * 1000;
+            break;
+        }
+    }
+
+    //console.log(tracks.map(JSON.stringify).join(':'))
+    //console.log(playingTracks);
+    for (const {source, volume} of tracks) {
+        let sound = requireSound(source);
+        currentTracks.push(sound);
+        if (playingTracks.includes(sound)) {
+            //console.log('adjusting volume ' + source);
+            sound.howl.volume(sound.props.volume * volume);
+            let offset = (timeOffset / 1000);
+            const duration = sound.howl.duration();
+            offset = offset % duration;
+            const delta = Math.abs(sound.howl.seek() - offset);
+            if (delta > 0.05 && delta < duration - 0.05) {
+                // console.log('Sound was off actual:', sound.howl.seek(), 'vs desired:', offset);
+                sound.howl.seek(offset);
+            }
+        } else {
+            //console.log('playing track ', source, volume);
+            sound = playTrack(source, timeOffset, muted, false);
+            if (sound) {
+                sound.howl.volume(sound.props.volume * volume);
+            }
+        }
+        sound.howl
+    }
+    // Make sure to fade out any tracks other than the new ones.
+    fadeOutPlayingTracks(currentTracks);
+}
+
 
 function stopTrack() {
-    currentTrackSource = null;
     trackIsPlaying = false;
-    if (previousTrack) {
-        previousTrack.stop();
-        previousTrack = null;
+    for (const playingTrack of playingTracks) {
+        // console.log('Stopping from stopTrack ', playingTrack.props.src);
+        playingTrack.stop();
     }
-}
-function getCurrentTrackSource() {
-    return currentTrackSource;
+    playingTracks = [];
+    window.playingTracks = playingTracks;
 }
 function isPlayingTrack() {
     return trackIsPlaying;
@@ -161,13 +225,13 @@ function unmuteSounds() {
     for (const sound of playingSounds) sound.howl.mute(false);
 }
 function muteTrack() {
-    if (previousTrack) {
-        previousTrack.howl.mute(true);
+    for (const playingTrack of playingTracks) {
+        playingTrack.howl.mute(true);
     }
 }
 function unmuteTrack() {
-    if (previousTrack) {
-        previousTrack.howl.mute(false);
+    for (const playingTrack of playingTracks) {
+        playingTrack.howl.mute(false);
     }
 }
 
@@ -180,7 +244,7 @@ const preloadSounds = () => {
         {key: 'explosion', source: 'sfx/explosion.mp3'}, // Bomb explodes
         {key: 'flag', source: 'sfx/flag.mp3'}, // Mark a square as a bomb
         {key: 'energy', source: 'sfx/gainenergy.mp3', volume: 3}, // Gain energy from energy chest/diffuser
-        {key: 'lava', source: 'sfx/lavalower.mp3', limit: 2}, // Lower the lava
+        {key: 'lowerLava', source: 'sfx/lavalower.mp3', limit: 2}, // Lower the lava
         {key: 'money', source: 'sfx/money.mp3', volume: 0.3, limit: 10}, // receieve a crystal
         {key: 'select', source: 'sfx/select.mp3'}, // Button click
         {key: 'upgrade', source: 'sfx/upgrade.mp3', volume: 5 }, // Purchase upgrade
@@ -192,6 +256,13 @@ const preloadSounds = () => {
         {key: 'ship', type: 'bgm', source: 'bgm/ship.mp3', volume: 10},
         {key: 'victory', type: 'bgm', source: 'bgm/victory.ogg', volume: 5, repeatFrom: 4000},
         {key: 'intro', type: 'bgm', source: 'bgm/intro.ogg', volume: 5},
+
+        {key: 'digging1', type: 'bgm', source: 'bgm/digging1.ogg', volume: 4},
+        {key: 'digging1-2', type: 'bgm', source: 'bgm/digging1-2.ogg', volume: 1},
+        {key: 'digging2', type: 'bgm', source: 'bgm/digging2.ogg', volume: 3},
+        {key: 'digging2-2', type: 'bgm', source: 'bgm/digging2-2.ogg', volume: 1},
+        {key: 'digging3', type: 'bgm', source: 'bgm/digging3.ogg', volume: 3},
+        {key: 'lava', type: 'bgm', source: 'bgm/lava.ogg', volume: 4},
     ].forEach(requireSound);
 };
 
@@ -207,8 +278,8 @@ module.exports = {
     unmuteTrack,
     playSound,
     playTrack,
+    playTrackCombination,
     stopTrack,
     preloadSounds,
-    getCurrentTrackSource,
     isPlayingTrack,
 };

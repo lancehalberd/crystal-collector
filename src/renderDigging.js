@@ -94,7 +94,7 @@ function renderDigging(context, state) {
         gradient.addColorStop(0.05 + Math.sin(state.time / 500) * 0.05, `rgba(${gradientRGB}, 0.0)`);
         gradient.addColorStop(.90, `rgba(${gradientRGB}, 0.8)`);
         context.fillStyle = gradient;
-        context.fillRect(0, lavaDepthY + waveHeight - 200, canvas.width, canvas.height);
+        context.fillRect(0, lavaDepthY + waveHeight - 200, canvas.width, canvas.height + 200);
     }
     if (lavaDepthY < canvas.height + ROW_HEIGHT / 2) {
         context.save();

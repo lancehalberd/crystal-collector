@@ -431,7 +431,7 @@ function exploreCell(state, row, column, usingExtractor = false) {
             const delta = Math.floor(state.saved.lavaDepth) - depth;
             state.saved.lavaDepth += 1.5 / delta;
             if (1.5 / delta >= 0.1) {
-                playSound(state, 'lava');
+                playSound(state, 'lowerLava');
             }
         }
     } else {
