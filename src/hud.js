@@ -44,7 +44,6 @@ const { crystalFrame, diffuserAnimation } = require('sprites');
 const {
     achievementAnimation,
     getAchievementBonus,
-    getAchievementStat,
     ACHIEVEMENT_GAIN_X_BONUS_FUEL_IN_ONE_DAY,
     ACHIEVEMENT_REPAIR_SHIP_IN_X_DAYS,
     ACHIEVEMENT_EXPLORE_DEPTH_X,
@@ -916,7 +915,7 @@ function getHUDButtons(state) {
     ];
 }
 
-const fuelFrame = r(44, 44, {left: 3*44, image: requireImage('gfx/energy.png')});
+const fuelFrame = r(36, 36, {image: requireImage('gfx/energy.png')});
 function renderHUD(context, state) {
     if (state.leaving || state.incoming) return;
     const layoutProperties = getLayoutProperties(state);
@@ -941,50 +940,78 @@ function renderHUD(context, state) {
         && state.saved.finishedIntro  && state.outroTime === false
     ) {
         const fuelMultiplier = 1 + getAchievementBonus(state, ACHIEVEMENT_GAIN_X_BONUS_FUEL_IN_ONE_DAY) / 100;
-        const fuelBarWidth = Math.min(canvas.width / 2.5, 200 * fuelMultiplier);
         const maxFuel = Math.round(state.saved.maxFuel * fuelMultiplier);
-        const fuelBarHeight = fuelFrame.height;
-        const fuelBarLeft = 10;
-        context.fillStyle = 'black';
-        context.fillRect(fuelBarLeft, 10, fuelBarWidth, fuelBarHeight);
-        context.fillStyle = '#080';
-        const fuelWidth = Math.round(fuelBarWidth * state.saved.fuel / maxFuel);
-        const displayFuelWidth = Math.round(fuelBarWidth * state.displayFuel / maxFuel);
-        context.fillRect(fuelBarLeft, 10, fuelWidth, fuelBarHeight);
+        let fuelBarTarget = new Rectangle(
+            10, 10, 
+            Math.min(canvas.width / 2.5, 200 * fuelMultiplier), fuelFrame.height
+        );
+        // Draw the border and background
+        drawRectangle(context, fuelBarTarget, { fillStyle: 'white'});
+        fuelBarTarget = fuelBarTarget.pad(-1);
+        drawRectangle(context, fuelBarTarget, { fillStyle: 'black'});
+        const fuelWidth = Math.round(fuelBarTarget.width * state.saved.fuel / maxFuel);
+        const displayFuelWidth = Math.round(fuelBarTarget.width * state.displayFuel / maxFuel);
+        // Draw the dark green base fuel value (gain/loss are rendered over this).
+        drawRectangle(context, {...fuelBarTarget, width: fuelWidth}, { fillStyle: '#080'});
         if (state.displayFuel > state.saved.fuel) {
             const difference = displayFuelWidth - fuelWidth;
-            context.fillStyle = '#F00';
-            context.fillRect(fuelBarLeft + fuelWidth, 10, difference, fuelBarHeight);
+            drawRectangle(context, {...fuelBarTarget.translate(fuelWidth, 0), width: difference}, { fillStyle: '#F00'});
         } else if (state.displayFuel < state.saved.fuel) {
             const difference = fuelWidth - displayFuelWidth;
-            context.fillStyle = '#0F0';
-            context.fillRect(fuelBarLeft + fuelWidth - difference, 10, difference, fuelBarHeight);
+            drawRectangle(context, {...fuelBarTarget.translate(fuelWidth - difference, 0), width: difference}, { fillStyle: '#0F0'});
         }
+        // If the player is over a cell, show a preview of how much energy they will lose/gain
+        // if they explore the cell.
         if (state.overButton && state.overButton.cell) {
             const {row, column} = state.overButton;
             if (canExploreCell(state, row, column) && getFlagValue(state, row, column) !== 2) {
                 const fuelCost = getFuelCost(state, row, column);
-                const fuelLeft = fuelBarLeft + Math.round(fuelBarWidth * Math.max(0, state.saved.fuel - fuelCost) / maxFuel);
-                context.fillStyle = (fuelCost <= state.saved.fuel) ? 'orange' : 'red';
-                context.fillRect(fuelLeft, 10, fuelBarLeft + fuelWidth - fuelLeft, fuelBarHeight);
+                const fillStyle = (fuelCost <= state.saved.fuel) ? 'orange' : 'red';
+                const left = fuelBarTarget.left + Math.round(fuelBarTarget.width * Math.max(0, state.saved.fuel - fuelCost) / maxFuel);
+                const width = fuelBarTarget.left + fuelWidth - left;
+                drawRectangle(context, {...fuelBarTarget, left, width}, { fillStyle });
                 if (fuelCost <= state.saved.fuel) {
                     const bonusFuelMultiplier = 1 + getAchievementBonus(state, ACHIEVEMENT_REPAIR_SHIP_IN_X_DAYS) / 100;
                     const fuelBonus = Math.min(maxFuel, state.saved.fuel + Math.round(bonusFuelMultiplier * fuelCost * 0.1));
-                    context.fillStyle = '#0F0';
-                    context.fillRect(fuelBarLeft + fuelWidth, 10, Math.round(fuelBarWidth * fuelBonus / maxFuel) - fuelWidth, fuelBarHeight);
+                    const width = Math.round(fuelBarTarget.width * fuelBonus / maxFuel) - fuelWidth;
+                    const target = {...fuelBarTarget.translate(fuelWidth, 0), width};
+                    drawRectangle(context, target, { fillStyle: '#0F0' });
                 }
             }
         }
-        context.strokeStyle = 'white';
-        context.lineWidth = 2;
-        context.strokeRect(fuelBarLeft, 10, fuelBarWidth, fuelBarHeight);
+        // Draw the triangle overlays over the corners.
+        fuelBarTarget = fuelBarTarget.pad(1);
+        context.save();
+        context.translate(fuelBarTarget.left, fuelBarTarget.top);
+        const bigTriangle = 10;
+        const smallTriangle = 6;
+        context.beginPath();
+        context.moveTo(0, 0);
+        context.lineTo(0, bigTriangle);
+        context.lineTo(bigTriangle, 0);
+        context.closePath();
+        context.moveTo(fuelBarTarget.width, fuelBarTarget.height);
+        context.lineTo(fuelBarTarget.width, fuelBarTarget.height - bigTriangle);
+        context.lineTo(fuelBarTarget.width - bigTriangle, fuelBarTarget.height);
+        context.closePath();
+        context.moveTo(fuelBarTarget.width, 0);
+        context.lineTo(fuelBarTarget.width, smallTriangle);
+        context.lineTo(fuelBarTarget.width - smallTriangle, 0);
+        context.closePath();
+        context.moveTo(0, fuelBarTarget.height);
+        context.lineTo(0, fuelBarTarget.height - smallTriangle);
+        context.lineTo(smallTriangle, fuelBarTarget.height);
+        context.closePath();
+        context.fillStyle = 'white';
+        context.fill();
+        context.restore();
 
         const textStyle = {fillStyle: 'white', size: 30, textBaseline: 'middle'};
-        const midline = 10 + fuelBarHeight / 2;
-        const fuelIconTarget = new Rectangle(fuelFrame).moveTo(fuelBarLeft - 2, 10);
+        const midline = fuelBarTarget.top + fuelBarTarget.height / 2;
+        const fuelIconTarget = new Rectangle(fuelFrame).moveTo(fuelBarTarget.left + 5, 10);
         drawImage(context, fuelFrame.image, fuelFrame, fuelIconTarget);
         // Render fuel amount.
-        drawText(context, state.saved.fuel.abbreviate(), fuelBarLeft + fuelFrame.width - 6, midline, textStyle);
+        drawText(context, state.saved.fuel.abbreviate(), fuelIconTarget.right, midline, textStyle);
     }
 
     if (state.ship && state.restart) {
