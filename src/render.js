@@ -19,6 +19,7 @@ const { renderTitle } = require('title');
 const { renderAchievements } = require('achievements');
 const { renderIntro, renderOutro } = require('scenes');
 const { renderHelp } = require('help');
+const { isKeyDown, KEY_SPACE } = require('keyboard');
 const loadTime = Date.now();
 //  0 1 2 3 4 5 6 7 8 9 A B C
 //0 - - \ _
@@ -36,8 +37,12 @@ function playDiggingTrack(state) {
     const allSources = ['digging1', 'digging1-2', 'digging2', 'digging2-2', 'digging3'];
     const finalPhase = allSources.length * 3 - 2;
     let y = state.camera.top + canvas.height / 2;
-    //y = 13000 * ( state.lastMouseCoords ? state.lastMouseCoords.x : 0) / canvas.width;
+    // Sound test code.
     const S = 1000;
+    if (isKeyDown(KEY_SPACE)) {
+        // 3 main tracks and 2 transition tracks
+        y = (3 * 2 * S + 2 * 2 * S) * ( state.lastMouseCoords ? state.lastMouseCoords.x : 0) / canvas.width;
+    }
     let phase = 0;
     while (y >= 0 && phase < finalPhase) {
         // Main track plays by itself for S pixels
@@ -97,7 +102,10 @@ function playDiggingTrack(state) {
     const lavaDepthY = state.displayLavaDepth * ROW_HEIGHT / 2 + ROW_HEIGHT / 2 - state.camera.top;
     const dy = 1.5 * canvas.height - lavaDepthY
     let volume = Math.max(0, Math.min(1, dy / (canvas.height)));
-    //volume = Math.max(0, (( state.lastMouseCoords ? state.lastMouseCoords.y : 0) - canvas.height / 2) / canvas.height * 2);
+    // Sound test code.
+    if (isKeyDown(KEY_SPACE)) {
+        volume = Math.max(0, (( state.lastMouseCoords ? state.lastMouseCoords.y : 0) - canvas.height / 2) / canvas.height * 2);
+    }
     // console.log(( state.lastMouseCoords ? state.lastMouseCoords.y : 0), canvas.height, volume);
     // console.log(volume, lavaDepthY, dy, canvas.height);
     tracks.push({source: 'lava', volume});
@@ -125,7 +133,7 @@ function render(context, state) {
         bgm = 'ship';
     }
     if (areImagesLoaded()) {
-        if (bgm === 'digging') {
+        if (isKeyDown(KEY_SPACE) || bgm === 'digging') {
             playDiggingTrack(state);
         } else {
             // console.log(bgm, '!=', getCurrentTrackSource());
