@@ -66,7 +66,7 @@ function renderBasicButton(context, state, button) {
     );
 }
 function getLayoutProperties(state) {
-    const padding = Math.round(Math.min(canvas.width, canvas.height) / 40);
+    const padding = Math.round(Math.min(canvas.width, canvas.height) / 80);
     const buttonHeight = Math.round(Math.min(canvas.height / 8, canvas.width / 6 / 2.5));
     const buttonWidth = Math.round(Math.min(2.5 * canvas.height / 8, canvas.width / 6));
     const primaryButtonHeight = Math.round(Math.min(canvas.height / 6, canvas.width * 0.75 / 3));
@@ -101,13 +101,25 @@ function getLayoutProperties(state) {
     };
 }
 
-const sleepButtonAnimation = createAnimation('gfx/teleportnew.png', r(30, 30));
-const sleepButtonActiveAnimation = createAnimation('gfx/teleportnew.png', r(30, 30), {x: 0, cols: 10, duration: 6});
+const sleepButtonAnimation = createAnimation('gfx/shipIcon.png', r(71, 36));
+const sleepButtonActiveAnimation = {
+    frames: [
+        r(71, 36, {image: requireImage('gfx/shipIconYellow.png')}),
+        r(71, 36, {image: requireImage('gfx/shipIconRed.png')}),
+        r(71, 36, {image: requireImage('gfx/shipIconYellow.png')}),
+        r(71, 36, {image: requireImage('gfx/shipIcon.png')}),
+    ],
+    frameDuration: 12, duration: 12 * 4,
+};
 const sleepButton = {
     render(context, state, button) {
         let frame;
-        // Play the teleport animation when over the button or fuel is low.
-        if (state.overButton === button || state.saved.fuel < state.saved.maxFuel / 10) {
+        if (state.overButton === button) {
+            // This will make the animation start at the beginning when it activates.
+            button.animationTime = state.time;
+            frame = sleepButtonActiveAnimation.frames[0];
+        } else if (state.saved.fuel < state.saved.maxFuel / 10) {
+            // Play the teleport animation when over the button or fuel is low.
             if (!button.animationTime) button.animationTime = state.time;
             frame = getFrame(sleepButtonActiveAnimation, state.time - button.animationTime);
         } else {
@@ -124,11 +136,11 @@ const sleepButton = {
     resize({buttonHeight, padding, width}) {
         this.height = sleepButtonAnimation.frames[0].height;
         this.width = sleepButtonAnimation.frames[0].width;
-        this.scale = Math.floor(2 * buttonHeight / this.width) / 2;
+        this.scale = Math.round(buttonHeight / this.height);
         this.height *= this.scale;
         this.width *= this.scale;
         this.top = padding;
-        this.left = Math.floor(width / 2 - this.width / 2);
+        this.left = Math.round(width / 2 - this.width / 2);
     },
 };
 function getSleepButton() {
@@ -148,8 +160,8 @@ const continueButton = {
         this.left = (width - this.width) / 2;
     },
 };
-const optionsAnimation = createAnimation('gfx/options.png', r(24, 24));
-const optionsOverAnimation = createAnimation('gfx/gearmouseover.png',  r(24, 24));
+const optionsAnimation = createAnimation('gfx/gear.png', r(36, 36));
+const optionsOverAnimation = createAnimation('gfx/gearover.png',  r(36, 36));
 const optionsButton = {
     render(context, state, button) {
         const animation = state.overButton === button ? optionsOverAnimation : optionsAnimation;
@@ -163,11 +175,11 @@ const optionsButton = {
     resize({ buttonHeight, padding, width }) {
         this.height = optionsAnimation.frames[0].height;
         this.width = optionsAnimation.frames[0].width;
-        this.scale = Math.floor(2 * buttonHeight / this.width) / 2;
+        this.scale = Math.round(buttonHeight / this.width);
         this.height *= this.scale;
         this.width *= this.scale;
-        this.top = padding / 2;
-        this.left = width - padding / 2 - this.width;
+        this.top = padding;
+        this.left = width - padding - this.width;
     },
 };
 const achievementButton = {
@@ -175,7 +187,7 @@ const achievementButton = {
         context.save();
         let animationTime = state.time - (state.lastAchievementTime || state.time);
         if (animationTime > achievementAnimation.duration) animationTime = 0;
-        context.globalAlpha = animationTime ? 1 : 0.8;
+        context.globalAlpha = (animationTime || (state.overButton === button)) ? 1 : 0.6;
         const frame = getFrame(achievementAnimation, animationTime);
         drawImage(context, frame.image, frame, new Rectangle(button).pad(-1));
         context.restore();
@@ -186,19 +198,19 @@ const achievementButton = {
     },
     resize(layoutProperties) {
         const {buttonHeight, padding} = layoutProperties;
-        optionsButton.resize(layoutProperties);
+        helpButton.resize(layoutProperties);
         this.height = achievementAnimation.frames[0].height;
         this.width = achievementAnimation.frames[0].width;
-        this.scale = Math.floor(2.2 * buttonHeight / this.width) / 2;
+        this.scale = Math.round(buttonHeight / this.width);
         this.height *= this.scale;
         this.width *= this.scale;
-        this.top = optionsButton.top + (optionsButton.height - this.height) / 2;
-        this.left = optionsButton.left - padding / 2 - this.width;
+        this.top = helpButton.top + (helpButton.height - this.height) / 2;
+        this.left = helpButton.left - padding - this.width;
     },
 };
 // Help Button is modified '?' character from google fonts Work Sans Extra-Bold 800 20px.
-const helpButtonAnimation = createAnimation('gfx/help.png', r(32, 32));
-const helpButtonOverAnimation = createAnimation('gfx/helpOver.png', r(32, 32));
+const helpButtonAnimation = createAnimation('gfx/help2.png', r(36, 36));
+const helpButtonOverAnimation = createAnimation('gfx/help2over.png', r(36, 36));
 const helpButton = {
     render(context, state, button) {
         const animation = state.overButton === button ? helpButtonOverAnimation : helpButtonAnimation;
@@ -210,14 +222,14 @@ const helpButton = {
     },
     resize(layoutProperties) {
         const {buttonHeight, padding} = layoutProperties;
-        achievementButton.resize(layoutProperties);
+        optionsButton.resize(layoutProperties);
         this.height = helpButtonAnimation.frames[0].height;
         this.width = helpButtonAnimation.frames[0].width;
-        this.scale = Math.floor(2 * buttonHeight / this.width) / 2;
+        this.scale = Math.round(buttonHeight / this.width);
         this.height *= this.scale;
         this.width *= this.scale;
-        this.top = achievementButton.top + (achievementButton.height - this.height) / 2;
-        this.left = achievementButton.left - padding / 2 - this.width;
+        this.top = optionsButton.top + (optionsButton.height - this.height) / 2;
+        this.left = optionsButton.left - padding - this.width;
     },
 };
 function getHelpButton() {
@@ -407,7 +419,7 @@ const digButton = {
             this.top = height - 2 * padding - Math.round(2.5 * buttonHeight);
             this.left = padding;
         } else {
-            this.top = padding + optionsButton.height;
+            this.top = padding * 2 + optionsButton.height;
             this.left = width - padding - this.width;
         }
     },
@@ -425,7 +437,7 @@ function resizeDigButton(layoutProperties) {
         this.top = height - (3 - row) * (this.height + padding);
         this.left = padding * 4 + (1 + column) * (this.width + padding);
     } else {
-        this.top = padding * 2 + (1 + this.row) * (this.height + padding / 2) + optionsButton.height;
+        this.top = padding * 4 + (1 + this.row) * (this.height + padding) + optionsButton.height;
         this.left = width - padding - this.width;
     }
 }
@@ -547,6 +559,8 @@ function renderButtonBackground(context, state, button, fillColor = '#000') {
         context.fillStyle = fillColor;
         context.fillRect(button.left, button.top, button.width, button.height);
     }
+    // Lines will not appear crisp if they aren't rounded.
+    button = new Rectangle(button).snap();
     context.fillStyle = getButtonColor(state, button);
     context.fillRect(button.left, button.top, button.width, 1);
     context.fillRect(button.left, button.top + button.height - 1, button.width, 1);
@@ -564,18 +578,6 @@ function renderButtonBackground(context, state, button, fillColor = '#000') {
 
     context.fillRect(button.left + button.width - 8, button.top + button.height - 3, 6, 1);
     context.fillRect(button.left + button.width - 3, button.top + button.height - 8, 1, 6);
-
-    /*const lineColor = getButtonColor(state, button);
-    context.fillStyle = lineColor;
-    context.fillRect(button.left, button.top, button.width, button.height);
-    context.fillStyle = fillColor;
-    context.fillRect(button.left + 1, button.top + 1, button.width - 2, button.height - 2);
-    context.fillStyle = lineColor;
-    context.fillRect(button.left + 2, button.top + 2, button.width - 4, button.height - 4);
-    context.fillStyle = fillColor;
-    context.fillRect(button.left + 3, button.top + 3, button.width - 6, button.height - 6);
-    context.fillRect(button.left + 8, button.top + 1, button.width - 16, button.height - 2);
-    context.fillRect(button.left + 1, button.top + 8, button.width - 2, button.height - 16);*/
 }
 
 function getDisplayValue(value) {

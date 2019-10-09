@@ -28,6 +28,9 @@ function drawRectangle(context, rectangle, {fillStyle, strokeStyle, lineWidth = 
 function drawText(context, text, x, y,
     {fillStyle = 'black', maxWidth, strokeStyle, lineWidth = 1, textAlign = 'left', textBaseline = 'bottom', size = 20, measure = false}
 ) {
+    x = Math.round(x / 2) * 2;
+    y = Math.round(y / 2) * 2;
+    size = Math.round(size / 2) * 2;
     context.textAlign = textAlign;
     context.textBaseline = textBaseline;
     context.font = `${size}px VT323`;

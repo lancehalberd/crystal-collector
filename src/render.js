@@ -120,6 +120,8 @@ function playDiggingTrack(state) {
 }
 
 function render(context, state) {
+    context.fillStyle = 'black';
+    context.fillRect(0, 0, canvas.width, canvas.height);
     let bgmTime = state.time - (state.bgmTime || 0);
     let bgm = 'digging';
     // The intro is 4 seconds longer than the intro music, so we just keep playing the
@@ -144,8 +146,6 @@ function render(context, state) {
         }
     }
     if (!areImagesLoaded() || !state.interacted) {
-        context.fillStyle = 'black';
-        context.fillRect(0, 0, canvas.width, canvas.height);
         // Don't render for the first 200ms, to prevent 'Loading...' from flashing
         // when assets are cached.
         if (Date.now() - loadTime > 200) renderPlayButton(context, state);

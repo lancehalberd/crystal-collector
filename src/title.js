@@ -147,10 +147,10 @@ const fileButton = {
         let p = (animationTime - this.delay()) / loadButtonAnimationTime;
         p = Math.min(1, Math.max(0, p));
         this.p = p;
-        this.width = p * (width - 3 * padding) / 2;
-        this.height = p * (height - 3 * padding) / 2;
-        this.top = height / 2 + ((this.index >= 2) ? padding / 2 : -padding / 2 - this.height);
-        this.left = width / 2 + ((this.index % 2) ? padding / 2 : -padding / 2 - this.width);
+        this.width = p * (width - 6 * padding) / 2;
+        this.height = p * (height - 6 * padding) / 2;
+        this.top = height / 2 + ((this.index >= 2) ? padding : -padding - this.height);
+        this.left = width / 2 + ((this.index % 2) ? padding : -padding - this.width);
     },
 };
 const fileButtons = [0,1,2,3].map(index => ({
