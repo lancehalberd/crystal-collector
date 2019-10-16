@@ -34,14 +34,14 @@ const loadTime = Date.now();
 
 function playDiggingTrack(state) {
     let bgmTime = state.time - (state.bgmTime || 0);
-    const allSources = ['digging1', 'digging1-2', 'digging2', 'digging2-2', 'digging3'];
+    const allSources = ['digging1', 'digging1-2', 'digging2', 'digging2-2', 'digging3', 'digging3-2', 'digging4'];
     const finalPhase = allSources.length * 3 - 2;
     let y = state.camera.top + canvas.height / 2;
     // Sound test code.
-    const S = 1000;
+    const S = 720;
     if (isKeyDown(KEY_SPACE)) {
         // 3 main tracks and 2 transition tracks
-        y = (3 * 2 * S + 2 * 2 * S) * ( state.lastMouseCoords ? state.lastMouseCoords.x : 0) / canvas.width;
+        y = (4 * 2 * S + 3 * 2 * S) * ( state.lastMouseCoords ? state.lastMouseCoords.x : 0) / canvas.width;
     }
     let phase = 0;
     while (y >= 0 && phase < finalPhase) {
