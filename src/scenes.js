@@ -157,11 +157,16 @@ function drawStars(context, time, dx, y) {
 */
 const endingSequence = [
     // Render the part teleporting in first.
-    {duration: 2000, render(context, state, animationTime) {
+    {duration: 5000, render(context, state, animationTime) {
         renderShipScene(context, state);
     }},
+    // A pause before the launch.
+    {duration: 1000, render(context, state, animationTime) {
+        renderShipBackground(context, state);
+        renderShip(context, state);
+    }},
     // Ship warp sequence starts happening here.
-    {duration: 3000, render(context, state, animationTime) {
+    {duration: 5000, render(context, state, animationTime) {
         renderShipBackground(context, state);
         renderShip(context, state);
     }},
@@ -198,7 +203,7 @@ const endingSequence = [
         drawCenter(context, programmerAnimation, animationTime, this.duration);
     }},
     // The screen pans down to a planet and the ship flies in an arc as if to land.
-    {duration: 5000, render(context, state, animationTime) {
+    {duration: 6000, render(context, state, animationTime) {
         let y = Math.max(-100, -animationTime / 10);
         let x = (12000 - 2300) / 2 + 250;
         drawStars(context, state.time, x, y / 5);
@@ -238,7 +243,7 @@ const endingSequence = [
         drawCenter(context, artAnimation, animationTime, this.duration);
     }},
     // The camera pans up and the ship flies across the screen flash with music notes coming out.
-    {duration: 5000, render(context, state, animationTime) {
+    {duration: 6000, render(context, state, animationTime) {
         let y = Math.min(0, Math.max(-100, -100 + 100 * (animationTime - 200) / 1000));
         let x = (12000 - 2300) / 2 + 250;
         if (animationTime > 3000) {
@@ -275,7 +280,7 @@ const endingSequence = [
 
         renderCreditsCard(context, state,
             'Music',
-            ['Robert Brewer', 'Joseph English'],
+            ['Joseph English'],
             getCardAlpha(animationTime, this.duration)
         );
     }},
@@ -285,7 +290,7 @@ const endingSequence = [
         drawCenter(context, musicAnimation, animationTime, this.duration);
     }},
     // The ship flies successfully navigates a meteor shower with additional credits.
-    {duration: 10500, render(context, state, animationTime) {
+    {duration: 12000, render(context, state, animationTime) {
         renderShipBackground(context, state);
 
 
@@ -294,20 +299,20 @@ const endingSequence = [
         }
 
         let frame = getFrame(shipPartyAnimation, state.time);
-        let u = animationTime / 10500;
+        let u = animationTime / 12000;
         let x = canvas.width + frame.width / 2 - u * (canvas.width + frame.width);
-        let y = 150 + Math.sin(u * Math.PI * 2) * 75;
+        let y = 300 + Math.sin(u * Math.PI * 2) * 75;
         drawImage(context, frame.image, frame, new Rectangle(frame).moveCenterTo(x - 14, y + 2));
         frame = getFrame(shipThrusterAnimation, state.time);
         drawImage(context, frame.image, frame, new Rectangle(frame).moveCenterTo(x, y));
 
-        if (animationTime < 5000) {
+        if (animationTime < 5500) {
             renderCreditsCard(context, state,
                 'Additional Programming',
                 ['Haydn Neese'],
                 getCardAlpha(animationTime, 5000)
             );
-        } else if (animationTime >= 5500) {
+        } else if (animationTime >= 6500) {
             renderCreditsCard(context, state,
                 'Testing',
                 ['Leon Garcia', 'Hillary Spratt', 'And Many Others'],
@@ -320,7 +325,7 @@ const endingSequence = [
         renderShipBackground(context, state);
 
         if (animationTime < 10000) {
-            renderAsteroids(context, 10, animationTime + 8500);
+            renderAsteroids(context, 10, animationTime + 10000);
         }
         // The cake is bigger if the player completes the game in fewer days.
         let cakeAnimation = cake1Animation;

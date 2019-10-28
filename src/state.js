@@ -291,7 +291,7 @@ function advanceState(state) {
         delete state.hintButton;
     }
     if (state.outroTime !== false) {
-        if (state.outroTime === 2300) playSoundWithState(state, 'shipWarp');
+        if (state.outroTime === 6300) playSoundWithState(state, 'shipWarp');
         state = {
             ...state,
             outroTime: state.outroTime + FRAME_LENGTH,

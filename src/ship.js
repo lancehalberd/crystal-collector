@@ -109,8 +109,8 @@ function renderTransitionShipBackground(context, state) {
             0,
             -200 + 200 * (topTarget / 3 -state.camera.top) / (-topTarget * 2 / 3)
     ));
-    if (state.outroTime > 2300) {
-        const dx = (state.outroTime - 2300) / 2;
+    if (state.outroTime > 6300) {
+        const dx = (state.outroTime - 6300) / 2;
         const emptyFrame = getFrame(nightAnimationEmpty, state.time);
         const firstFrame = dx < canvas.width ? frame : emptyFrame;
 
@@ -140,8 +140,8 @@ function renderShip(context, state) {
     let frame = getFrame(shipAnimation, state.time);
     let tx = Math.round(canvas.width / 2 + EDGE_LENGTH / 2);
     let dy = 3 * Math.sin(state.time / 500);
-    if (state.outroTime !== false && state.outroTime >= 2000) {
-        let animationTime = state.outroTime - 2000;
+    if (state.outroTime !== false && state.outroTime >= 6000) {
+        let animationTime = state.outroTime - 6000;
         const chargeTime = shipWarpStartAnimation.duration;
         tx += (animationTime < chargeTime) ? animationTime / 40 : (chargeTime / 40 - (animationTime - chargeTime));
         dy *= Math.max(0, chargeTime - animationTime) / chargeTime;
@@ -156,8 +156,8 @@ function renderShip(context, state) {
         }
     } else {
         let ty = Math.round(shipBaseHeight + dy);
-        if (state.introTime !== false && state.introTime >= 4000) {
-            frame = getFrame(shipEmergencyAnimation, state.introTime - 4000);
+        if (state.introTime !== false && state.introTime >= 12000) {
+            frame = getFrame(shipEmergencyAnimation, state.introTime - 12000);
             tx -= 14;
             ty += 2;
         }
@@ -199,6 +199,15 @@ function renderShipScene(context, state) {
             if (animationTime < arriveAnimation.duration - 200) break;
         }
         frame = getFrame(animation, animationTime);
+        // Make the elements blink during the outro time.
+        if (state.outroTime >= 0) {
+            // Show each part for 600ms
+            if (state.outroTime < 3000 && (state.outroTime < 600 * i || state.outroTime > 600 * (i + 1))) {
+                continue;
+            }
+            // Blink all parts.
+            if (state.outroTime >= 3000 && state.outroTime < 4500 && state.outroTime % 1000 > 500) continue;
+        }
         drawImage(context, frame.image, frame,
             new Rectangle(frame).scale(scale).moveCenterTo(
                 left + scale * warpDriveSlots[i][0],

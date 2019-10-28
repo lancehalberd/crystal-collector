@@ -5,7 +5,7 @@ window.sounds = sounds;
 import {Howl/*, Howler*/} from 'howler';
 
 function requireSound(key) {
-    let source, offset, volume, duration, limit, repeatFrom, type = 'default';
+    let source, offset, volume, duration, limit, repeatFrom, nextTrack, type = 'default';
     if (typeof key === 'string') {
         [source, offset, volume] = key.split('+');
         key = source;
@@ -15,6 +15,7 @@ function requireSound(key) {
         limit = key.limit;
         source = key.source;
         repeatFrom = key.repeatFrom;
+        nextTrack = key.nextTrack;
         type = key.type || type;
         key = key.key || source;
     }
@@ -53,8 +54,16 @@ function requireSound(key) {
                 //}
             };
         }
+        // A track can specify another track source to automatically transition to without crossfade.
+        if (nextTrack) {
+            howlerProperties.onend = function() {
+                playTrack(nextTrack, 0, this.mute(), false, false);
+                this.stop();
+            };
+        }
         newSound.howl = new Howl(howlerProperties);
         newSound.props = howlerProperties;
+        newSound.nextTrack = nextTrack;
     } else {
         const howlerProperties = {
             src: [source],
@@ -111,7 +120,7 @@ function playSound(key, muted = false) {
 
 let playingTracks = [], trackIsPlaying = false;
 window.playingTracks = playingTracks;
-function playTrack(source, timeOffset, muted = false, fadeOutOthers = true) {
+function playTrack(source, timeOffset, muted = false, fadeOutOthers = true, crossFade = true) {
     const sound = requireSound(source);
     if (!sound.howl || !sound.howl.duration()) {
         return false;
@@ -120,9 +129,21 @@ function playTrack(source, timeOffset, muted = false, fadeOutOthers = true) {
     if (playingTracks.includes(sound) || sound.howl.playing()) {
         return sound;
     }
+    // Do nothing if the sound has transitioned to the next track.
+    // This allows treating preventing restarting the sound when the source is still the original track.
+    // This currently only supports one instance of nextTrack set per sound.
+    if (sound.nextTrack) {
+        const nextTrackSound = requireSound(sound.nextTrack);
+        if (playingTracks.includes(nextTrackSound) || nextTrackSound.howl.playing()) {
+            return nextTrackSound;
+        }
+    }
     //console.log('playTrack', playingTracks, source, sound);
     trackIsPlaying = false;
-    if (fadeOutOthers) fadeOutPlayingTracks();
+    if (fadeOutOthers) {
+        if (crossFade) fadeOutPlayingTracks();
+        else stopTrack();
+    }
 
     const volume = sound.props.volume;
     let offset = (timeOffset / 1000);
@@ -137,7 +158,8 @@ function playTrack(source, timeOffset, muted = false, fadeOutOthers = true) {
     // console.log({volume});
     // console.log('fade in new track', sound);
     //console.log('Fade in ' + sound.props.src);
-    sound.howl.fade(0, volume, 1000);
+    if (crossFade) sound.howl.fade(0, volume, 1000);
+    else sound.howl.volume(volume);
     playingTracks.push(sound);
     return sound;
 }
@@ -209,7 +231,7 @@ function stopTrack() {
     trackIsPlaying = false;
     for (const playingTrack of playingTracks) {
         // console.log('Stopping from stopTrack ', playingTrack.props.src);
-        playingTrack.stop();
+        playingTrack.howl.stop();
     }
     playingTracks = [];
     window.playingTracks = playingTracks;
@@ -235,6 +257,18 @@ function unmuteTrack() {
     }
 }
 
+function getSoundDuration(key) {
+    const sound = requireSound(key);
+    if (sound.duration) {
+        return sound.duration;
+    }
+    if (!sound.howl || !sound.howl.duration()) {
+        return false;
+    }
+    sound.duration = sound.howl.duration();
+    return sound.duration;
+}
+
 const preloadSounds = () => {
     [
         {key: 'achievement', source: 'sfx/achievement.mp3', volume: 2, limit: 2}, // Unlock an achievement
@@ -254,7 +288,8 @@ const preloadSounds = () => {
         // See credits.html for: mobbrobb.
         {key: 'digging', type: 'bgm', source: 'bgm/title.mp3', volume: 2},
         {key: 'ship', type: 'bgm', source: 'bgm/ship.mp3', volume: 10},
-        {key: 'victory', type: 'bgm', source: 'bgm/victory.ogg', volume: 5, repeatFrom: 4000},
+        {key: 'victory', type: 'bgm', source: 'bgm/credits.ogg', volume: 5, nextTrack: 'victoryloop'},
+        {key: 'victoryloop', type: 'bgm', source: 'bgm/creditsloop.ogg', volume: 5},
         {key: 'intro', type: 'bgm', source: 'bgm/intro.ogg', volume: 5},
 
         {key: 'digging1', type: 'bgm', source: 'bgm/digging1.ogg', volume: 4},
@@ -264,7 +299,6 @@ const preloadSounds = () => {
         {key: 'digging3', type: 'bgm', source: 'bgm/digging3.ogg', volume: 3},
         {key: 'digging3-2', type: 'bgm', source: 'bgm/transition3.ogg', volume: 3},
         {key: 'digging4', type: 'bgm', source: 'bgm/digging4.wav', volume: 3},
-        //{key: 'lava', type: 'bgm', source: 'bgm/lava.ogg', volume: 4},
         {key: 'lava', type: 'bgm', source: 'bgm/danger3.ogg', volume: 5},
     ].forEach(requireSound);
 };
@@ -275,6 +309,7 @@ window.stopTrack = stopTrack;
 window.requireSound = requireSound;
 
 module.exports = {
+    getSoundDuration,
     muteSounds,
     unmuteSounds,
     muteTrack,
