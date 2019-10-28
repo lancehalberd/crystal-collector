@@ -298,7 +298,7 @@ const preloadSounds = () => {
         {key: 'digging2-2', type: 'bgm', source: 'bgm/digging2-2.ogg', volume: 1},
         {key: 'digging3', type: 'bgm', source: 'bgm/digging3.ogg', volume: 3},
         {key: 'digging3-2', type: 'bgm', source: 'bgm/transition3.ogg', volume: 3},
-        {key: 'digging4', type: 'bgm', source: 'bgm/digging4.wav', volume: 3},
+        {key: 'digging4', type: 'bgm', source: 'bgm/digging4.ogg', volume: 3},
         {key: 'lava', type: 'bgm', source: 'bgm/danger3.ogg', volume: 5},
     ].forEach(requireSound);
 };
