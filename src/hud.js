@@ -552,7 +552,9 @@ function getButtonColor(state, button) {
     const neutralColor = button.neutralColor || boxBorderColorNeutral;
     const enabled = !button.isEnabled || button.isEnabled(state, button);
     const active = button.isActive && button.isActive(state, button);
-    return (state.overButton === button || active) ? (enabled ? button.activeColor || boxBorderColorGood : boxBorderColorBad) : neutralColor;
+    return (state.overButton === button || active)
+        ? (enabled ? (button.activeColor || boxBorderColorGood) : boxBorderColorBad)
+        : neutralColor;
 }
 function renderButtonBackground(context, state, button, fillColor = '#000') {
     if (fillColor) {
@@ -560,8 +562,8 @@ function renderButtonBackground(context, state, button, fillColor = '#000') {
         context.fillRect(button.left, button.top, button.width, button.height);
     }
     // Lines will not appear crisp if they aren't rounded.
-    button = new Rectangle(button).snap();
     context.fillStyle = getButtonColor(state, button);
+    button = new Rectangle(button).snap();
     context.fillRect(button.left, button.top, button.width, 1);
     context.fillRect(button.left, button.top + button.height - 1, button.width, 1);
     context.fillRect(button.left, button.top, 1, button.height);
@@ -944,7 +946,7 @@ function renderHUD(context, state) {
         const fuelMultiplier = 1 + getAchievementBonus(state, ACHIEVEMENT_GAIN_X_BONUS_FUEL_IN_ONE_DAY) / 100;
         const maxFuel = Math.round(state.saved.maxFuel * fuelMultiplier);
         let fuelBarTarget = new Rectangle(
-            10, 10, 
+            10, 10,
             Math.min(canvas.width / 2.5, 200 * fuelMultiplier), fuelFrame.height
         );
         // Draw the border and background
