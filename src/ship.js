@@ -200,7 +200,7 @@ function renderShipScene(context, state) {
         }
         frame = getFrame(animation, animationTime);
         // Make the elements blink during the outro time.
-        if (state.outroTime >= 0) {
+        if (state.outroTime > 0) {
             // Show each part for 600ms
             if (state.outroTime < 3000 && (state.outroTime < 600 * i || state.outroTime > 600 * (i + 1))) {
                 continue;

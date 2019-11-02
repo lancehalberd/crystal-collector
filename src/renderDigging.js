@@ -262,6 +262,10 @@ function renderCellShading(context, state, row, column) {
         context.globalAlpha = 0.15 + p * p * (0.25 + 0.25 * Math.sin(state.time / 500));
         context.lineWidth = 6;
         context.stroke();
+        if (!cell.destroyed && cell.numbersRevealed) {
+            context.fillStyle = '#FFF';
+            context.fill();
+        }
         context.restore();
     }
     // Indicators for the number of crystals and bombs near this cell.

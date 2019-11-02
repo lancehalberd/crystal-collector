@@ -261,8 +261,8 @@ function revealCellNumbers(state, row, column) {
             if (cellColor === 'treasure') treasures++;
         }
     }
-    let explored = state.rows[row][z(column)].explored || (crystals === 0 && traps === 0 && treasures === 0);
-    return updateCell(state, row, column, {crystals, traps, treasures, numbersRevealed, explored});
+    //let explored = state.rows[row][z(column)].explored || (crystals === 0 && traps === 0 && treasures === 0);
+    return updateCell(state, row, column, {crystals, traps, treasures, numbersRevealed});
 }
 
 function updateCell(state, row, column, properties) {
@@ -354,8 +354,8 @@ function detonateDebris(state, row, column) {
         const cellToUpdate = state.rows[coordsToUpdate.row][z(coordsToUpdate.column)];
         const traps = cellToUpdate.traps - 1;
         // Mark cells with no nearby traps/crystals explored since numbers are already revealed.
-        let explored = cellToUpdate.explored || (!traps && !cellToUpdate.crystals && !cellToUpdate.treasures);
-        state = updateCell(state, coordsToUpdate.row, coordsToUpdate.column, {traps, explored});
+        //let explored = cellToUpdate.explored || (!traps && !cellToUpdate.crystals && !cellToUpdate.treasures);
+        state = updateCell(state, coordsToUpdate.row, coordsToUpdate.column, {traps});
     }
     state = {...state, waitingForExplosion: false};
     return state;
@@ -397,8 +397,8 @@ function exploreCell(state, row, column, usingExtractor = false) {
             const cellToUpdate = state.rows[coordsToUpdate.row][z(coordsToUpdate.column)];
             const treasures = cellToUpdate.treasures - 1;
             // Mark cells with no nearby traps/crystals explored since numbers are already revealed.
-            let explored = cellToUpdate.explored || (!treasures && !cellToUpdate.crystals && !cellToUpdate.traps);
-            state = updateCell(state, coordsToUpdate.row, coordsToUpdate.column, {treasures, explored});
+            //let explored = cellToUpdate.explored || (!treasures && !cellToUpdate.crystals && !cellToUpdate.traps);
+            state = updateCell(state, coordsToUpdate.row, coordsToUpdate.column, {treasures});
         }
     } else if (cellColor === 'green') {
         const depth = getDepth(state, row, column);
@@ -424,8 +424,8 @@ function exploreCell(state, row, column, usingExtractor = false) {
             const cellToUpdate = state.rows[coordsToUpdate.row][z(coordsToUpdate.column)];
             const crystals = cellToUpdate.crystals - 1;
             // Mark cells with no nearby traps/crystals explored since numbers are already revealed.
-            let explored = cellToUpdate.explored || (!crystals && !cellToUpdate.traps && !cellToUpdate.treasures);
-            state = updateCell(state, coordsToUpdate.row, coordsToUpdate.column, {crystals, explored});
+            // let explored = cellToUpdate.explored || (!crystals && !cellToUpdate.traps && !cellToUpdate.treasures);
+            state = updateCell(state, coordsToUpdate.row, coordsToUpdate.column, {crystals});
         }
         if (!usingExtractor && depth > state.saved.lavaDepth - 11 && depth < Math.floor(state.saved.lavaDepth)) {
             const delta = Math.floor(state.saved.lavaDepth) - depth;
@@ -571,8 +571,8 @@ function advanceDigging(state) {
                         const cellToUpdate = state.rows[coordsToUpdate.row][z(coordsToUpdate.column)];
                         const traps = cellToUpdate.traps - 1;
                         // Mark cells with no nearby traps/crystals/treasures explored since numbers are already revealed.
-                        let explored = cellToUpdate.explored || (!traps && !cellToUpdate.crystals && !cellToUpdate.treasures);
-                        state = updateCell(state, coordsToUpdate.row, coordsToUpdate.column, {traps, explored});
+                        //let explored = cellToUpdate.explored || (!traps && !cellToUpdate.crystals && !cellToUpdate.treasures);
+                        state = updateCell(state, coordsToUpdate.row, coordsToUpdate.column, {traps});
                     }
                     state = addSprite(state, {...bombSprite, x, y, bonusFuel, time: state.time + 400});
                     state = addSprite(state, {
