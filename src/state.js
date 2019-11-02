@@ -55,7 +55,7 @@ function getNewCamera(lavaDepth = INITIAL_LAVA_DEPTH) {
         minX: 1E9,
         maxX: -1E9,
         minY: 1E9,
-        maxY: lavaDepth * ROW_HEIGHT / 2 + ROW_HEIGHT / 2,//-1E9,
+        maxY: -1E9, //lavaDepth * ROW_HEIGHT / 2 + ROW_HEIGHT / 2,
     };
 }
 
