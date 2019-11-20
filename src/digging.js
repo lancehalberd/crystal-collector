@@ -519,7 +519,7 @@ function advanceDigging(state) {
             const multiplier = startingCell.row >= 25 ? 2 : 1;
             dy = Math.min(multiplier * MAX_TELEPORT_SPEED, Math.max(5, dy));
             state = {...state, camera: {...state.camera,
-                top: state.camera.top + dy,
+                top: Math.min(targetTop, state.camera.top + dy),
                 left: Math.round((state.camera.left * 20 + targetLeft) / 21)
             }};
         } else {

@@ -34,6 +34,7 @@ const leavingAdvice = [
     {label: 'Most of the unstable ship debris is buried deep beneath the surface.'},
     {label: 'Unlocking achievements will improve Dig Bot\'s capabilities.'},
     {label: 'You will need to find five stable ship parts to repair your warp drive.'},
+    {label: 'If an obstacle blocks your way, try searching for crystals nearby.'},
     {label: 'You can start over from day 1 with all of your achievements after repairing your ship.'},
 ];
 

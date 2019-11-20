@@ -37,9 +37,21 @@ function renderAsteroids(context, numberOfAsteroids, animationTime) {
         drawImage(context, frame.image, frame, new Rectangle(frame).scale(scale).moveCenterTo(x, y));
     }
 }
+function renderShipParts(context, state, animationTime) {
+    if (animationTime < 0) return;
+    const vs = [[40, 1], [55, 3], [75, 2], [85, 4], [100, 2]]
+    for (let i = 0; i < 5; i++) {
+        let t = animationTime / 1000
+        const tx = canvas.width / 2 + vs[i][0] * t;
+        const ty = canvas.height / 2 + t * vs[i][1] + (i + 5) * 5 * t * t;
+        const frame = getFrame(shipPartAnimations[i], animationTime);
+        drawImage(context, frame.image, frame, new Rectangle(frame).moveCenterTo(tx, ty))
+    }
+}
 const introSequence = [
     // Asteroid hits the spaceship from the top left
     {duration: 5000, render(context, state, introTime) {
+        renderShip(context, state);
         const numberOfAsteroids = 1 + Math.floor(introTime / 500);
         renderAsteroids(context, numberOfAsteroids, introTime);
         // Finally
@@ -52,6 +64,7 @@ const introSequence = [
         }
     }},
     {duration: 1000, render(context, state, introTime) {
+        renderShip(context, state);
         renderAsteroids(context, 10, introTime + 5000);
         const frame = getFrame(asteroidAnimation, introTime);
         const p = introTime / 1000;
@@ -61,43 +74,41 @@ const introSequence = [
     }},
     // There is an explosion + pieces of the ship fall toward the bottom of the screen.
     {duration: 2500, render(context, state, introTime) {
+        renderShipParts(context, state, introTime - 200);
+        renderShip(context, state);
         renderAsteroids(context, 10, introTime + 6000);
         if (introTime === 0) playSound(state, 'explosion');
-        if (introTime >= 200) {
-            for (let i = 0; i < 5; i++) {
-                let dx = -25 + 10 * i;
-                let t = (introTime - 200) / 1000
-                const tx = canvas.width / 2 + dx * t;
-                const ty = canvas.height / 2 + 60 * t + 60 * t * t;
-                const frame = getFrame(shipPartAnimations[i], introTime);
-                drawImage(context, frame.image, frame, new Rectangle(frame).moveCenterTo(tx, ty))
-            }
-        }
         if (introTime <= explosionAnimation.duration) drawCenter(context, explosionAnimation, introTime);
     }},
     // cut 1: sad face, warning play alarm sfx
     {duration: 2000, render(context, state, introTime) {
+        renderShipParts(context, state, introTime + 2300);
+        renderShip(context, state);
         renderAsteroids(context, 10, introTime + 8000);
         if (introTime % 2000 === 0) playSound(state, 'alarm');
         drawCenter(context, cut1Animation, introTime);
     }},
     // cut 2: ship, warning play alarm sfx
     {duration: 2000, render(context, state, introTime) {
+        renderShip(context, state);
         // Fine to stop rendering asteroids, they should all be out of frame by now.
         if (introTime % 2000 === 0) playSound(state, 'alarm');
         drawCenter(context, cut2Animation, introTime);
     }},
     // cut 3a+b: flashin red warp drive missing parts play alarm sfx
     {duration: 6000, render(context, state, introTime) {
+        renderShip(context, state);
         if (introTime % 2000 === 0) playSound(state, 'alarm');
         drawCenter(context, cut3Animation, introTime);
     }},
     // cut 4: stop alarm sfx.
     {duration: 1000, render(context, state, introTime) {
+        renderShip(context, state);
         drawCenter(context, cut4Animation, introTime);
     }},
     // cut 5: run the teleport animation where digbot was in frame 5a
     {duration: 3000, render(context, state, introTime) {
+        renderShip(context, state);
         drawCenter(context, cut5Animation, introTime);
         if (introTime >= teleportAnimation.duration) return;
         const frame = getFrame(teleportAnimation, introTime);
@@ -315,7 +326,7 @@ const endingSequence = [
         } else if (animationTime >= 6500) {
             renderCreditsCard(context, state,
                 'Testing',
-                ['Leon Garcia', 'Hillary Spratt', 'And Many Others'],
+                ['Chris Evans', 'Leon Garcia', 'Hillary Spratt', 'And Many Others'],
                 getCardAlpha(animationTime - 5500, 5000)
             );
         }
@@ -375,7 +386,6 @@ const teleportAnimation = createAnimation('gfx/teleportnew.png', r(30, 30), {col
 function renderIntro(context, state) {
     let introTime = state.introTime || 0;
     renderShipBackground(context, state);
-    renderShip(context, state);
     for (let i = 0; i < introSequence.length; i++) {
         const scene = introSequence[i];
         if (introTime < scene.duration) {
