@@ -356,6 +356,7 @@ function getCardAlpha(animationTime, duration) {
 
 
 const endingSequenceDuration = endingSequence.reduce((sum, scene) => sum + (scene.duration || 0), 0) + 5000;
+console.log(endingSequenceDuration);
 module.exports = {
     endingSequenceDuration,
     introSequenceDuration,

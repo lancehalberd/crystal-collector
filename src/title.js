@@ -1,5 +1,5 @@
 const Rectangle = require('Rectangle');
-const { COLOR_BAD, canvas } = require('gameConstants');
+const { COLOR_BAD, COLOR_CRYSTAL, canvas } = require('gameConstants');
 const { r, requireImage, getFrame } = require('animations');
 const { drawImage, drawRectangle, drawText } = require('draw');
 module.exports = {
@@ -96,7 +96,7 @@ const fileButton = {
             if (saveData.shipPart > i) drawImage(context, frame.image, frame, target);
         }
         // Gems collected
-        scale = Math.floor(2 * size / crystalFrame.height) / 2;
+        scale = Math.round(2 * size / crystalFrame.height) / 2;
         iconRectangle = new Rectangle(crystalFrame).scale(scale);
         drawImage(context, crystalFrame.image, crystalFrame,
             iconRectangle.moveCenterTo(
@@ -105,7 +105,7 @@ const fileButton = {
             )
         );
         drawText(context, saveData.score.abbreviate(), left + 5 + iconRectangle.width, top + halfHeight * 5,
-            {fillStyle: '#4AF', strokeStyle: 'white', textAlign: 'left', textBaseline: 'middle', size, measure: true}
+            {fillStyle: COLOR_CRYSTAL, strokeStyle: 'white', textAlign: 'left', textBaseline: 'middle', size, measure: true}
         );
     },
     onClick(state) {

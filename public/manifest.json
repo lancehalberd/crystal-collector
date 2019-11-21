@@ -3,8 +3,8 @@
   "name": "Crystal Collector",
   "icons": [
     {
-      "src": "gfx/icon-192.png",
-      "sizes": "192x192",
+      "src": "gfx/logo1.png",
+      "sizes": "100x100",
       "type": "image/png"
     }
   ],

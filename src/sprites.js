@@ -8,11 +8,6 @@ const { drawImage } = require('draw');
 const { playSound } = require('state');
 const { requireImage, createAnimation, getFrame, r } = require('animations');
 
-const militaryFrame = {
-    image: requireImage('gfx/militaryIcons.png'),
-    width: 16,
-    height: 16,
-}
 const diffuserAnimation = createAnimation('gfx/diffuse.png', r(25, 25), {cols: 5}, {loop: false});
 const crystalAnimations = [
      createAnimation('gfx/crystals.png', r(30, 30), {x:0}),
@@ -24,7 +19,7 @@ const crystalAnimations = [
      createAnimation('gfx/crystals.png', r(30, 30), {x:6}),
      createAnimation('gfx/crystals.png', r(30, 30), {x:7, cols:2}),
 ];
-const crystalFrame = {...militaryFrame, left: 153, top: 40};
+const crystalFrame = crystalAnimations[5].frames[0];
 const explosionAnimation = createAnimation('gfx/explosion.png', r(215, 215), {cols: 14, duration: 3}, {loop: false});
 let spriteIdCounter = 0;
 function addSprite(state, sprite) {

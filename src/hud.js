@@ -1,4 +1,4 @@
-const { canvas, context, COLOR_GOOD, COLOR_BAD } = require('gameConstants');
+const { canvas, context, COLOR_GOOD, COLOR_BAD, COLOR_CRYSTAL } = require('gameConstants');
 const Rectangle = require('Rectangle');
 const { drawImage, drawRectangle, drawText } = require('draw');
 const { areImagesLoaded, createAnimation, getFrame, requireImage, r } = require('animations');
@@ -715,17 +715,18 @@ const shopButton = {
             );
         }
 
+        let scale = 1;
+        if (crystalFrame.height <= 0.5 * size) scale = 2;
+        if (crystalFrame.height >= 2 * size) scale /= 2;
         x = width - 5;
         y = height - rowHeight + halfHeight;
         const cost = button.getCost(state, button);
-        const fillStyle = (cost <= state.saved.score) ? '#4AF' : COLOR_BAD;
+        const fillStyle = (cost <= state.saved.score) ? COLOR_CRYSTAL : COLOR_BAD;
         canvas.style.letterSpacing = '2px';
         const costWidth = drawText(context, cost.abbreviate(), x, y,
-            {fillStyle, textAlign: 'right', textBaseline, size: Math.round(1.5 * size), measure: true}
+            {fillStyle, textAlign: 'right', textBaseline, size: Math.round(scale * crystalFrame.height), measure: true}
         );
         canvas.style.letterSpacing = '';
-        let scale = 1;
-        if (crystalFrame.height < 0.75 * size) scale = 2;
         const iconRectangle = new Rectangle(crystalFrame).scale(scale);
         x = x - costWidth - 5 - iconRectangle.width / 2;
         drawImage(context, crystalFrame.image, crystalFrame, iconRectangle.moveCenterTo(x, y));
@@ -926,14 +927,19 @@ function renderHUD(context, state) {
 
     if (!state.title && !state.showOptions && !state.showAchievements && state.saved.finishedIntro && state.outroTime === false) {
         // Draw SCORE indicator
-        const scoreWidth = drawText(context, state.saved.score.abbreviate(), canvas.width - 10, canvas.height - 10,
-            {fillStyle: '#4AF', strokeStyle: 'white', textAlign: 'right', textBaseline: 'bottom', size: 36, measure: true}
-        );
+        const right = canvas.width - 15;
+        const y = canvas.height - 30;
         let iconRectangle = new Rectangle(crystalFrame).scale(2);
+        const scoreWidth = drawText(context, state.saved.score.abbreviate(), right, y,
+            {
+                fillStyle: COLOR_CRYSTAL, strokeStyle: 'white', textAlign: 'right', 
+                textBaseline: 'middle', size: Math.round(iconRectangle.height * 1.1), measure: true
+            }
+        );
         drawImage(context, crystalFrame.image, crystalFrame,
             iconRectangle.moveCenterTo(
-                canvas.width - 20 - scoreWidth - 5 - iconRectangle.width / 2,
-                canvas.height - 10 - 20
+                right - scoreWidth - 4 - iconRectangle.width / 2,
+                y - 4
             )
         );
     }
