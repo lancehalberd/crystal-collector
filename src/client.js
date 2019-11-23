@@ -205,6 +205,7 @@ const renderLoop = () => {
         debugger;
     }
 };
+//setInterval(renderLoop, 5);
 renderLoop();
 
 /*

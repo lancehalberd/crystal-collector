@@ -932,7 +932,7 @@ function renderHUD(context, state) {
         let iconRectangle = new Rectangle(crystalFrame).scale(2);
         const scoreWidth = drawText(context, state.saved.score.abbreviate(), right, y,
             {
-                fillStyle: COLOR_CRYSTAL, strokeStyle: 'white', textAlign: 'right', 
+                fillStyle: COLOR_CRYSTAL, strokeStyle: 'white', textAlign: 'right',
                 textBaseline: 'middle', size: Math.round(iconRectangle.height * 1.1), measure: true
             }
         );
@@ -1050,7 +1050,6 @@ function renderHUD(context, state) {
         }
         button.render(context, state, button, layoutProperties);
     }
-
 }
 function renderPlayButton(context, state) {
     const layoutProperties = getLayoutProperties(state);

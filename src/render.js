@@ -6,6 +6,7 @@ const {
     isPlayingTrack,
     playTrackCombination,
 } = require('sounds');
+const { drawText, drawRectangle } = require('draw');
 
 module.exports = render;
 
@@ -185,5 +186,17 @@ function render(context, state) {
         }
     }
     state.sfx = {};
+    timeStack.push(Date.now());
+    if (timeStack.length > 60) timeStack.shift();
+    if (isKeyDown(KEY_SPACE)) renderFPS(context);
 }
+function renderFPS(context) {
+    const frames = timeStack.length - 1;
+    const time = (timeStack[frames] - timeStack[0]) / 1000;
+    drawRectangle(context, {top:0,left:0,width:100, height:44}, {fillStyle: '#000', strokeStyle: '#FFF'});
+    drawText(context, Math.round(frames / time * 100) / 100, 10, 10,
+        {fillStyle: 'white', textAlign: 'left', textBaseline: 'top', size: 24}
+    );
+}
+const timeStack = [];
 
