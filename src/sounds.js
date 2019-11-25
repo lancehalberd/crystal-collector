@@ -285,8 +285,6 @@ const preloadSounds = () => {
         {key: 'alarm', source: 'sfx/alarm.mp3', volume: 2},
         {key: 'teleport', source: 'sfx/teleport.mp3', volume: 5},
         {key: 'shipWarp', source: 'sfx/largeteleport.mp3', volume: 5},
-        // See credits.html for: mobbrobb.
-        {key: 'digging', type: 'bgm', source: 'bgm/title.mp3', volume: 2},
         {key: 'ship', type: 'bgm', source: 'bgm/ship.mp3', volume: 10},
         {key: 'victory', type: 'bgm', source: 'bgm/credits.ogg', volume: 5, nextTrack: 'victoryloop'},
         {key: 'victoryloop', type: 'bgm', source: 'bgm/creditsloop.ogg', volume: 5},
