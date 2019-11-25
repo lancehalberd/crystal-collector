@@ -253,6 +253,7 @@ const achievementSprite = {
     },
     height: 80,
     width: 300,
+    renderOverHud: true,
 };
 
 function renderAchievements(context, state) {

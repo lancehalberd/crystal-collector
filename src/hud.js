@@ -1,7 +1,7 @@
 const { canvas, context, COLOR_GOOD, COLOR_BAD, COLOR_CRYSTAL } = require('gameConstants');
 const Rectangle = require('Rectangle');
 const { drawImage, drawRectangle, drawText } = require('draw');
-const { areImagesLoaded, createAnimation, getFrame, requireImage, r } = require('animations');
+const { areImagesLoaded, getPercentImagesLoaded, createAnimation, getFrame, requireImage, r } = require('animations');
 const { endingSequenceDuration } = require('scenes');
 
 module.exports = {
@@ -238,7 +238,11 @@ function getHelpButton() {
 
 const playButton = {
     getLabel(/*state, button*/) {
-        return areImagesLoaded() ? 'Play!' : 'Loading...';
+        if (areImagesLoaded()) {
+            return 'Play!';
+        }
+        const p = 100 * getPercentImagesLoaded();
+        return areImagesLoaded() ? 'Play!' : `Loading ${p.toFixed(1)}%`;
     },
     render: renderBasicButton,
     onClick(state) {
@@ -247,7 +251,7 @@ const playButton = {
     },
     resize({width, height, primaryButtonWidth, primaryButtonHeight}) {
         this.height = primaryButtonHeight;
-        this.width = primaryButtonWidth;
+        this.width = primaryButtonWidth * 1.2;
         this.top = (height - this.height) / 2;
         this.left = (width - this.width) / 2;
     },

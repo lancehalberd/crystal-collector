@@ -152,7 +152,6 @@ function playTrack(source, timeOffset, muted = false, fadeOutOthers = true, cros
     }
     // console.log(timeOffset, sound.howl.duration(), offset);
     sound.howl.seek(offset);
-    sound.howl.mute(muted);
     sound.howl.play();
     sound.shouldPlay = true;
     // console.log({volume});
@@ -160,6 +159,7 @@ function playTrack(source, timeOffset, muted = false, fadeOutOthers = true, cros
     //console.log('Fade in ' + sound.props.src);
     if (crossFade) sound.howl.fade(0, volume, 1000);
     else sound.howl.volume(volume);
+    sound.howl.mute(muted);
     playingTracks.push(sound);
     return sound;
 }

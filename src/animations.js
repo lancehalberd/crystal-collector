@@ -12,10 +12,11 @@ function loadImage(source, callback) {
     images[source].originalSource = source;
     return images[source];
 }
-let numberOfImagesLeftToLoad = 0;
+let numberOfImagesLeftToLoad = 0, totalImagesToLoad = 0;
 function requireImage(imageFile) {
     if (images[imageFile]) return images[imageFile];
     numberOfImagesLeftToLoad++;
+    totalImagesToLoad++;
     return loadImage(imageFile, () => {
         images[imageFile].imageIsLoaded = true;
         numberOfImagesLeftToLoad--
@@ -23,6 +24,9 @@ function requireImage(imageFile) {
 }
 function areImagesLoaded() {
     return numberOfImagesLeftToLoad <= 0;
+}
+function getPercentImagesLoaded() {
+    return 1 - numberOfImagesLeftToLoad / totalImagesToLoad;
 }
 const initialImagesToLoad = [
 
@@ -88,6 +92,7 @@ const getHitBox = (animation, animationTime) => {
 
 module.exports = {
     areImagesLoaded,
+    getPercentImagesLoaded,
     requireImage,
     r, i, a,
     getFrame,

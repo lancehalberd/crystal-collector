@@ -169,12 +169,18 @@ function render(context, state) {
     } else {
         renderDigging(context, state);
         for (let spriteId in state.spriteMap) {
+            if (state.spriteMap[spriteId].renderOverHud) continue;
             state.spriteMap[spriteId].render(context, state, state.spriteMap[spriteId]);
         }
     }
 
     // Render HUD on top of the screen fading to black.
     renderHUD(context, state);
+    // Render sprite elements that should display on top of the HUD (achievement panels).
+    for (let spriteId in state.spriteMap) {
+        if (!state.spriteMap[spriteId].renderOverHud) continue;
+        state.spriteMap[spriteId].render(context, state, state.spriteMap[spriteId]);
+    }
 
     if (state.instructionsAlpha > 0) {
         renderHelp(context, state);
