@@ -84,13 +84,14 @@ const introSequence = [
     {duration: 2000, render(context, state, introTime) {
         renderShipParts(context, state, introTime + 2300);
         renderShip(context, state);
-        renderAsteroids(context, 10, introTime + 8000);
+        renderAsteroids(context, 10, introTime + 8500);
         if (introTime % 2000 === 0) playSound(state, 'alarm');
         drawCenter(context, cut1Animation, introTime);
     }},
     // cut 2: ship, warning play alarm sfx
     {duration: 2000, render(context, state, introTime) {
         renderShip(context, state);
+        renderAsteroids(context, 10, introTime + 10500);
         // Fine to stop rendering asteroids, they should all be out of frame by now.
         if (introTime % 2000 === 0) playSound(state, 'alarm');
         drawCenter(context, cut2Animation, introTime);
@@ -98,6 +99,7 @@ const introSequence = [
     // cut 3a+b: flashin red warp drive missing parts play alarm sfx
     {duration: 6000, render(context, state, introTime) {
         renderShip(context, state);
+        renderAsteroids(context, 10, introTime + 12500);
         if (introTime % 2000 === 0) playSound(state, 'alarm');
         drawCenter(context, cut3Animation, introTime);
     }},
@@ -151,11 +153,15 @@ const shipPartyAnimation = {
 
 function drawStars(context, time, dx, y) {
     const frame = getFrame(nightAnimationEmpty, time);
+    let x = canvas.width - frame.width;
     drawImage(context, frame.image, frame,
-        new Rectangle(frame).moveTo(dx % canvas.width, y)
+        new Rectangle(frame).moveTo(dx % frame.width + x, y)
     );
     drawImage(context, frame.image, frame,
-        new Rectangle(frame).moveTo(dx % canvas.width - canvas.width, y)
+        new Rectangle(frame).moveTo(dx % frame.width + x - frame.width, y)
+    );
+    drawImage(context, frame.image, frame,
+        new Rectangle(frame).moveTo(dx % frame.width + x - 2 * frame.width, y)
     );
 }
 
@@ -204,11 +210,12 @@ const endingSequence = [
     // The programmer animation plays + the stars slow and start to pan down.
     {duration: programmerAnimation.duration, render(context, state, animationTime) {
         const introTime = 2000;
-        let dx = (Math.min(2000, animationTime) + 10000 - 2300) / 2;
+        let dx = (Math.min(2000, animationTime) + 12000 - 2300) / 2;
         if (animationTime > 2000) {
             let u = Math.min(1, (animationTime - 2000) / 1000);
             dx += 250 - ((u - 1) ** 2) / 4 * 1000; // = 250 at u = 1;
         }
+        //console.log('mid dx ', dx);
         drawStars(context, state.time, dx, 0);
 
         drawCenter(context, programmerAnimation, animationTime, this.duration);
@@ -216,7 +223,8 @@ const endingSequence = [
     // The screen pans down to a planet and the ship flies in an arc as if to land.
     {duration: 6000, render(context, state, animationTime) {
         let y = Math.max(-100, -animationTime / 10);
-        let x = (12000 - 2300) / 2 + 250;
+        let x = (14000 - 2300) / 2 + 250;
+        //console.log('freeze dx ', x)
         drawStars(context, state.time, x, y / 5);
         // Pan the planet in from the bottom of the screen.
         let frame = getFrame(planetAnimation, animationTime);
@@ -244,7 +252,7 @@ const endingSequence = [
     // The art animation plays.
     {duration: artAnimation.duration, render(context, state, animationTime) {
         let y = -100;
-        let x = (12000 - 2300) / 2 + 250;
+        let x = (14000 - 2300) / 2 + 250;
         drawStars(context, state.time, x, y / 5);
         let frame = getFrame(planetAnimation, animationTime);
         drawImage(context, frame.image, frame,
@@ -256,7 +264,7 @@ const endingSequence = [
     // The camera pans up and the ship flies across the screen flash with music notes coming out.
     {duration: 6000, render(context, state, animationTime) {
         let y = Math.min(0, Math.max(-100, -100 + 100 * (animationTime - 200) / 1000));
-        let x = (12000 - 2300) / 2 + 250;
+        let x = (14000 - 2300) / 2 + 250;
         if (animationTime > 3000) {
             let u = Math.min(1, (animationTime - 3000) / 1000);
             x += (u ** 2) / 4 * 1000; // 0 -> 250 as u 0 -> 1
@@ -264,6 +272,7 @@ const endingSequence = [
         if (animationTime > 4000) {
             x += (animationTime - 4000) / 2
         }
+        //console.log('accelerate dx ', x)
         drawStars(context, state.time, x, y / 5);
         let frame = getFrame(planetAnimation, animationTime);
         drawImage(context, frame.image, frame,
@@ -356,7 +365,7 @@ function getCardAlpha(animationTime, duration) {
 
 
 const endingSequenceDuration = endingSequence.reduce((sum, scene) => sum + (scene.duration || 0), 0) + 5000;
-console.log(endingSequenceDuration);
+// console.log(endingSequenceDuration);
 module.exports = {
     endingSequenceDuration,
     introSequenceDuration,

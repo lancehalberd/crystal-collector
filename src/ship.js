@@ -109,19 +109,28 @@ function renderTransitionShipBackground(context, state) {
             0,
             -200 + 200 * (topTarget / 3 -state.camera.top) / (-topTarget * 2 / 3)
     ));
+    const emptyFrame = getFrame(nightAnimationEmpty, state.time);
     if (state.outroTime > 6300) {
         const dx = (state.outroTime - 6300) / 2;
-        const emptyFrame = getFrame(nightAnimationEmpty, state.time);
-        const firstFrame = dx < canvas.width ? frame : emptyFrame;
+        //console.log('base dx ', dx)
+        const firstFrame = dx < frame.width ? frame : emptyFrame;
+        let x = canvas.width - frame.width;
 
-        drawImage(context, emptyFrame.image, firstFrame,
-            new Rectangle(emptyFrame).moveTo(dx % canvas.width, spaceBaseHeight)
+        drawImage(context, firstFrame.image, firstFrame,
+            new Rectangle(firstFrame).moveTo(dx % frame.width + x, spaceBaseHeight)
         );
-        drawImage(context, firstFrame.image, emptyFrame,
-            new Rectangle(firstFrame).moveTo(dx % canvas.width - canvas.width, spaceBaseHeight)
+        drawImage(context, emptyFrame.image, emptyFrame,
+            new Rectangle(emptyFrame).moveTo(dx % frame.width + x - frame.width, spaceBaseHeight)
+        );
+        drawImage(context, emptyFrame.image, emptyFrame,
+            new Rectangle(emptyFrame).moveTo(dx % frame.width + x - 2 * frame.width, spaceBaseHeight)
         );
     } else {
-        drawImage(context, frame.image, frame, new Rectangle(frame).moveTo(0, spaceBaseHeight));
+        let x = canvas.width - frame.width;
+        drawImage(context, frame.image, frame, new Rectangle(frame).moveTo(x, spaceBaseHeight));
+        drawImage(context, emptyFrame.image, emptyFrame,
+            new Rectangle(emptyFrame).moveTo(x - emptyFrame.width, spaceBaseHeight)
+        );
     }
     // Fill the whole canvas with black, in case somehow it is too tall in portrait mode.
     if (spaceBaseHeight + frame.height < canvas.height) {

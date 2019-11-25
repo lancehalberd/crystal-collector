@@ -1,5 +1,5 @@
 const {
-    canvas, FRAME_LENGTH,
+    canvas, context, FRAME_LENGTH,
 } = require('gameConstants');
 
 const { preloadSounds, muteSounds } = require('sounds');
@@ -21,44 +21,41 @@ let changedLocalStorage = Date.now();
 let savedLocalStorage = changedLocalStorage;
 try {
     savedState = JSON.parse(window.localStorage.getItem(saveKey));
-    if (!savedState) {
-        savedState = {
-            disableAutoscroll: false,
-            hideHelp: false,
-            muteSounds: false,
-            muteMusic: false,
-            saveSlots: [],
-        };
-    }
-    // Convert legacy saved data to newer format that supports multiple save slots.
-    if (!savedState.saveSlots) {
-        savedState = {
-            disableAutoscroll: false,
-            hideHelp: false,
-            muteSounds: false,
-            muteMusic: false,
-            saveSlots: [
-                {...savedState},
-            ],
-        };
-    }
 } catch (e) {
     console.log('Invalid save data');
 }
+if (!savedState) {
+    savedState = {
+        disableAutoscroll: false,
+        hideHelp: false,
+        muteSounds: false,
+        muteMusic: false,
+        saveSlots: [],
+    };
+}
+// Convert legacy saved data to newer format that supports multiple save slots.
+if (!savedState.saveSlots) {
+    savedState = {
+        disableAutoscroll: false,
+        hideHelp: false,
+        muteSounds: false,
+        muteMusic: false,
+        saveSlots: [
+            {...savedState},
+        ],
+    };
+}
 window.savedState = savedState;
 
-const context = canvas.getContext('2d', {alpha: false});
-context.imageSmoothingEnabled = false;
-
 function updateCanvasSize() {
-    let scale = window.innerWidth / 800;
+    let scale = 1.25//window.innerWidth / 800;
     if (scale <= 0.75) {
         canvas.width = 600;
         scale *= 4 / 3;
     } else {
         canvas.width = 800;
     }
-    canvas.height = Math.max(300, Math.ceil(window.innerHeight / scale));
+    canvas.height = 500; //Math.max(300, Math.ceil(window.innerHeight / scale));
     canvas.style.transformOrigin = '0 0'; //scale from top left
     canvas.style.transform = 'scale(' + scale + ')';
     canvas.scale = scale;
@@ -66,8 +63,9 @@ function updateCanvasSize() {
     if (state) state.lastResized = Date.now();
     context.imageSmoothingEnabled = false;
 }
-updateCanvasSize();
-window.onresize = updateCanvasSize;
+// Disable resizing on Kongregate to see if it reduces flicker.
+//updateCanvasSize();
+//window.onresize = updateCanvasSize;
 
 function getEventCoords(event) {
     let x = 0, y = 0;

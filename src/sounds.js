@@ -203,7 +203,7 @@ function playTrackCombination(tracks, timeOffset, muted = false) {
         let sound = requireSound(source);
         currentTracks.push(sound);
         if (playingTracks.includes(sound)) {
-            //console.log('adjusting volume ' + source);
+            // console.log('adjusting volume ' + source, sound.props.volume * volume);
             sound.howl.volume(sound.props.volume * volume);
             let offset = (timeOffset / 1000);
             const duration = sound.howl.duration();
@@ -214,7 +214,7 @@ function playTrackCombination(tracks, timeOffset, muted = false) {
                 sound.howl.seek(offset);
             }
         } else {
-            //console.log('playing track ', source, volume);
+            // console.log('playing track ', source, volume);
             sound = playTrack(source, timeOffset, muted, false);
             if (sound) {
                 sound.howl.volume(sound.props.volume * volume);

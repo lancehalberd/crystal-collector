@@ -39,7 +39,7 @@ function playDiggingTrack(state) {
     const finalPhase = allSources.length * 3 - 2;
     let y = state.camera.top + canvas.height / 2;
     // Sound test code.
-    const S = 720;
+    const S = 705;
     if (isKeyDown(KEY_SPACE)) {
         // 3 main tracks and 2 transition tracks
         y = (4 * 2 * S + 3 * 2 * S) * ( state.lastMouseCoords ? state.lastMouseCoords.x : 0) / canvas.width;

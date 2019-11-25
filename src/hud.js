@@ -251,7 +251,7 @@ const playButton = {
     },
     resize({width, height, primaryButtonWidth, primaryButtonHeight}) {
         this.height = primaryButtonHeight;
-        this.width = primaryButtonWidth * 1.2;
+        this.width = primaryButtonWidth * 1.4;
         this.top = (height - this.height) / 2;
         this.left = (width - this.width) / 2;
     },
