@@ -8,8 +8,8 @@ const COLOR_BAD = '#c44e33';
 const COLOR_CRYSTAL = '#58bf9f';
 
 const canvas = document.createElement('canvas');
-canvas.width = 900;
-canvas.height = 600;
+canvas.width = 800;
+canvas.height = 550;
 //const scale = 2;
 //canvas.style.transformOrigin = '0 0'; //scale from top left
 //canvas.style.transform = 'scale(' + scale + ')';

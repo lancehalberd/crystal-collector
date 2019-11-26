@@ -61,9 +61,19 @@ function renderBasicButton(context, state, button) {
         button.height - 20,
         Math.round(button.width / 5),
     );
-    drawText(context, label, button.left + button.width / 2, button.top + button.height / 2,
-        {fillStyle: 'white', textAlign: 'center', textBaseline: 'middle', size }
-    );
+    if (areImagesLoaded()) {
+        drawText(context, label, button.left + button.width / 2, button.top + button.height / 2,
+            {fillStyle: 'white', textAlign: 'center', textBaseline: 'middle', size }
+        );
+    } else {
+        // Use vanilla text rendering until preloading is done. Otherwise we risk
+        // caching font characters before the VT323 font finishes loading.
+        context.fillStyle = 'white';
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+        context.font = `${size}px VT323`;
+        context.fillText(label, button.left + button.width / 2, button.top + button.height / 2);
+    }
 }
 function getLayoutProperties(state) {
     const padding = Math.round(Math.min(canvas.width, canvas.height) / 80);
