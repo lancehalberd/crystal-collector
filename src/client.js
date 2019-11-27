@@ -96,10 +96,15 @@ function onMouseDown(event) {
         state.interacted = true;
         return false;
     }
-    state.mouseDown = state.time;
-    state.dragDistance = 0;
-    state.mouseDragged = false;
-    state.mouseDownCoords = state.lastMouseCoords = getEventCoords(event);
+    // This might need to be removed for touch screen devices.
+    if (event.which === 1) {
+        state.mouseDown = state.time;
+        state.dragDistance = 0;
+        state.mouseDragged = false;
+        state.mouseDownCoords = state.lastMouseCoords = getEventCoords(event);
+    } else if (event.which === 3) {
+        state.rightMouseDownCoords = state.lastMouseCoords = getEventCoords(event);
+    }
     event.preventDefault();
     return false;
 }
@@ -113,6 +118,14 @@ function onMouseMove(event) {
 }
 function onMouseUp(event) {
     state.mouseDown = false;
+    if (event.which === 3) {
+        const coords = getEventCoords(event);
+        if (Math.abs(coords.x - state.rightMouseDownCoords.x) < 10 &&
+            Math.abs(coords.y - state.rightMouseDownCoords.y) < 10
+        ) {
+            state.rightClicked = true;
+        }
+    }
     event.preventDefault();
     return false;
 }
@@ -127,9 +140,6 @@ const update = () => {
         state.context = context;
         canvas.onmousedown =  onMouseDown;
         canvas.oncontextmenu = function (event) {
-            state.rightClicked = true;
-            state.mouseDownCoords = false;
-            state.mouseDown = false;
             event.preventDefault();
             return false;
         }
