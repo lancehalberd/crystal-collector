@@ -52,6 +52,7 @@ const {
 const { muteSounds, unmuteSounds, muteTrack, unmuteTrack } = require('sounds');
 const { getTitleHUDButtons } = require('title');
 const { showNextHint } = require('help');
+const { getOptionButtons } = require('options');
 
 function renderBasicButton(context, state, button) {
     let label = button.label;
@@ -304,88 +305,6 @@ const shipButton = {
         // user switched to the shop and back.
         return {...state, ship: true, shop: state.time, collectingPart: false};
     },
-};
-
-let optionIndex = 0;
-const optionToggleButton = {
-    resize({padding, height, width, buttonWidth, buttonHeight}) {
-        this.height = buttonHeight;
-        this.width =  buttonWidth * 2;
-        this.top = height / 2 - this.height * (3.5 - 1.2 * this.optionIndex);
-        this.left =  Math.round((width - this.width) / 2);
-    },
-}
-const muteSoundsButton = {
-    getLabel(state) {
-        if (state.saved.muteSounds) return 'Sounds Off';
-        return 'Sound On';
-    },
-    render: renderBasicButton,
-    onClick(state) {
-        // Set collectingPart to false so we don't show the part teleport in again if the
-        // user switched to the shop and back.
-        if (!state.saved.muteSounds) muteSounds();
-        else unmuteSounds();
-        state = updateSave(state, {muteSounds: !state.saved.muteSounds});
-        playSound(state, 'select');
-        return state;
-    },
-    ...optionToggleButton,
-    optionIndex: optionIndex++,
-};
-const muteMusicButton = {
-    getLabel(state) {
-        if (state.saved.muteMusic) return 'Music Off';
-        return 'Music On';
-    },
-    render: renderBasicButton,
-    onClick(state) {
-        const muteMusic = !state.saved.muteMusic;
-        if (muteMusic) muteTrack();
-        else unmuteTrack();
-        return updateSave(state, {muteMusic});
-    },
-    ...optionToggleButton,
-    optionIndex: optionIndex++,
-};
-const showHelpButton = {
-    getLabel(state) {
-        if (state.saved.hideHelp) return 'Hints Off';
-        return 'Hints On';
-    },
-    render: renderBasicButton,
-    onClick(state) {
-        const hideHelp = !state.saved.hideHelp;
-        return updateSave(state, {hideHelp});
-    },
-    ...optionToggleButton,
-    optionIndex: optionIndex++,
-};
-const autoscrollButton = {
-    getLabel(state) {
-        if (state.saved.disableAutoscroll) return 'Autoscroll Off';
-        return 'Autoscroll On';
-    },
-    render: renderBasicButton,
-    onClick(state) {
-        const disableAutoscroll = !state.saved.disableAutoscroll;
-        return updateSave(state, {disableAutoscroll});
-    },
-    ...optionToggleButton,
-    optionIndex: optionIndex++,
-};
-const titleButton = {
-    label: 'Title',
-    render: renderBasicButton,
-    onClick(state) {
-        return {
-            ...state, bgmTime: state.time,
-            title: state.time, showOptions: false, saveSlot: false,
-            robot: false
-        };
-    },
-    ...optionToggleButton,
-    optionIndex: optionIndex++,
 };
 
 const diffuserFrame = r(25, 16, {left: 100, top: 9, image: requireImage('gfx/diffuse.png')});
@@ -888,8 +807,7 @@ function getHUDButtons(state) {
         return [closeButton, ...standardButtons];
     }
     if (state.showOptions) {
-        const buttons = [muteSoundsButton, muteMusicButton, showHelpButton, autoscrollButton, titleButton, closeButton, ...standardButtons];
-        return buttons;
+        return [closeButton, ...getOptionButtons(state), ...standardButtons];
     }
     if (state.title) {
         return getTitleHUDButtons(state);

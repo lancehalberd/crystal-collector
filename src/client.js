@@ -9,6 +9,7 @@ const {
     advanceState,
 } = require('state');
 const render = require('render');
+const { optionFlags } = require('options');
 
 preloadSounds();
 let preloadedSounds = true;
@@ -179,30 +180,27 @@ const update = () => {
         savedState.saveSlots[state.saveSlot] = state.saved;
         changedLocalStorage = now;
     }
-    if (!!state.saved.muteSounds !== !!savedState.muteSounds) {
-        savedState.muteSounds = !!state.saved.muteSounds;
-        changedLocalStorage = now;
-    }
-    if (!!state.saved.muteMusic !== !!savedState.muteMusic) {
-        savedState.muteMusic = !!state.saved.muteMusic;
-        changedLocalStorage = now;
-    }
-    if (!!state.saved.hideHelp !== !!savedState.hideHelp) {
-        savedState.hideHelp = !!state.saved.hideHelp;
-        changedLocalStorage = now;
-    }
-    if (!!state.saved.disableAutoscroll !== !!savedState.disableAutoscroll) {
-        savedState.disableAutoscroll = !!state.saved.disableAutoscroll;
-        changedLocalStorage = now;
+    for (const optionFlag of optionFlags) {
+        if (!!state.saved[optionFlags] !== !!savedState[optionFlags]) {
+            savedState[optionFlags] = !!state.saved[optionFlags];
+            changedLocalStorage = now;
+        }
     }
     // Only commit to local storage once every 5 seconds.
-    if (changedLocalStorage > savedLocalStorage && now - savedLocalStorage > 5000) {
+    if (changedLocalStorage > savedLocalStorage && now - savedLocalStorage >= 5000) {
         //console.log("Attempting to save to local storage");
         savedLocalStorage = now;
-        window.localStorage.setItem(saveKey, JSON.stringify(savedState));
+        commitSaveToLocalStorage(state);
     }
 };
 setInterval(update, FRAME_LENGTH);
+
+export function commitSaveToLocalStorage(state) {
+    if (state.saveSlot !== false && state.saved !== savedState.saveSlots[state.saveSlot]) {
+        savedState.saveSlots[state.saveSlot] = state.saved;
+    }
+    window.localStorage.setItem(saveKey, JSON.stringify(savedState));
+}
 
 const renderLoop = () => {
     try {
@@ -215,18 +213,3 @@ const renderLoop = () => {
 };
 //setInterval(renderLoop, 5);
 renderLoop();
-
-/*
-import {Howl, Howler} from 'howler';
-var sound = new Howl({
-  src: ['bgm/victory.ogg'],
-  loop: true,
-  volume: 0.5,
-  onend: function() {
-      sound.seek(4);
-  }
-});
-console.log('calling play');
-sound.play();
-*/
-

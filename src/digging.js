@@ -22,6 +22,7 @@ module.exports = {
     z,
     getCellColor,
     canExploreCell,
+    createCell,
     createCellsInRange,
     isCellRevealed,
     getFlagValue,
@@ -42,6 +43,7 @@ module.exports = {
     detonateDebris,
     teleportOut,
     getTopTarget,
+    revealCellNumbers,
 };
 
 const { playSound, updateSave, nextDay } = require('state');
@@ -133,19 +135,25 @@ function isCellRevealed(state, row, column) {
 function getFlagValue(state, row, column) {
     return state.flags[row] && state.flags[row][z(column)];
 }
-function createCellsInRange(state, row, column, revealAll = false) {
+function createCellsInRange(state, row, column, revealAll = false, onlyInRange = 0) {
     if (row < 0) return false;
     let range = Math.round(getRangeAtDepth(state, getDepth(state, row, column)));
-    if (revealAll) range = 3;
+    if (onlyInRange) range = onlyInRange;
+    else if (revealAll) range = 3;
     const candidatesForReveal = [];
     for (const cellCoords of getCellsInRange(state, row, column, range)) {
         state = createCell(state, cellCoords.row, cellCoords.column);
+        if (onlyInRange) {
+            continue;
+        }
         candidatesForReveal[cellCoords.distance] = candidatesForReveal[cellCoords.distance] || [];
         if (!state.rows[cellCoords.row][z(cellCoords.column)].numbersRevealed) {
             candidatesForReveal[cellCoords.distance].push(cellCoords);
         }
     }
-    if (revealAll) {
+    if (onlyInRange) {
+        return state;
+    } if (revealAll) {
         for (const candidates of candidatesForReveal) {
             for (const coords of candidates) {
                 state = revealCellNumbers(state, coords.row, coords.column);
@@ -205,7 +213,9 @@ const SLOPE = LONG_EDGE / SHORT_EDGE;
 function createCell(state, row, column) {
     if (row < 0) return state;
     const columnz = z(column);
-    if (state.rows[row] && state.rows[row][columnz]) return state;
+    if (state.rows[row] && state.rows[row][columnz]) {
+        return state;
+    }
     // Update the bounds we allow the user to drag and scroll to.
     const {x, y} = getCellCenter(state, row, column);
     state = {...state, camera: {
@@ -485,6 +495,9 @@ function advanceDigging(state) {
         state = {...state, camera: {...state.camera,
             top: Math.max(targetTop, state.camera.top + dy),
         }};
+        if (state.saved.skipAnimations) {
+            state.camera.top = targetTop;
+        }
         if (state.camera.top === targetTop) {
             if (!state.robot.finishingTeleport) {
                 state = {...state, robot: {...state.robot, animationTime: state.time, finishingTeleport: true}};
@@ -514,6 +527,9 @@ function advanceDigging(state) {
         const targetLeft = startingCell.column * COLUMN_WIDTH + SHORT_EDGE + EDGE_LENGTH / 2 - canvas.width / 2;
         const rowOffset = (startingCell.column % 2) ? ROW_HEIGHT / 2 : 0;
         const targetTop = Math.max(-200, (startingCell.row + 0.5) * ROW_HEIGHT + rowOffset - canvas.height / 2);
+        if (state.saved.skipAnimations) {
+            state.camera.top = targetTop;
+        }
         if (Math.abs(targetTop - state.camera.top) >= 5) {
             let dy = Math.round((state.camera.top * 5 + targetTop) / 6) - state.camera.top;
             const multiplier = startingCell.row >= 25 ? 2 : 1;
@@ -530,13 +546,16 @@ function advanceDigging(state) {
                 // This needs to happen before we allow dragging, otherwise the min/max coords for camera
                 // won't be set yet, which breaks dragging.
                 if (!state.rows[startingCell.row]) {
-                    state = revealCell(state, startingCell.row, startingCell.column);
-                    const {x, y} = getCellCenter(state, startingCell.row, startingCell.column);
-                    state = spawnDebris(state, x, y, startingCell.row, startingCell.column);
-                    state = {...state, selected: startingCell};
-                    state = spawnLavaBubbles(state);
-                    state.targetCell = state.selected;
                     state = {...state, robot: {...state.robot, teleportingIn: false, finishingTeleport: false, animationTime: state.time}};
+                    state = exploreCell(state, startingCell.row, startingCell.column);
+                    //state = revealCell(state, startingCell.row, startingCell.column);
+                    //const {x, y} = getCellCenter(state, startingCell.row, startingCell.column);
+                    //state = spawnDebris(state, x, y, startingCell.row, startingCell.column);
+                    //state = {...state, selected: startingCell};
+                    state = spawnLavaBubbles(state);
+                    state = {...state, targetCell: startingCell, selected: startingCell};
+                    //state.targetCell = state.selected;
+                    //state = {...state, robot: {...state.robot, teleportingIn: false, finishingTeleport: false, animationTime: state.time}};
                 }
             }
         }
@@ -677,6 +696,9 @@ function spawnCrystals(state, x, y, amount, radius = EDGE_LENGTH - EDGE_LENGTH /
 }
 function spawnDebris(state, x, y, row, column) {
     playSound(state, 'dig');
+    if (state.saved.hideParticles) {
+        return state;
+    }
     let index = row - 3 + 6 * random.normSeed(Math.cos(row) + Math.sin(z(column)));
     index = Math.min(Math.max(0, Math.floor(index / 10)), particleAnimations.length - 1);
     let dx = -SHORT_EDGE;

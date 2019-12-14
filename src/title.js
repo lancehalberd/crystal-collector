@@ -6,11 +6,12 @@ module.exports = {
     getTitleHUDButtons,
     renderTitle,
 };
-const { getNewSaveSlot, nextDay, resumeDigging } = require('state');
+const { getNewSaveSlot, nextDay, resumeDigging, updateSave } = require('state');
 const { crystalFrame } = require('sprites');
 const { renderShipBackground, renderShip, shipPartAnimations } = require('ship');
 const { getButtonColor, getLayoutProperties, renderButtonBackground, renderBasicButton } = require('hud');
 const { achievementAnimation, getAchievementPercent, initializeAchievements } = require('achievements');
+const { applySuspendedState } = require('suspendedState');
 
 const titleFrame = r(100, 126, {image: requireImage('gfx/logotall.png')});
 const fileFrame = r(150, 125, {image: requireImage('gfx/monitor.png')});
@@ -121,7 +122,12 @@ const fileButton = {
         state = initializeAchievements(state);
         state.loadScreen = false;
         state.title = false;
-        if (!state.saved.playedToday) {
+        if (state.saved.suspendedState) {
+            state = applySuspendedState(state, state.saved.suspendedState);
+            state = updateSave(state, {suspendedState: null});
+            state.shop = false;
+            state.ship = false;
+        } else if (!state.saved.playedToday) {
             state = resumeDigging(state);
             state.incoming = false;
             if (state.saved.day !== 1) {
