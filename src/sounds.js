@@ -189,7 +189,7 @@ function playTrackCombination(tracks, timeOffset, muted = false) {
     // If any tracks are already playing, use the timeOffset of the first
     // track instead of the given timeOffset, in case there is drift between
     // the bgm time in state and the actual position of the tracks.
-    for (const { source, volume } of tracks) {
+    for (const { source } of tracks) {
         let sound = requireSound(source);
         if (playingTracks.includes(sound)) {
             timeOffset = sound.howl.seek() * 1000;

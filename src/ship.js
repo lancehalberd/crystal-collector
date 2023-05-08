@@ -1,7 +1,7 @@
 const Rectangle = require('rectangle');
 const random = require('random');
 const { drawImage, drawRectangle } = require('draw');
-const { canvas, EDGE_LENGTH, FRAME_LENGTH } = require('gameConstants');
+const { canvas, EDGE_LENGTH } = require('gameConstants');
 const { r, createAnimation, getFrame, requireImage } = require('animations');
 
 const warpDriveSlots = [

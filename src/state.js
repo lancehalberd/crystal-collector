@@ -2,7 +2,7 @@ const Rectangle = require('Rectangle');
 const random = require('random');
 
 const {
-    FRAME_LENGTH, canvas, EDGE_LENGTH, ROW_HEIGHT,
+    FRAME_LENGTH, canvas, EDGE_LENGTH,
 } = require('gameConstants');
 
 const {
@@ -38,7 +38,7 @@ const { getHUDButtons } = require('hud');
 const { shouldShowHelp, showIncomingHint } = require('help');
 
 const { advanceDigging, getOverCell, getTopTarget } = require('digging');
-const { arriveAnimation, shipPartDepths } = require('ship');
+const { arriveAnimation } = require('ship');
 
 const {
     advanceAchievements,
@@ -48,7 +48,7 @@ const {
 
 const INITIAL_LAVA_DEPTH = 100;
 
-function getNewCamera(lavaDepth = INITIAL_LAVA_DEPTH) {
+function getNewCamera(/*lavaDepth = INITIAL_LAVA_DEPTH*/) {
     return {
         left: -canvas.width / 2 + EDGE_LENGTH,
         top: getTopTarget(),

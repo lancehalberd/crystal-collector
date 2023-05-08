@@ -27,7 +27,7 @@ function drawRectangle(context, rectangle, {fillStyle, strokeStyle, lineWidth = 
 
 const cachedFonts = {};
 function drawText(context, text, x, y,
-    {fillStyle = 'black', maxWidth, strokeStyle, lineWidth = 1, textAlign = 'left', textBaseline = 'bottom', size = 20}
+    {fillStyle = 'black', strokeStyle, lineWidth = 1, textAlign = 'left', textBaseline = 'bottom', size = 20}
 ) {
     text = `${text}`;
     x = Math.round(x / 2) * 2;

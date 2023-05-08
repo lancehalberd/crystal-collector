@@ -6,7 +6,7 @@ const {
 const Rectangle = require('Rectangle');
 const { drawImage } = require('draw');
 const { playSound } = require('state');
-const { requireImage, createAnimation, getFrame, r } = require('animations');
+const { createAnimation, getFrame, r } = require('animations');
 
 const diffuserAnimation = createAnimation('gfx/diffuse.png', r(25, 25), {cols: 5}, {loop: false});
 const crystalAnimations = [

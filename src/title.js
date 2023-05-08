@@ -14,7 +14,7 @@ const { achievementAnimation, getAchievementPercent, initializeAchievements } = 
 const { applySuspendedState } = require('suspendedState');
 
 const titleFrame = r(100, 126, {image: requireImage('gfx/logotall.png')});
-const fileFrame = r(150, 125, {image: requireImage('gfx/monitor.png')});
+// const fileFrame = r(150, 125, {image: requireImage('gfx/monitor.png')});
 const titleTopFrame = r(800, 800, {image: requireImage('gfx/titletop.png')});
 const titleBottomFrame = r(800, 800, {image: requireImage('gfx/titlebottom.png')});
 // Trash icon from: https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/Trash_font_awesome.svg/480px-Trash_font_awesome.svg.png
@@ -200,7 +200,7 @@ const deleteFileButton = {
     onClick(state) {
         return {...state, deleteSlot: this.index};
     },
-    resize({animationTime, width, height, padding}) {
+    resize() {
         const fileButton = fileButtons[this.index];
         this.width = fileButton.width * 0.1;
         this.height = Math.min(fileButton.height, 30);

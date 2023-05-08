@@ -49,7 +49,6 @@ const {
     ACHIEVEMENT_EXPLORE_DEPTH_X,
     ACHIEVEMENT_DIFFUSE_X_BOMBS_IN_ONE_DAY,
 } = require('achievements');
-const { muteSounds, unmuteSounds, muteTrack, unmuteTrack } = require('sounds');
 const { getTitleHUDButtons } = require('title');
 const { showNextHint } = require('help');
 const { getOptionButtons } = require('options');

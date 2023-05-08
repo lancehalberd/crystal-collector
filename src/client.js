@@ -2,7 +2,7 @@ const {
     canvas, context, FRAME_LENGTH,
 } = require('gameConstants');
 
-const { preloadSounds, muteSounds } = require('sounds');
+const { preloadSounds } = require('sounds');
 
 const {
     getNewState,
@@ -65,8 +65,8 @@ function updateCanvasSize() {
     context.imageSmoothingEnabled = false;
 }
 // Disable resizing on Kongregate to see if it reduces flicker.
-//updateCanvasSize();
-//window.onresize = updateCanvasSize;
+updateCanvasSize();
+window.onresize = updateCanvasSize;
 
 function getEventCoords(event) {
     let x = 0, y = 0;
@@ -181,8 +181,8 @@ const update = () => {
         changedLocalStorage = now;
     }
     for (const optionFlag of optionFlags) {
-        if (!!state.saved[optionFlags] !== !!savedState[optionFlags]) {
-            savedState[optionFlags] = !!state.saved[optionFlags];
+        if (!!state.saved[optionFlag] !== !!savedState[optionFlag]) {
+            savedState[optionFlag] = !!state.saved[optionFlag];
             changedLocalStorage = now;
         }
     }

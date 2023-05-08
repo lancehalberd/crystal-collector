@@ -174,16 +174,16 @@ function drawStars(context, time, dx, y) {
 */
 const endingSequence = [
     // Render the part teleporting in first.
-    {duration: 5000, render(context, state, animationTime) {
+    {duration: 5000, render(context, state) {
         renderShipScene(context, state);
     }},
     // A pause before the launch.
-    {duration: 1000, render(context, state, animationTime) {
+    {duration: 1000, render(context, state) {
         renderShipBackground(context, state);
         renderShip(context, state);
     }},
     // Ship warp sequence starts happening here.
-    {duration: 5000, render(context, state, animationTime) {
+    {duration: 5000, render(context, state) {
         renderShipBackground(context, state);
         renderShip(context, state);
     }},
@@ -210,9 +210,9 @@ const endingSequence = [
     // The programmer animation plays + the stars slow and start to pan down.
     {duration: programmerAnimation.duration, render(context, state, animationTime) {
         const introTime = 2000;
-        let dx = (Math.min(2000, animationTime) + 12000 - 2300) / 2;
-        if (animationTime > 2000) {
-            let u = Math.min(1, (animationTime - 2000) / 1000);
+        let dx = (Math.min(introTime, animationTime) + 12000 - 2300) / 2;
+        if (animationTime > introTime) {
+            let u = Math.min(1, (animationTime - introTime) / 1000);
             dx += 250 - ((u - 1) ** 2) / 4 * 1000; // = 250 at u = 1;
         }
         //console.log('mid dx ', dx);
