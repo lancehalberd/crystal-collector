@@ -49,14 +49,14 @@ if (!savedState.saveSlots) {
 window.savedState = savedState;
 
 function updateCanvasSize() {
-    let scale = 1.25//window.innerWidth / 800;
+    let scale = window.innerWidth / 800;
     if (scale <= 0.75) {
         canvas.width = 600;
         scale *= 4 / 3;
     } else {
         canvas.width = 800;
     }
-    canvas.height = 500; //Math.max(300, Math.ceil(window.innerHeight / scale));
+    canvas.height = Math.max(300, Math.ceil(window.innerHeight / scale));
     canvas.style.transformOrigin = '0 0'; //scale from top left
     canvas.style.transform = 'scale(' + scale + ')';
     canvas.scale = scale;
