@@ -60,8 +60,5 @@ typings/
 # Directory for files related to the project but not in the repo
 etc/
 
-# Don't include built js file.
-public/client.js
-
 # osx file
 .DS_Store
