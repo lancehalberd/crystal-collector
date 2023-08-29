@@ -56,7 +56,9 @@ function updateCanvasSize() {
     } else {
         canvas.width = 800;
     }
+    scale = Math.max(1, Math.floor(scale));
     canvas.height = Math.max(300, Math.ceil(window.innerHeight / scale));
+    canvas.width = Math.ceil(window.innerWidth / scale);
     canvas.style.transformOrigin = '0 0'; //scale from top left
     canvas.style.transform = 'scale(' + scale + ')';
     canvas.scale = scale;

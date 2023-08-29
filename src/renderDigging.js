@@ -141,11 +141,11 @@ function renderBackground(context, state) {
     const columns = Math.ceil(canvas.width / height) + 2;
     const rows = Math.ceil(canvas.height / width) + 1;
     for (let row = topRow + rows - 1; row >= topRow; row--) {
-        let y = row * height - state.camera.top;
+        let y = Math.round(row * height - state.camera.top);
         const index = Math.min(cellBackgrounds.length - 1, Math.floor(row / 5));
         const frame = cellBackgrounds[index].frames[0];
         for (let column = leftColumn; column < leftColumn + columns; column++) {
-            let x = column * width - state.camera.left;
+            let x = Math.round(column * width - state.camera.left);
             drawImage(context, frame.image, frame, new Rectangle(0,0,width,height).moveTo(x, y));
         }
     }

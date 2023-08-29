@@ -1,1 +1,15 @@
 rsync --rsh=ssh -a --rsync-path="mkdir -p ~/chrisflash.com/crystal-collector && rsync" --exclude='node_modules' --exclude='etc' ~/Sites/crystal-collector/public/ mevolve@ps264245.dreamhostps.com:~/chrisflash.com/crystal-collector/;
+
+This is not as efficient as rsync, but should do the trick:
+scp ~/Documents/Sites/crystal-collector/public/* mevolve@ps264245.dreamhostps.com:~/websitefolder
+
+
+git remote add deploy ssh://mevolve@ps264245.dreamhostps.com/~/crystal-collector/
+Needed to run this command to allow updates in general on the server repo:
+git config --global receive.denyCurrentBranch updateInstead
+
+
+ln -s crystal-collector gemhunter.chrisflash.com
+
+// Do this to deploy to the remote repo
+git push deploy main
