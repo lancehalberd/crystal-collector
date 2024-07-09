@@ -1,6 +1,6 @@
 {
   "name": "CrystalCollector",
-  "version": "1.0.0",
+  "version": "0.1.01-alpha",
   "description": "Rogue-like Puzzle Mining Game",
   "main": "index.js",
   "dependencies": {
@@ -19,8 +19,9 @@
     "watchify": "^3.11.0"
   },
   "scripts": {
-    "start": "npm-run-all -p -r build server",
-    "build": "node build.js",
+    "start": "npm-run-all -p -r buildAndWatch server",
+    "buildAndWatch": "node scripts/build-src-watch.js",
+    "build": "node scripts/build-src-once.js",
     "server": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

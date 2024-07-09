@@ -1,0 +1,37 @@
+{
+  "name": "GemBlast",
+  "productName": "Gem Blast",
+  "version": "0.1.01-alpha",
+  "description": "Rogue-like Puzzle Mining Game",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "prepare": "cd ../ && node scripts/build-src-once.js && cd electron && node ../scripts/prepare-electron.js",
+    "runLocally": "npm-run-all prepare package start",
+    "make": "electron-forge make"
+  },
+  "config": {
+    "forge": {
+      "packagerConfig": {
+        "icon": "app-icons/icon"
+      },
+      "makers": [
+        {
+          "name": "@electron-forge/maker-zip"
+        }
+      ]
+    }
+  },
+  "devDependencies": {
+    "@electron-forge/cli": "^7.4.0",
+    "@electron-forge/maker-zip": "^7.4.0",
+    "electron": "^31.0.2",
+    "npm-run-all": "^4.1.5"
+  },
+  "author": "Hillary Spratt",
+  "license": "ISC",
+  "dependencies": {
+    "electron-squirrel-startup": "^1.0.1"
+  }
+}

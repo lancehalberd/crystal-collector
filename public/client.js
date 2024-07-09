@@ -3821,7 +3821,7 @@ function renderAchievements(context, state) {
     }
 }
 
-},{"Rectangle":2,"animations":4,"draw":7,"gameConstants":8,"ship":19,"sprites":22,"state":23}],4:[function(require,module,exports){
+},{"Rectangle":2,"animations":4,"draw":7,"gameConstants":8,"ship":18,"sprites":21,"state":22}],4:[function(require,module,exports){
 'use strict';
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
@@ -4229,7 +4229,7 @@ var renderLoop = function renderLoop() {
 //setInterval(renderLoop, 5);
 renderLoop();
 
-},{"gameConstants":8,"options":12,"render":15,"sounds":21,"state":23}],6:[function(require,module,exports){
+},{"gameConstants":8,"options":12,"render":14,"sounds":20,"state":22}],6:[function(require,module,exports){
 'use strict';
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
@@ -5219,7 +5219,7 @@ function gainBonusFuel(state, amount) {
     return updateSave(state, { fuel: fuel, bonusFuelToday: bonusFuelToday });
 }
 
-},{"achievements":3,"gameConstants":8,"help":9,"hud":10,"random":13,"renderRobot":17,"ship":19,"sprites":22,"state":23,"treasures":26}],7:[function(require,module,exports){
+},{"achievements":3,"gameConstants":8,"help":9,"hud":10,"random":13,"renderRobot":16,"ship":18,"sprites":21,"state":22,"treasures":25}],7:[function(require,module,exports){
 'use strict';
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
@@ -5589,7 +5589,7 @@ function renderHelp(context, state) {
     context.restore();
 }
 
-},{"draw":7,"gameConstants":8,"hud":10,"ship":19,"state":23}],10:[function(require,module,exports){
+},{"draw":7,"gameConstants":8,"hud":10,"ship":18,"state":22}],10:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -6665,7 +6665,7 @@ function renderPlayButton(context, state) {
     button.render(context, state, button, layoutProperties);
 }
 
-},{"Rectangle":2,"achievements":3,"animations":4,"digging":6,"draw":7,"gameConstants":8,"help":9,"options":12,"scenes":18,"sprites":22,"state":23,"title":25}],11:[function(require,module,exports){
+},{"Rectangle":2,"achievements":3,"animations":4,"digging":6,"draw":7,"gameConstants":8,"help":9,"options":12,"scenes":17,"sprites":21,"state":22,"title":24}],11:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -6975,7 +6975,7 @@ function getOptionButtons(state) {
     return [muteSoundsButton, muteMusicButton, showHelpButton, autoscrollButton, skipAnimations, hideParticles].concat(_toConsumableArray(!state.ship && !state.shop ? [suspendButton] : []), [titleButton]);
 }
 
-},{"client":5,"hud":10,"sounds":21,"state":23,"suspendedState":24}],13:[function(require,module,exports){
+},{"client":5,"hud":10,"sounds":20,"state":22,"suspendedState":23}],13:[function(require,module,exports){
 "use strict";
 
 var MAX_INT = Math.pow(2, 32);
@@ -7085,179 +7085,6 @@ window.random = {
 module.exports = window.random;
 
 },{}],14:[function(require,module,exports){
-'use strict';
-
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var Rectangle = function () {
-    _createClass(Rectangle, null, [{
-        key: 'defineByCenter',
-        value: function defineByCenter(x, y, width, height) {
-            return new Rectangle(x - width / 2, y - height / 2, width, height);
-        }
-    }, {
-        key: 'defineFromPoints',
-        value: function defineFromPoints(A, B) {
-            // convert arrays to objects.
-            if (A.length) A = { x: A[0], y: A[1] };
-            if (B.length) B = { x: B[0], y: B[1] };
-            return new Rectangle(Math.min(A.x, B.x), Math.min(A.y, B.y), Math.abs(A.x - B.x), Math.abs(A.y - B.y));
-        }
-    }, {
-        key: 'defineFromElement',
-        value: function defineFromElement($element) {
-            return new Rectangle($element.offset().left, $element.offset().top, $element.outerWidth(true), $element.outerHeight(true));
-        }
-
-        // Image needs to be loaded already.
-
-    }, {
-        key: 'defineFromImage',
-        value: function defineFromImage(image) {
-            return new Rectangle(0, 0, image.width, image.height);
-        }
-    }, {
-        key: 'collision',
-        value: function collision(A, B) {
-            return !(A.top + A.height <= B.top || A.top >= B.top + B.height || A.left + A.width <= B.left || A.left >= B.left + B.width);
-        }
-    }]);
-
-    function Rectangle() {
-        var left = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
-        var top = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
-        var width = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
-        var height = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 0;
-
-        _classCallCheck(this, Rectangle);
-
-        if ((typeof left === 'undefined' ? 'undefined' : _typeof(left)) === 'object') {
-            top = left.top || 0;
-            width = left.width || 0;
-            height = left.height || 0;
-            left = left.left || 0;
-        }
-        this.left = left;
-        this.top = top;
-        // Don't allow negative width/height. Update left/top so
-        // that width/height are always positive.
-        if (width <= 0) {
-            width *= -1;
-            this.left -= width;
-        }
-        this.width = width;
-        if (height <= 0) {
-            height *= -1;
-            this.top -= height;
-        }
-        this.height = height;
-        this.right = left + width;
-        this.bottom = top + height;
-    }
-
-    _createClass(Rectangle, [{
-        key: 'snap',
-        value: function snap() {
-            return new Rectangle(Math.round(this.left), Math.round(this.top), Math.round(this.width), Math.round(this.height));
-        }
-    }, {
-        key: 'translate',
-        value: function translate(dx, dy) {
-            return new Rectangle(this.left + dx, this.top + dy, this.width, this.height);
-        }
-    }, {
-        key: 'moveTo',
-        value: function moveTo(x, y) {
-            return new Rectangle(x, y, this.width, this.height);
-        }
-    }, {
-        key: 'moveCenterTo',
-        value: function moveCenterTo(x, y) {
-            return this.moveTo(x - this.width / 2, y - this.height / 2);
-        }
-    }, {
-        key: 'resize',
-        value: function resize(width, height) {
-            return new Rectangle(this.left, this.top, width, height);
-        }
-    }, {
-        key: 'pad',
-        value: function pad(padding) {
-            return new Rectangle(this.left - padding, this.top - padding, this.width + 2 * padding, this.height + 2 * padding);
-        }
-    }, {
-        key: 'scale',
-        value: function scale(_scale) {
-            return new Rectangle(this.left * _scale, this.top * _scale, this.width * _scale, this.height * _scale);
-        }
-    }, {
-        key: 'scaleFromCenter',
-        value: function scaleFromCenter(scale) {
-            var center = this.getCenter();
-            return this.scaleFromPoint(center[0], center[1], scale);
-        }
-    }, {
-        key: 'scaleFromPoint',
-        value: function scaleFromPoint(x, y, scale) {
-            return this.translate(-x, -y).scale(scale).translate(x, y);
-        }
-    }, {
-        key: 'stretch',
-        value: function stretch(scaleX, scaleY) {
-            return new Rectangle(this.left * scaleX, this.top * scaleY, this.width * scaleX, this.height * scaleY);
-        }
-    }, {
-        key: 'stretchFromCenter',
-        value: function stretchFromCenter(scaleX, scaleY) {
-            var center = this.getCenter();
-            return this.stretchFromPoint(center[0], center[1], scaleX, scaleY);
-        }
-    }, {
-        key: 'stretchFromPoint',
-        value: function stretchFromPoint(x, y, scaleX, scaleY) {
-            return this.translate(-x, -y).stretch(scaleX, scaleY).translate(x, y);
-        }
-    }, {
-        key: 'getCenter',
-        value: function getCenter() {
-            return [this.left + this.width / 2, this.top + this.height / 2];
-        }
-    }, {
-        key: 'containsPoint',
-        value: function containsPoint(x, y) {
-            return !(y < this.top || y > this.bottom || x < this.left || x > this.right);
-        }
-
-        // By default overlapping at a single point counts, but if includeBoundary is false, then the overlap counts
-        // only if the overlapping area has positive area,
-
-    }, {
-        key: 'overlapsRectangle',
-        value: function overlapsRectangle(rectangle) {
-            var includeBoundary = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
-
-            if (includeBoundary) {
-                return !(this.bottom < rectangle.top || this.top > rectangle.bottom || this.right < rectangle.left || this.left > rectangle.right);
-            }
-            return !(this.bottom <= rectangle.top || this.top >= rectangle.bottom || this.right <= rectangle.left || this.left >= rectangle.right);
-        }
-    }, {
-        key: 'round',
-        value: function round() {
-            return new Rectangle(Math.round(this.left), Math.round(this.top), Math.round(this.width), Math.round(this.height));
-        }
-    }]);
-
-    return Rectangle;
-}();
-
-module.exports = Rectangle;
-
-},{}],15:[function(require,module,exports){
 'use strict';
 
 var _require = require('gameConstants'),
@@ -7491,7 +7318,7 @@ function renderFPS(context) {
 }
 var timeStack = [];
 
-},{"achievements":3,"animations":4,"draw":7,"gameConstants":8,"help":9,"hud":10,"keyboard":11,"renderDigging":16,"scenes":18,"ship":19,"shop":20,"sounds":21,"state":23,"title":25}],16:[function(require,module,exports){
+},{"achievements":3,"animations":4,"draw":7,"gameConstants":8,"help":9,"hud":10,"keyboard":11,"renderDigging":15,"scenes":17,"ship":18,"shop":19,"sounds":20,"state":22,"title":24}],15:[function(require,module,exports){
 'use strict';
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
@@ -7921,7 +7748,7 @@ module.exports = {
     renderDigging: renderDigging
 };
 
-},{"Rectangle":2,"animations":4,"digging":6,"draw":7,"gameConstants":8,"random":13,"renderRobot":17,"ship":19}],17:[function(require,module,exports){
+},{"Rectangle":2,"animations":4,"digging":6,"draw":7,"gameConstants":8,"random":13,"renderRobot":16,"ship":18}],16:[function(require,module,exports){
 'use strict';
 
 var _require = require('gameConstants'),
@@ -8052,7 +7879,7 @@ function renderRobot(context, state) {
     context.restore();
 }
 
-},{"Rectangle":2,"animations":4,"digging":6,"draw":7,"gameConstants":8}],18:[function(require,module,exports){
+},{"Rectangle":2,"animations":4,"digging":6,"draw":7,"gameConstants":8}],17:[function(require,module,exports){
 'use strict';
 
 var Rectangle = require('Rectangle');
@@ -8526,12 +8353,12 @@ function renderCreditsCard(context, state, title, names, alpha) {
     context.restore();
 }
 
-},{"Rectangle":2,"animations":4,"draw":7,"gameConstants":8,"hud":10,"ship":19,"sprites":22,"state":23}],19:[function(require,module,exports){
+},{"Rectangle":2,"animations":4,"draw":7,"gameConstants":8,"hud":10,"ship":18,"sprites":21,"state":22}],18:[function(require,module,exports){
 'use strict';
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
-var Rectangle = require('rectangle');
+var Rectangle = require('Rectangle');
 var random = require('random');
 
 var _require = require('draw'),
@@ -8769,7 +8596,7 @@ var shipPartSprite = {
     }
 };
 
-},{"animations":4,"digging":6,"draw":7,"gameConstants":8,"hud":10,"random":13,"rectangle":14,"sprites":22,"state":23}],20:[function(require,module,exports){
+},{"Rectangle":2,"animations":4,"digging":6,"draw":7,"gameConstants":8,"hud":10,"random":13,"sprites":21,"state":22}],19:[function(require,module,exports){
 'use strict';
 
 var Rectangle = require('Rectangle');
@@ -8803,7 +8630,7 @@ function renderShop(context, state) {
     drawImage(context, robotFrame.image, robotFrame, new Rectangle(robotFrame).moveCenterTo(shopRectangle.left + shopRectangle.width / 2, shopRectangle.top + shopRectangle.height / 2));
 }
 
-},{"Rectangle":2,"animations":4,"draw":7,"hud":10,"ship":19}],21:[function(require,module,exports){
+},{"Rectangle":2,"animations":4,"draw":7,"hud":10,"ship":18}],20:[function(require,module,exports){
 'use strict';
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
@@ -9321,7 +9148,7 @@ module.exports = {
     isPlayingTrack: isPlayingTrack
 };
 
-},{"howler":1}],22:[function(require,module,exports){
+},{"howler":1}],21:[function(require,module,exports){
 'use strict';
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
@@ -9636,7 +9463,7 @@ var _require5 = require('digging'),
     gainCrystals = _require5.gainCrystals,
     detonateDebris = _require5.detonateDebris;
 
-},{"Rectangle":2,"animations":4,"digging":6,"draw":7,"gameConstants":8,"state":23}],23:[function(require,module,exports){
+},{"Rectangle":2,"animations":4,"digging":6,"draw":7,"gameConstants":8,"state":22}],22:[function(require,module,exports){
 'use strict';
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
@@ -10009,7 +9836,7 @@ function applyActions(state, actions) {
     return state;
 }
 
-},{"Rectangle":2,"achievements":3,"animations":4,"digging":6,"gameConstants":8,"help":9,"hud":10,"random":13,"scenes":18,"ship":19,"sounds":21}],24:[function(require,module,exports){
+},{"Rectangle":2,"achievements":3,"animations":4,"digging":6,"gameConstants":8,"help":9,"hud":10,"random":13,"scenes":17,"ship":18,"sounds":20}],23:[function(require,module,exports){
 'use strict';
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
@@ -10170,7 +9997,7 @@ function applySuspendedState(state, suspendedState) {
     return state;
 }
 
-},{"digging":6,"gameConstants":8}],25:[function(require,module,exports){
+},{"digging":6,"gameConstants":8}],24:[function(require,module,exports){
 'use strict';
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
@@ -10234,6 +10061,21 @@ var titleBottomFrame = r(800, 800, { image: requireImage('gfx/titlebottom.png') 
 // Trash icon from: https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/Trash_font_awesome.svg/480px-Trash_font_awesome.svg.png
 //const trashFrame = r(480, 480, {'image': requireImage('gfx/trash.png')});
 var loadButtonAnimationTime = 400;
+// const quitGameButton = {
+//     label: 'Quit',
+//     onClick(state) {
+//         console.log('Trying to quit Gem Blast');
+//         console.log({window});
+//         return {...state};
+//     },
+//     render: renderBasicButton,
+//     resize({width, height, buttonWidth, buttonHeight}) {
+//         this.height = buttonHeight;
+//         this.width = buttonWidth;
+//         this.top = 5.5 * height / 6 - this.height / 2;
+//         this.left = (width - this.width) / 2;
+//     },
+// }
 var chooseFileButton = {
     label: 'Start',
     onClick: function onClick(state) {
@@ -10468,6 +10310,7 @@ var cancelDeleteButton = {
 };
 
 function getTitleHUDButtons(state) {
+    // if (window.process && !state.loadScreen) return [chooseFileButton, quitGameButton];
     if (!state.loadScreen) return [chooseFileButton];
     if (state.deleteSlot !== false) return [confirmDeleteButton, cancelDeleteButton];
     return [].concat(_toConsumableArray(fileButtons), _toConsumableArray(deleteFileButtons));
@@ -10535,7 +10378,7 @@ function renderLoadScreen(context, state) {
     }
 }
 
-},{"Rectangle":2,"achievements":3,"animations":4,"draw":7,"gameConstants":8,"hud":10,"ship":19,"sprites":22,"state":23,"suspendedState":24}],26:[function(require,module,exports){
+},{"Rectangle":2,"achievements":3,"animations":4,"draw":7,"gameConstants":8,"hud":10,"ship":18,"sprites":21,"state":22,"suspendedState":23}],25:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -10767,4 +10610,4 @@ var diffuserSprite = {
     }
 };
 
-},{"Rectangle":2,"achievements":3,"animations":4,"digging":6,"draw":7,"gameConstants":8,"random":13,"sprites":22,"state":23}]},{},[5]);
+},{"Rectangle":2,"achievements":3,"animations":4,"digging":6,"draw":7,"gameConstants":8,"random":13,"sprites":21,"state":22}]},{},[5]);

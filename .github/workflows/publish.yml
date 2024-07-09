@@ -1,0 +1,97 @@
+# from: https://trashmoon.com/blog/2022/automating-steam-releases-for-html-games-with-electron-forge-and-github-actions/
+name: Build/release
+
+# Run this workflow whenever a tag that starts with v is pushed to github.
+# to add a tag, do this before committing and pushing: $ git tag -a v1.4 -m "my version 1.4"
+on: [push]
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v1
+
+      # Try using newer github actions, DOES NOT WORK
+      # - name: Read .nvmrc
+      #   run: |
+      #     node_version={cat .nvmrc}
+      #     echo "NODE_VERSION=$node_version" >> "$GITHUB_OUTPUT"
+      - name: Read .nvmrc
+        run: echo ::set-output name=NODE_VERSION::$(cat .nvmrc)
+        id: nvm
+
+      - name: Use Node.js ${{ steps.nvm.outputs.node_version }}
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
+
+      # Wine is required in order to generate an Electron build for Windows from
+      # an Ubuntu machine.
+      - name: Install Wine
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt update
+          sudo apt install -y wine-stable
+
+      # Install dependencies for the app
+      - name: Run app install
+        # use yarn instead of npm for consistency with our lock file
+        uses: borales/actions-yarn@v4
+        with:
+          cmd: install # will run `yarn install` command
+
+      # Move all the game files into a build/ directory.
+      - name: Run build
+        run: npm run build
+
+      # Install dependencies for electron
+      - name: Run electron install
+        # use yarn instead of npm for consistency with our lock file
+        uses: borales/actions-yarn@v4
+        with:
+          cmd: install
+          dir: electron # will run `yarn install` command in `electron` subfolder
+
+      # npm run make uses Electron Forge, see package.json above for details.
+      # We have to run make three times, once for each platform. This step
+      # generates three directories, corresponding to each platform.
+      # Ubuntu is set as our environment, so platform auto resolves to that.
+      # Notice the working-directory is now ./electron!
+      - name: Copy HTML app to electron/, and make Electron packages
+        run: |
+          node ../scripts/prepare-electron.js
+          npm run make
+          npm run make -- --platform=win32
+          npm run make -- --platform=darwin
+        working-directory: ./electron
+
+      - name: check files exist on github
+        run: |
+          echo "** workspace **"
+          ls ${{ github.workspace }}
+          echo "** electron/out folder **"
+          ls ${{ github.workspace }}/electron/out/
+
+      # View this action's source code and documentation at
+      # https://github.com/game-ci/steam-deploy. Note that this action only
+      # works in ubuntu environments. If you want to run in Mac OS or Windows
+      # environments, you'll need to write your own deploy script.
+      # The depot{number}Path parameters correspond to the directories created
+      # in the previous step by npm run make.
+      - name: Deploy to Steam
+        uses: game-ci/steam-deploy@v3.0.4
+        with:
+          username: ${{ secrets.STEAM_USERNAME }}
+          configVdf: ${{ secrets.STEAM_CONFIG_VDF}}
+          appId: 2560850
+          buildDescription: ${{ github.ref }}
+          rootPath: electron/out
+          depot1Path: Gem Blast-win32-x64
+          depot2Path: Gem Blast-darwin-x64
+          depot3Path: Gem Blast-linux-x64
+          releaseBranch: prerelease

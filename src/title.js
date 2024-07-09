@@ -20,6 +20,21 @@ const titleBottomFrame = r(800, 800, {image: requireImage('gfx/titlebottom.png')
 // Trash icon from: https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/Trash_font_awesome.svg/480px-Trash_font_awesome.svg.png
 //const trashFrame = r(480, 480, {'image': requireImage('gfx/trash.png')});
 const loadButtonAnimationTime = 400;
+// const quitGameButton = {
+//     label: 'Quit',
+//     onClick(state) {
+//         console.log('Trying to quit Gem Blast');
+//         console.log({window});
+//         return {...state};
+//     },
+//     render: renderBasicButton,
+//     resize({width, height, buttonWidth, buttonHeight}) {
+//         this.height = buttonHeight;
+//         this.width = buttonWidth;
+//         this.top = 5.5 * height / 6 - this.height / 2;
+//         this.left = (width - this.width) / 2;
+//     },
+// }
 const chooseFileButton = {
     label: 'Start',
     onClick(state) {
@@ -243,6 +258,7 @@ const cancelDeleteButton = {
 };
 
 function getTitleHUDButtons(state) {
+    // if (window.process && !state.loadScreen) return [chooseFileButton, quitGameButton];
     if (!state.loadScreen) return [chooseFileButton];
     if (state.deleteSlot !== false) return [confirmDeleteButton, cancelDeleteButton];
     return [...fileButtons, ...deleteFileButtons];

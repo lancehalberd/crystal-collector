@@ -1,4 +1,4 @@
-const Rectangle = require('rectangle');
+const Rectangle = require('Rectangle');
 const random = require('random');
 const { drawImage, drawRectangle } = require('draw');
 const { canvas, EDGE_LENGTH } = require('gameConstants');
