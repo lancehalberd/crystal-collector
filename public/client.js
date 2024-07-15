@@ -4229,7 +4229,7 @@ var renderLoop = function renderLoop() {
 //setInterval(renderLoop, 5);
 renderLoop();
 
-},{"gameConstants":8,"options":12,"render":15,"sounds":21,"state":23}],6:[function(require,module,exports){
+},{"gameConstants":8,"options":13,"render":15,"sounds":21,"state":23}],6:[function(require,module,exports){
 'use strict';
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
@@ -4238,14 +4238,17 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
 var random = require('random');
 
-var _require = require('gameConstants'),
-    canvas = _require.canvas,
-    FRAME_LENGTH = _require.FRAME_LENGTH,
-    EDGE_LENGTH = _require.EDGE_LENGTH,
-    COLUMN_WIDTH = _require.COLUMN_WIDTH,
-    ROW_HEIGHT = _require.ROW_HEIGHT,
-    SHORT_EDGE = _require.SHORT_EDGE,
-    LONG_EDGE = _require.LONG_EDGE;
+var _require = require('isDemo'),
+    IS_DEMO = _require.IS_DEMO;
+
+var _require2 = require('gameConstants'),
+    canvas = _require2.canvas,
+    FRAME_LENGTH = _require2.FRAME_LENGTH,
+    EDGE_LENGTH = _require2.EDGE_LENGTH,
+    COLUMN_WIDTH = _require2.COLUMN_WIDTH,
+    ROW_HEIGHT = _require2.ROW_HEIGHT,
+    SHORT_EDGE = _require2.SHORT_EDGE,
+    LONG_EDGE = _require2.LONG_EDGE;
 
 var CRYSTAL_SIZES = [1, 5, 10, 25, 100, 500, 1000, 2500, 10000, 50000, 100000, 250000, 1E6, 5E6, 10E6, 25E6];
 
@@ -4277,52 +4280,52 @@ module.exports = {
     revealCellNumbers: revealCellNumbers
 };
 
-var _require2 = require('state'),
-    playSound = _require2.playSound,
-    updateSave = _require2.updateSave,
-    nextDay = _require2.nextDay;
+var _require3 = require('state'),
+    playSound = _require3.playSound,
+    updateSave = _require3.updateSave,
+    nextDay = _require3.nextDay;
 
-var _require3 = require('sprites'),
-    addSprite = _require3.addSprite,
-    bombSprite = _require3.bombSprite,
-    crystalSprite = _require3.crystalSprite,
-    debrisSprite = _require3.debrisSprite,
-    diffuserSprite = _require3.diffuserSprite,
-    shipDebrisSprite = _require3.shipDebrisSprite,
-    explosionSprite = _require3.explosionSprite,
-    shieldSprite = _require3.shieldSprite,
-    particleAnimations = _require3.particleAnimations,
-    lavaBubbleSprite = _require3.lavaBubbleSprite,
-    lavaBubbleAnimations = _require3.lavaBubbleAnimations;
+var _require4 = require('sprites'),
+    addSprite = _require4.addSprite,
+    bombSprite = _require4.bombSprite,
+    crystalSprite = _require4.crystalSprite,
+    debrisSprite = _require4.debrisSprite,
+    diffuserSprite = _require4.diffuserSprite,
+    shipDebrisSprite = _require4.shipDebrisSprite,
+    explosionSprite = _require4.explosionSprite,
+    shieldSprite = _require4.shieldSprite,
+    particleAnimations = _require4.particleAnimations,
+    lavaBubbleSprite = _require4.lavaBubbleSprite,
+    lavaBubbleAnimations = _require4.lavaBubbleAnimations;
 
-var _require4 = require('achievements'),
-    getAchievementBonus = _require4.getAchievementBonus,
-    incrementAchievementStat = _require4.incrementAchievementStat,
-    ACHIEVEMENT_COLLECT_X_CRYSTALS = _require4.ACHIEVEMENT_COLLECT_X_CRYSTALS,
-    ACHIEVEMENT_COLLECT_X_CRYSTALS_IN_ONE_DAY = _require4.ACHIEVEMENT_COLLECT_X_CRYSTALS_IN_ONE_DAY,
-    ACHIEVEMENT_GAIN_X_BONUS_FUEL_IN_ONE_DAY = _require4.ACHIEVEMENT_GAIN_X_BONUS_FUEL_IN_ONE_DAY,
-    ACHIEVEMENT_REPAIR_SHIP_IN_X_DAYS = _require4.ACHIEVEMENT_REPAIR_SHIP_IN_X_DAYS,
-    ACHIEVEMENT_PREVENT_X_EXPLOSIONS = _require4.ACHIEVEMENT_PREVENT_X_EXPLOSIONS,
-    ACHIEVEMENT_DIFFUSE_X_BOMBS = _require4.ACHIEVEMENT_DIFFUSE_X_BOMBS;
+var _require5 = require('achievements'),
+    getAchievementBonus = _require5.getAchievementBonus,
+    incrementAchievementStat = _require5.incrementAchievementStat,
+    ACHIEVEMENT_COLLECT_X_CRYSTALS = _require5.ACHIEVEMENT_COLLECT_X_CRYSTALS,
+    ACHIEVEMENT_COLLECT_X_CRYSTALS_IN_ONE_DAY = _require5.ACHIEVEMENT_COLLECT_X_CRYSTALS_IN_ONE_DAY,
+    ACHIEVEMENT_GAIN_X_BONUS_FUEL_IN_ONE_DAY = _require5.ACHIEVEMENT_GAIN_X_BONUS_FUEL_IN_ONE_DAY,
+    ACHIEVEMENT_REPAIR_SHIP_IN_X_DAYS = _require5.ACHIEVEMENT_REPAIR_SHIP_IN_X_DAYS,
+    ACHIEVEMENT_PREVENT_X_EXPLOSIONS = _require5.ACHIEVEMENT_PREVENT_X_EXPLOSIONS,
+    ACHIEVEMENT_DIFFUSE_X_BOMBS = _require5.ACHIEVEMENT_DIFFUSE_X_BOMBS;
 
-var _require5 = require('treasures'),
-    collectTreasure = _require5.collectTreasure;
+var _require6 = require('treasures'),
+    collectTreasure = _require6.collectTreasure;
 
-var _require6 = require('ship'),
-    collectShipPart = _require6.collectShipPart,
-    getShipPartLocation = _require6.getShipPartLocation;
+var _require7 = require('ship'),
+    collectShipPart = _require7.collectShipPart,
+    getShipPartLocation = _require7.getShipPartLocation;
 
-var _require7 = require('renderRobot'),
-    teleportInAnimationFinish = _require7.teleportInAnimationFinish,
-    teleportOutAnimationStart = _require7.teleportOutAnimationStart,
-    teleportOutAnimationFinish = _require7.teleportOutAnimationFinish;
+var _require8 = require('renderRobot'),
+    teleportInAnimationFinish = _require8.teleportInAnimationFinish,
+    teleportOutAnimationStart = _require8.teleportOutAnimationStart,
+    teleportOutAnimationFinish = _require8.teleportOutAnimationFinish;
 
-var _require8 = require('help'),
-    showLeavingHint = _require8.showLeavingHint,
-    showSpecialHint = _require8.showSpecialHint;
+var _require9 = require('help'),
+    showLeavingHint = _require9.showLeavingHint,
+    showSpecialHint = _require9.showSpecialHint;
 
-var _require9 = require('hud'),
-    getSleepButton = _require9.getSleepButton;
+var _require10 = require('hud'),
+    getSleepButton = _require10.getSleepButton;
 
 // Injects indexes from the integers into non-negative integers.
 
@@ -4770,6 +4773,13 @@ function detonateDebris(state, row, column) {
     return state;
 }
 
+function emitPurchaseMessage(state) {
+    console.log('Purchase the full game to dig deeper.');
+    if (!state.emitPurchaseMessage) state.emitPurchaseMessageTimer = 3000;
+    if (state.emitPurchaseMessageTimer) state.emitPurchaseMessageTimer += -1;
+    return state = _extends({}, state, { emitPurchaseMessage: true });
+}
+
 function exploreCell(state, row, column) {
     var usingExtractor = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
 
@@ -4885,10 +4895,16 @@ function exploreCell(state, row, column) {
         }
 
         if (!usingExtractor && depth > state.saved.lavaDepth - 11 && depth < Math.floor(state.saved.lavaDepth)) {
-            var delta = Math.floor(state.saved.lavaDepth) - depth;
-            state.saved.lavaDepth += 1.5 / delta;
-            if (1.5 / delta >= 0.1) {
-                playSound(state, 'lowerLava');
+            if (!IS_DEMO) {
+                // only lower lava if the full game is available
+                var delta = Math.floor(state.saved.lavaDepth) - depth;
+                state.saved.lavaDepth += 1.5 / delta;
+                if (1.5 / delta >= 0.1) {
+                    playSound(state, 'lowerLava');
+                }
+            }
+            if (IS_DEMO) {
+                emitPurchaseMessage(state);
             }
         }
     } else {
@@ -5219,7 +5235,7 @@ function gainBonusFuel(state, amount) {
     return updateSave(state, { fuel: fuel, bonusFuelToday: bonusFuelToday });
 }
 
-},{"achievements":3,"gameConstants":8,"help":9,"hud":10,"random":13,"renderRobot":17,"ship":19,"sprites":22,"state":23,"treasures":26}],7:[function(require,module,exports){
+},{"achievements":3,"gameConstants":8,"help":9,"hud":10,"isDemo":11,"random":14,"renderRobot":17,"ship":19,"sprites":22,"state":23,"treasures":26}],7:[function(require,module,exports){
 'use strict';
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
@@ -6488,7 +6504,7 @@ function getHUDButtons(state) {
         return [closeButton].concat(standardButtons);
     }
     if (state.showOptions) {
-        return [closeButton].concat(_toConsumableArray(getOptionButtons(state)), standardButtons);
+        return [].concat(_toConsumableArray(getOptionButtons(state)), standardButtons);
     }
     if (state.title) {
         return getTitleHUDButtons(state);
@@ -6532,8 +6548,8 @@ function renderHUD(context, state) {
         drawImage(context, crystalFrame.image, crystalFrame, iconRectangle.moveCenterTo(right - scoreWidth - 4 - iconRectangle.width / 2, y - 4));
     }
 
-    // Draw FUEL indicator
     if (!state.title && !state.shop && !state.showAchievements && !state.ship && !state.showOptions && state.saved.finishedIntro && state.outroTime === false) {
+        // Draw FUEL indicator
         var fuelMultiplier = 1 + getAchievementBonus(state, ACHIEVEMENT_GAIN_X_BONUS_FUEL_IN_ONE_DAY) / 100;
         var maxFuel = Math.round(state.saved.maxFuel * fuelMultiplier);
         var fuelBarTarget = new Rectangle(10, 10, Math.min(canvas.width / 2.5, 200 * fuelMultiplier), fuelFrame.height);
@@ -6665,7 +6681,13 @@ function renderPlayButton(context, state) {
     button.render(context, state, button, layoutProperties);
 }
 
-},{"Rectangle":2,"achievements":3,"animations":4,"digging":6,"draw":7,"gameConstants":8,"help":9,"options":12,"scenes":18,"sprites":22,"state":23,"title":25}],11:[function(require,module,exports){
+},{"Rectangle":2,"achievements":3,"animations":4,"digging":6,"draw":7,"gameConstants":8,"help":9,"options":13,"scenes":18,"sprites":22,"state":23,"title":25}],11:[function(require,module,exports){
+"use strict";
+
+var IS_DEMO = false;
+module.exports = { IS_DEMO: IS_DEMO };
+
+},{}],12:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -6784,7 +6806,7 @@ var isKeyDown = exports.isKeyDown = function isKeyDown(keyCode) {
     return false;
 };
 
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 'use strict';
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
@@ -6816,6 +6838,21 @@ var _require4 = require('sounds'),
 
 var _require5 = require('client'),
     commitSaveToLocalStorage = _require5.commitSaveToLocalStorage;
+
+var saveGame = function saveGame(state) {
+    if (!state.ship && !state.shop) {
+        state = updateSave(state, { suspendedState: createSuspendedState(state) });
+        commitSaveToLocalStorage(state);
+    }
+    return state;
+};
+
+var showTitle = function showTitle(state) {
+    return _extends({}, state, { bgmTime: state.time,
+        title: state.time, showOptions: false, saveSlot: false,
+        robot: false
+    });
+};
 
 var optionIndex = 0;
 var optionToggleButton = {
@@ -6859,6 +6896,7 @@ var muteMusicButton = _extends({
 
     render: renderBasicButton,
     onClick: function onClick(state) {
+        playSound(state, 'select');
         var muteMusic = !state.saved.muteMusic;
         if (muteMusic) muteTrack();else unmuteTrack();
         return updateSave(state, { muteMusic: muteMusic });
@@ -6874,6 +6912,7 @@ var showHelpButton = _extends({
 
     render: renderBasicButton,
     onClick: function onClick(state) {
+        playSound(state, 'select');
         var hideHelp = !state.saved.hideHelp;
         return updateSave(state, { hideHelp: hideHelp });
     }
@@ -6888,6 +6927,7 @@ var autoscrollButton = _extends({
 
     render: renderBasicButton,
     onClick: function onClick(state) {
+        playSound(state, 'select');
         var disableAutoscroll = !state.saved.disableAutoscroll;
         return updateSave(state, { disableAutoscroll: disableAutoscroll });
     }
@@ -6902,6 +6942,7 @@ var hideParticles = _extends({
 
     render: renderBasicButton,
     onClick: function onClick(state) {
+        playSound(state, 'select');
         var hideParticles = !state.saved.hideParticles;
         return updateSave(state, { hideParticles: hideParticles });
     }
@@ -6916,22 +6957,19 @@ var skipAnimations = _extends({
 
     render: renderBasicButton,
     onClick: function onClick(state) {
+        playSound(state, 'select');
         var skipAnimations = !state.saved.skipAnimations;
         return updateSave(state, { skipAnimations: skipAnimations });
     }
 }, optionToggleButton, {
     optionIndex: optionIndex++
 });
-var suspendButton = {
-    label: 'Suspend',
+var resumeButton = {
+    label: 'Resume',
     render: renderBasicButton,
     onClick: function onClick(state) {
-        state = updateSave(state, { suspendedState: createSuspendedState(state) });
-        commitSaveToLocalStorage(state);
-        return _extends({}, state, { bgmTime: state.time,
-            title: state.time, showOptions: false, saveSlot: false,
-            robot: false
-        });
+        playSound(state, 'select');
+        return _extends({}, state, { showAchievements: false, showOptions: false });
     },
     resize: function resize(_ref2) {
         var height = _ref2.height,
@@ -6939,22 +6977,24 @@ var suspendButton = {
             buttonWidth = _ref2.buttonWidth,
             buttonHeight = _ref2.buttonHeight;
 
+        // This is duplicating the logic for the y position of the option buttons
+        // and assuming this should display as a fourth row.
+        var y = 3;
         this.height = buttonHeight;
         this.width = buttonWidth * 2;
-        this.top = height / 2 - this.height * (3.5 - 1.2 * 3.5);
+        this.top = height / 2 - this.height * (3.5 - 1.2 * y);
         this.left = Math.round((width - this.width) / 2);
     },
 
     optionIndex: optionIndex++
 };
-var titleButton = {
-    label: 'Title',
+var quitButton = {
+    label: 'Quit',
     render: renderBasicButton,
     onClick: function onClick(state) {
-        return _extends({}, state, { bgmTime: state.time,
-            title: state.time, showOptions: false, saveSlot: false,
-            robot: false
-        });
+        state = saveGame(state);
+        window.electronAPI.setCloseButton(true);
+        return _extends({}, state);
     },
     resize: function resize(_ref3) {
         var height = _ref3.height,
@@ -6963,19 +7003,41 @@ var titleButton = {
             buttonHeight = _ref3.buttonHeight;
 
         this.height = buttonHeight;
-        this.width = buttonWidth * 2;
-        this.top = height / 2 - this.height * (3.5 - 1.2 * 4.5);
-        this.left = Math.round((width - this.width) / 2);
+        this.width = buttonWidth;
+        this.top = height / 2 - this.height * (3.5 - 1.2 * 5);
+        this.left = Math.round((width - this.width) / 2) - this.width - Math.round(this.width / 20);
+    },
+
+    optionIndex: optionIndex++
+};
+var titleButton = {
+    label: 'Title',
+    render: renderBasicButton,
+    onClick: function onClick(state) {
+        playSound(state, 'select');
+        state = saveGame(state);
+        return showTitle(state);
+    },
+    resize: function resize(_ref4) {
+        var height = _ref4.height,
+            width = _ref4.width,
+            buttonWidth = _ref4.buttonWidth,
+            buttonHeight = _ref4.buttonHeight;
+
+        this.height = buttonHeight;
+        this.width = buttonWidth;
+        this.top = height / 2 - this.height * (3.5 - 1.2 * 5);
+        this.left = Math.round((width - this.width) / 2) + this.width + Math.round(this.width / 20);
     },
 
     optionIndex: optionIndex++
 };
 
 function getOptionButtons(state) {
-    return [muteSoundsButton, muteMusicButton, showHelpButton, autoscrollButton, skipAnimations, hideParticles].concat(_toConsumableArray(!state.ship && !state.shop ? [suspendButton] : []), [titleButton]);
+    return [muteSoundsButton, muteMusicButton, showHelpButton, autoscrollButton, skipAnimations, hideParticles, resumeButton, titleButton].concat(_toConsumableArray(window.electronAPI && !state.loadScreen ? [quitButton] : []));
 }
 
-},{"client":5,"hud":10,"sounds":21,"state":23,"suspendedState":24}],13:[function(require,module,exports){
+},{"client":5,"hud":10,"sounds":21,"state":23,"suspendedState":24}],14:[function(require,module,exports){
 "use strict";
 
 var MAX_INT = Math.pow(2, 32);
@@ -7083,179 +7145,6 @@ window.random = {
 };
 
 module.exports = window.random;
-
-},{}],14:[function(require,module,exports){
-'use strict';
-
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var Rectangle = function () {
-    _createClass(Rectangle, null, [{
-        key: 'defineByCenter',
-        value: function defineByCenter(x, y, width, height) {
-            return new Rectangle(x - width / 2, y - height / 2, width, height);
-        }
-    }, {
-        key: 'defineFromPoints',
-        value: function defineFromPoints(A, B) {
-            // convert arrays to objects.
-            if (A.length) A = { x: A[0], y: A[1] };
-            if (B.length) B = { x: B[0], y: B[1] };
-            return new Rectangle(Math.min(A.x, B.x), Math.min(A.y, B.y), Math.abs(A.x - B.x), Math.abs(A.y - B.y));
-        }
-    }, {
-        key: 'defineFromElement',
-        value: function defineFromElement($element) {
-            return new Rectangle($element.offset().left, $element.offset().top, $element.outerWidth(true), $element.outerHeight(true));
-        }
-
-        // Image needs to be loaded already.
-
-    }, {
-        key: 'defineFromImage',
-        value: function defineFromImage(image) {
-            return new Rectangle(0, 0, image.width, image.height);
-        }
-    }, {
-        key: 'collision',
-        value: function collision(A, B) {
-            return !(A.top + A.height <= B.top || A.top >= B.top + B.height || A.left + A.width <= B.left || A.left >= B.left + B.width);
-        }
-    }]);
-
-    function Rectangle() {
-        var left = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
-        var top = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
-        var width = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
-        var height = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 0;
-
-        _classCallCheck(this, Rectangle);
-
-        if ((typeof left === 'undefined' ? 'undefined' : _typeof(left)) === 'object') {
-            top = left.top || 0;
-            width = left.width || 0;
-            height = left.height || 0;
-            left = left.left || 0;
-        }
-        this.left = left;
-        this.top = top;
-        // Don't allow negative width/height. Update left/top so
-        // that width/height are always positive.
-        if (width <= 0) {
-            width *= -1;
-            this.left -= width;
-        }
-        this.width = width;
-        if (height <= 0) {
-            height *= -1;
-            this.top -= height;
-        }
-        this.height = height;
-        this.right = left + width;
-        this.bottom = top + height;
-    }
-
-    _createClass(Rectangle, [{
-        key: 'snap',
-        value: function snap() {
-            return new Rectangle(Math.round(this.left), Math.round(this.top), Math.round(this.width), Math.round(this.height));
-        }
-    }, {
-        key: 'translate',
-        value: function translate(dx, dy) {
-            return new Rectangle(this.left + dx, this.top + dy, this.width, this.height);
-        }
-    }, {
-        key: 'moveTo',
-        value: function moveTo(x, y) {
-            return new Rectangle(x, y, this.width, this.height);
-        }
-    }, {
-        key: 'moveCenterTo',
-        value: function moveCenterTo(x, y) {
-            return this.moveTo(x - this.width / 2, y - this.height / 2);
-        }
-    }, {
-        key: 'resize',
-        value: function resize(width, height) {
-            return new Rectangle(this.left, this.top, width, height);
-        }
-    }, {
-        key: 'pad',
-        value: function pad(padding) {
-            return new Rectangle(this.left - padding, this.top - padding, this.width + 2 * padding, this.height + 2 * padding);
-        }
-    }, {
-        key: 'scale',
-        value: function scale(_scale) {
-            return new Rectangle(this.left * _scale, this.top * _scale, this.width * _scale, this.height * _scale);
-        }
-    }, {
-        key: 'scaleFromCenter',
-        value: function scaleFromCenter(scale) {
-            var center = this.getCenter();
-            return this.scaleFromPoint(center[0], center[1], scale);
-        }
-    }, {
-        key: 'scaleFromPoint',
-        value: function scaleFromPoint(x, y, scale) {
-            return this.translate(-x, -y).scale(scale).translate(x, y);
-        }
-    }, {
-        key: 'stretch',
-        value: function stretch(scaleX, scaleY) {
-            return new Rectangle(this.left * scaleX, this.top * scaleY, this.width * scaleX, this.height * scaleY);
-        }
-    }, {
-        key: 'stretchFromCenter',
-        value: function stretchFromCenter(scaleX, scaleY) {
-            var center = this.getCenter();
-            return this.stretchFromPoint(center[0], center[1], scaleX, scaleY);
-        }
-    }, {
-        key: 'stretchFromPoint',
-        value: function stretchFromPoint(x, y, scaleX, scaleY) {
-            return this.translate(-x, -y).stretch(scaleX, scaleY).translate(x, y);
-        }
-    }, {
-        key: 'getCenter',
-        value: function getCenter() {
-            return [this.left + this.width / 2, this.top + this.height / 2];
-        }
-    }, {
-        key: 'containsPoint',
-        value: function containsPoint(x, y) {
-            return !(y < this.top || y > this.bottom || x < this.left || x > this.right);
-        }
-
-        // By default overlapping at a single point counts, but if includeBoundary is false, then the overlap counts
-        // only if the overlapping area has positive area,
-
-    }, {
-        key: 'overlapsRectangle',
-        value: function overlapsRectangle(rectangle) {
-            var includeBoundary = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
-
-            if (includeBoundary) {
-                return !(this.bottom < rectangle.top || this.top > rectangle.bottom || this.right < rectangle.left || this.left > rectangle.right);
-            }
-            return !(this.bottom <= rectangle.top || this.top >= rectangle.bottom || this.right <= rectangle.left || this.left >= rectangle.right);
-        }
-    }, {
-        key: 'round',
-        value: function round() {
-            return new Rectangle(Math.round(this.left), Math.round(this.top), Math.round(this.width), Math.round(this.height));
-        }
-    }]);
-
-    return Rectangle;
-}();
-
-module.exports = Rectangle;
 
 },{}],15:[function(require,module,exports){
 'use strict';
@@ -7436,7 +7325,7 @@ function render(context, state) {
     if (!areImagesLoaded() || !state.interacted) {
         // Don't render for the first 200ms, to prevent 'Loading...' from flashing
         // when assets are cached.
-        if (Date.now() - loadTime > 200) renderPlayButton(context, state);
+        if (Date.now() - loadTime > 200 && !window.electronAPI) renderPlayButton(context, state);
         return;
     }
     if (state.outroTime !== false) {
@@ -7491,7 +7380,7 @@ function renderFPS(context) {
 }
 var timeStack = [];
 
-},{"achievements":3,"animations":4,"draw":7,"gameConstants":8,"help":9,"hud":10,"keyboard":11,"renderDigging":16,"scenes":18,"ship":19,"shop":20,"sounds":21,"state":23,"title":25}],16:[function(require,module,exports){
+},{"achievements":3,"animations":4,"draw":7,"gameConstants":8,"help":9,"hud":10,"keyboard":12,"renderDigging":16,"scenes":18,"ship":19,"shop":20,"sounds":21,"state":23,"title":25}],16:[function(require,module,exports){
 'use strict';
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
@@ -7521,18 +7410,21 @@ var _require3 = require('draw'),
 var _require4 = require('renderRobot'),
     renderRobot = _require4.renderRobot;
 
-var _require5 = require('digging'),
-    z = _require5.z,
-    canExploreCell = _require5.canExploreCell,
-    getFuelCost = _require5.getFuelCost,
-    isCellRevealed = _require5.isCellRevealed,
-    getFlagValue = _require5.getFlagValue,
-    getCellCenter = _require5.getCellCenter;
+var _require5 = require('isDemo'),
+    IS_DEMO = _require5.IS_DEMO;
 
-var _require6 = require('ship'),
-    getShipPartLocation = _require6.getShipPartLocation,
-    renderShip = _require6.renderShip,
-    renderTransitionShipBackground = _require6.renderTransitionShipBackground;
+var _require6 = require('digging'),
+    z = _require6.z,
+    canExploreCell = _require6.canExploreCell,
+    getFuelCost = _require6.getFuelCost,
+    isCellRevealed = _require6.isCellRevealed,
+    getFlagValue = _require6.getFlagValue,
+    getCellCenter = _require6.getCellCenter;
+
+var _require7 = require('ship'),
+    getShipPartLocation = _require7.getShipPartLocation,
+    renderShip = _require7.renderShip,
+    renderTransitionShipBackground = _require7.renderTransitionShipBackground;
 
 var lavaPattern = null;
 function renderDigging(context, state) {
@@ -7643,6 +7535,16 @@ function renderDigging(context, state) {
         var size = 15;
         if (!(depth % 50)) size = 30;else if (!(depth % 10)) size = 20;
         drawText(context, depth + ' -', 10, y, { fillStyle: '#FFF', textAlign: 'left', textBaseline: 'middle', size: size });
+        if (IS_DEMO && depth <= state.displayLavaDepth && depth + 5 > state.displayLavaDepth) {
+            context.save();
+            context.globalAlpha = 1;
+            var alert = {
+                label: 'Purchase the full game to\nlower the lava and dig deeper.',
+                textProperties: { fillStyle: 'white', textAlign: 'center', textBaseline: 'middle', size: 36 }
+            };
+            drawText(context, alert.label, canvas.width / 2, y, alert.textProperties);
+            context.restore();
+        }
         y += 5 * ROW_HEIGHT / 2;
         depth += 5;
     }
@@ -7921,7 +7823,7 @@ module.exports = {
     renderDigging: renderDigging
 };
 
-},{"Rectangle":2,"animations":4,"digging":6,"draw":7,"gameConstants":8,"random":13,"renderRobot":17,"ship":19}],17:[function(require,module,exports){
+},{"Rectangle":2,"animations":4,"digging":6,"draw":7,"gameConstants":8,"isDemo":11,"random":14,"renderRobot":17,"ship":19}],17:[function(require,module,exports){
 'use strict';
 
 var _require = require('gameConstants'),
@@ -8531,7 +8433,7 @@ function renderCreditsCard(context, state, title, names, alpha) {
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
-var Rectangle = require('rectangle');
+var Rectangle = require('Rectangle');
 var random = require('random');
 
 var _require = require('draw'),
@@ -8769,7 +8671,7 @@ var shipPartSprite = {
     }
 };
 
-},{"animations":4,"digging":6,"draw":7,"gameConstants":8,"hud":10,"random":13,"rectangle":14,"sprites":22,"state":23}],20:[function(require,module,exports){
+},{"Rectangle":2,"animations":4,"digging":6,"draw":7,"gameConstants":8,"hud":10,"random":14,"sprites":22,"state":23}],20:[function(require,module,exports){
 'use strict';
 
 var Rectangle = require('Rectangle');
@@ -10009,7 +9911,7 @@ function applyActions(state, actions) {
     return state;
 }
 
-},{"Rectangle":2,"achievements":3,"animations":4,"digging":6,"gameConstants":8,"help":9,"hud":10,"random":13,"scenes":18,"ship":19,"sounds":21}],24:[function(require,module,exports){
+},{"Rectangle":2,"achievements":3,"animations":4,"digging":6,"gameConstants":8,"help":9,"hud":10,"random":14,"scenes":18,"ship":19,"sounds":21}],24:[function(require,module,exports){
 'use strict';
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
@@ -10200,6 +10102,7 @@ module.exports = {
 };
 
 var _require4 = require('state'),
+    playSound = _require4.playSound,
     getNewSaveSlot = _require4.getNewSaveSlot,
     nextDay = _require4.nextDay,
     resumeDigging = _require4.resumeDigging,
@@ -10227,6 +10130,9 @@ var _require8 = require('achievements'),
 var _require9 = require('suspendedState'),
     applySuspendedState = _require9.applySuspendedState;
 
+var _require10 = require('isDemo'),
+    IS_DEMO = _require10.IS_DEMO;
+
 var titleFrame = r(100, 126, { image: requireImage('gfx/logotall.png') });
 // const fileFrame = r(150, 125, {image: requireImage('gfx/monitor.png')});
 var titleTopFrame = r(800, 800, { image: requireImage('gfx/titletop.png') });
@@ -10234,10 +10140,11 @@ var titleBottomFrame = r(800, 800, { image: requireImage('gfx/titlebottom.png') 
 // Trash icon from: https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/Trash_font_awesome.svg/480px-Trash_font_awesome.svg.png
 //const trashFrame = r(480, 480, {'image': requireImage('gfx/trash.png')});
 var loadButtonAnimationTime = 400;
-var chooseFileButton = {
-    label: 'Start',
+var quitGameButton = {
+    label: 'Quit',
     onClick: function onClick(state) {
-        return _extends({}, state, { loadScreen: state.time });
+        window.electronAPI.setCloseButton(true);
+        return _extends({}, state);
     },
 
     render: renderBasicButton,
@@ -10247,10 +10154,40 @@ var chooseFileButton = {
             buttonWidth = _ref.buttonWidth,
             buttonHeight = _ref.buttonHeight;
 
+        var padding = buttonHeight / 10;
+        this.height = buttonHeight;
+        this.width = buttonWidth;
+        // this.top = (5 * height / 6) + (this.height / 2) + padding - (this.height / 4);
+        this.top = height - buttonHeight - padding;
+        this.left = (width - this.width) / 2;
+        // top should always be height - buttonHeight - padding
+    }
+};
+var chooseFileButton = {
+    label: 'Start',
+    onClick: function onClick(state) {
+        playSound(state, 'select');
+        return _extends({}, state, { loadScreen: state.time });
+    },
+
+    render: renderBasicButton,
+    resize: function resize(_ref2) {
+        var width = _ref2.width,
+            height = _ref2.height,
+            buttonWidth = _ref2.buttonWidth,
+            buttonHeight = _ref2.buttonHeight;
+
         this.height = buttonHeight;
         this.width = buttonWidth;
         this.top = 5 * height / 6 - this.height / 2;
         this.left = (width - this.width) / 2;
+        if (window.electronAPI) {
+            // shift start button up to make room for quit button
+            // this.top = this.top - this.height / 4;
+            var padding = buttonHeight / 10;
+            this.top = height - 2 * buttonHeight - 2 * padding;
+            console.log('make room for quit button below start button');
+        }
     }
 };
 var fileButton = {
@@ -10316,6 +10253,7 @@ var fileButton = {
         drawText(context, saveData.score.abbreviate(), left + 5 + iconRectangle.width, top + halfHeight * 5, { fillStyle: COLOR_CRYSTAL, strokeStyle: 'white', textAlign: 'left', textBaseline: 'middle', size: size, measure: true });
     },
     onClick: function onClick(state) {
+        playSound(state, 'select');
         if (this.p < 1) return state;
         var saveData = this.getSaveData(state);
         state.saveSlot = this.index;
@@ -10355,11 +10293,11 @@ var fileButton = {
         //state.saved.shipPart = 0; // reset ship part.
         return state;
     },
-    resize: function resize(_ref2) {
-        var animationTime = _ref2.animationTime,
-            width = _ref2.width,
-            height = _ref2.height,
-            padding = _ref2.padding;
+    resize: function resize(_ref3) {
+        var animationTime = _ref3.animationTime,
+            width = _ref3.width,
+            height = _ref3.height,
+            padding = _ref3.padding;
 
         var p = (animationTime - this.delay()) / loadButtonAnimationTime;
         p = Math.min(1, Math.max(0, p));
@@ -10410,6 +10348,7 @@ var deleteFileButton = {
         context.restore();
     },
     onClick: function onClick(state) {
+        playSound(state, 'flag');
         return _extends({}, state, { deleteSlot: this.index });
     },
     resize: function resize() {
@@ -10430,26 +10369,8 @@ var confirmDeleteButton = {
     activeColor: COLOR_BAD,
     label: 'Delete',
     onClick: function onClick(state) {
+        playSound(state, 'select');
         state.saveSlots[state.deleteSlot] = undefined;
-        return _extends({}, state, { deleteSlot: false });
-    },
-
-    render: renderBasicButton,
-    resize: function resize(_ref3) {
-        var buttonWidth = _ref3.buttonWidth,
-            buttonHeight = _ref3.buttonHeight,
-            width = _ref3.width,
-            height = _ref3.height;
-
-        this.width = buttonWidth;
-        this.height = buttonHeight;
-        this.top = height / 2 + 10;
-        this.left = width / 2 + 10;
-    }
-};
-var cancelDeleteButton = {
-    label: 'Cancel',
-    onClick: function onClick(state) {
         return _extends({}, state, { deleteSlot: false });
     },
 
@@ -10463,11 +10384,42 @@ var cancelDeleteButton = {
         this.width = buttonWidth;
         this.height = buttonHeight;
         this.top = height / 2 + 10;
+        this.left = width / 2 + 10;
+    }
+};
+var cancelDeleteButton = {
+    label: 'Cancel',
+    onClick: function onClick(state) {
+        playSound(state, 'select');
+        return _extends({}, state, { deleteSlot: false });
+    },
+
+    render: renderBasicButton,
+    resize: function resize(_ref5) {
+        var buttonWidth = _ref5.buttonWidth,
+            buttonHeight = _ref5.buttonHeight,
+            width = _ref5.width,
+            height = _ref5.height;
+
+        this.width = buttonWidth;
+        this.height = buttonHeight;
+        this.top = height / 2 + 10;
         this.left = width / 2 - 10 - this.width;
     }
 };
 
 function getTitleHUDButtons(state) {
+    //     {
+    //     "chooseFileButton": {
+    //         "label": "Start",
+    //         "height": 91,
+    //         "width": 228,
+    //         "top": 854.5,
+    //         "left": 568.5,
+    //         "lastResized": 1720624857362
+    //     }
+    // }
+    if (window.electronAPI && !state.loadScreen) return [chooseFileButton, quitGameButton];
     if (!state.loadScreen) return [chooseFileButton];
     if (state.deleteSlot !== false) return [confirmDeleteButton, cancelDeleteButton];
     return [].concat(_toConsumableArray(fileButtons), _toConsumableArray(deleteFileButtons));
@@ -10500,6 +10452,10 @@ function renderTitle(context, state) {
     scale = Math.floor(2 * (canvas.height / 3) / titleFrame.height);
     target = new Rectangle(titleFrame).scale(scale).moveTo((canvas.width - scale * titleFrame.width) / 2, 50);
     drawImage(context, titleFrame.image, titleFrame, target);
+    if (IS_DEMO) {
+        var padding = canvas.width / 20;
+        drawText(context, 'DEMO', padding, canvas.height - padding, { fillStyle: 'white', textAlign: 'left', textBaseline: 'bottom', size: padding * 3 });
+    }
 }
 function drawShipPanels(context, state) {
     var zoom = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
@@ -10535,7 +10491,7 @@ function renderLoadScreen(context, state) {
     }
 }
 
-},{"Rectangle":2,"achievements":3,"animations":4,"draw":7,"gameConstants":8,"hud":10,"ship":19,"sprites":22,"state":23,"suspendedState":24}],26:[function(require,module,exports){
+},{"Rectangle":2,"achievements":3,"animations":4,"draw":7,"gameConstants":8,"hud":10,"isDemo":11,"ship":19,"sprites":22,"state":23,"suspendedState":24}],26:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -10767,4 +10723,4 @@ var diffuserSprite = {
     }
 };
 
-},{"Rectangle":2,"achievements":3,"animations":4,"digging":6,"draw":7,"gameConstants":8,"random":13,"sprites":22,"state":23}]},{},[5]);
+},{"Rectangle":2,"achievements":3,"animations":4,"digging":6,"draw":7,"gameConstants":8,"random":14,"sprites":22,"state":23}]},{},[5]);

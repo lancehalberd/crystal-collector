@@ -12,6 +12,7 @@ const Rectangle = require('Rectangle');
 const { createAnimation, requireImage, r } = require('animations');
 const { drawImage, drawText } = require('draw');
 const { renderRobot } = require('renderRobot');
+const { IS_DEMO } = require('isDemo');
 
 const {
     z, canExploreCell, getFuelCost, isCellRevealed,
@@ -129,6 +130,16 @@ function renderDigging(context, state) {
         if (!(depth % 50)) size = 30;
         else if (!(depth % 10)) size = 20;
         drawText(context, `${depth} -`, 10, y, {fillStyle: '#FFF', textAlign: 'left', textBaseline: 'middle', size});
+        if (IS_DEMO && depth <= state.displayLavaDepth && depth + 5 > state.displayLavaDepth) {
+            context.save();
+            context.globalAlpha = 1;
+            const alert = {
+                label: 'Purchase the full game to\nlower the lava and dig deeper.',
+                textProperties: {fillStyle: 'white', textAlign: 'center', textBaseline: 'middle', size: 36},
+            }
+            drawText(context, alert.label, canvas.width / 2, y, alert.textProperties);
+            context.restore();
+        }
         y += 5 * ROW_HEIGHT / 2;
         depth += 5;
     }

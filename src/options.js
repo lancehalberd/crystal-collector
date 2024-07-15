@@ -15,6 +15,22 @@ const { createSuspendedState } = require('suspendedState');
 const { muteSounds, unmuteSounds, muteTrack, unmuteTrack } = require('sounds');
 const { commitSaveToLocalStorage } = require('client');
 
+const saveGame = (state) => {
+    if (!state.ship && !state.shop) {
+        state = updateSave(state, {suspendedState: createSuspendedState(state)});
+        commitSaveToLocalStorage(state);
+    }
+    return state;
+};
+
+const showTitle = (state) => {
+    return {
+        ...state, bgmTime: state.time,
+        title: state.time, showOptions: false, saveSlot: false,
+        robot: false
+    };
+};
+
 let optionIndex = 0;
 const optionToggleButton = {
     resize({height, width, buttonWidth, buttonHeight}) {
@@ -51,6 +67,7 @@ const muteMusicButton = {
     },
     render: renderBasicButton,
     onClick(state) {
+        playSound(state, 'select');
         const muteMusic = !state.saved.muteMusic;
         if (muteMusic) muteTrack();
         else unmuteTrack();
@@ -66,6 +83,7 @@ const showHelpButton = {
     },
     render: renderBasicButton,
     onClick(state) {
+        playSound(state, 'select');
         const hideHelp = !state.saved.hideHelp;
         return updateSave(state, {hideHelp});
     },
@@ -79,6 +97,7 @@ const autoscrollButton = {
     },
     render: renderBasicButton,
     onClick(state) {
+        playSound(state, 'select');
         const disableAutoscroll = !state.saved.disableAutoscroll;
         return updateSave(state, {disableAutoscroll});
     },
@@ -92,6 +111,7 @@ const hideParticles = {
     },
     render: renderBasicButton,
     onClick(state) {
+        playSound(state, 'select');
         const hideParticles = !state.saved.hideParticles;
         return updateSave(state, {hideParticles});
     },
@@ -105,29 +125,44 @@ const skipAnimations = {
     },
     render: renderBasicButton,
     onClick(state) {
+        playSound(state, 'select');
         const skipAnimations = !state.saved.skipAnimations;
         return updateSave(state, {skipAnimations});
     },
     ...optionToggleButton,
     optionIndex: optionIndex++,
 };
-const suspendButton = {
-    label: 'Suspend',
+const resumeButton = {
+    label: 'Resume',
     render: renderBasicButton,
     onClick(state) {
-        state = updateSave(state, {suspendedState: createSuspendedState(state)});
-        commitSaveToLocalStorage(state);
-        return {
-            ...state, bgmTime: state.time,
-            title: state.time, showOptions: false, saveSlot: false,
-            robot: false
-        };
+        playSound(state, 'select');
+        return {...state, showAchievements: false, showOptions: false};
+    },
+    resize({height, width, buttonWidth, buttonHeight}) {
+        // This is duplicating the logic for the y position of the option buttons
+        // and assuming this should display as a fourth row.
+        const y = 3;
+        this.height = buttonHeight;
+        this.width =  buttonWidth * 2;
+        this.top = height / 2 - this.height * (3.5 - 1.2 * y);
+        this.left =  Math.round((width - this.width) / 2);
+    },
+    optionIndex: optionIndex++,
+};
+const quitButton = {
+    label: 'Quit',
+    render: renderBasicButton,
+    onClick(state) {
+        state = saveGame(state);
+        window.electronAPI.setCloseButton(true);
+        return {...state};
     },
     resize({height, width, buttonWidth, buttonHeight}) {
         this.height = buttonHeight;
-        this.width =  buttonWidth * 2;
-        this.top = height / 2 - this.height * (3.5 - 1.2 * 3.5);
-        this.left =  Math.round((width - this.width) / 2);
+        this.width =  buttonWidth;
+        this.top = height / 2 - this.height * (3.5 - 1.2 * 5);
+        this.left = Math.round((width - this.width) / 2) - this.width - Math.round(this.width / 20);
     },
     optionIndex: optionIndex++,
 };
@@ -135,17 +170,15 @@ const titleButton = {
     label: 'Title',
     render: renderBasicButton,
     onClick(state) {
-        return {
-            ...state, bgmTime: state.time,
-            title: state.time, showOptions: false, saveSlot: false,
-            robot: false
-        };
+        playSound(state, 'select');
+        state = saveGame(state);
+        return showTitle(state);
     },
     resize({height, width, buttonWidth, buttonHeight}) {
         this.height = buttonHeight;
-        this.width =  buttonWidth * 2;
-        this.top = height / 2 - this.height * (3.5 - 1.2 * 4.5);
-        this.left =  Math.round((width - this.width) / 2);
+        this.width =  buttonWidth;
+        this.top = height / 2 - this.height * (3.5 - 1.2 * 5);
+        this.left = Math.round((width - this.width) / 2) + this.width + Math.round(this.width / 20);
     },
     optionIndex: optionIndex++,
 };
@@ -155,7 +188,7 @@ function getOptionButtons(state) {
         muteSoundsButton, muteMusicButton,
         showHelpButton, autoscrollButton,
         skipAnimations, hideParticles,
-                ...((!state.ship && !state.shop) ? [suspendButton] : []),
-                titleButton,
+                resumeButton,
+        titleButton, ...((window.electronAPI && !state.loadScreen) ? [quitButton] : []),
     ];
 }

@@ -806,7 +806,7 @@ function getHUDButtons(state) {
         return [closeButton, ...standardButtons];
     }
     if (state.showOptions) {
-        return [closeButton, ...getOptionButtons(state), ...standardButtons];
+        return [...getOptionButtons(state), ...standardButtons];
     }
     if (state.title) {
         return getTitleHUDButtons(state);
@@ -875,11 +875,11 @@ function renderHUD(context, state) {
         );
     }
 
-    // Draw FUEL indicator
     if (!state.title && !state.shop
         && !state.showAchievements && !state.ship && !state.showOptions
         && state.saved.finishedIntro  && state.outroTime === false
     ) {
+        // Draw FUEL indicator
         const fuelMultiplier = 1 + getAchievementBonus(state, ACHIEVEMENT_GAIN_X_BONUS_FUEL_IN_ONE_DAY) / 100;
         const maxFuel = Math.round(state.saved.maxFuel * fuelMultiplier);
         let fuelBarTarget = new Rectangle(

@@ -1,10 +1,10 @@
 {
-  "short_name": "Crystolect",
-  "name": "Crystal Collector",
+  "short_name": "GemHunter",
+  "name": "Gem Hunter",
   "icons": [
     {
-      "src": "gfx/logo1.png",
-      "sizes": "100x100",
+      "src": "gfx/icon_1024x1024.png",
+      "sizes": "1024x1024",
       "type": "image/png"
     }
   ],

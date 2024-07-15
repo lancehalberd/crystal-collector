@@ -149,7 +149,7 @@ function render(context, state) {
     if (!areImagesLoaded() || !state.interacted) {
         // Don't render for the first 200ms, to prevent 'Loading...' from flashing
         // when assets are cached.
-        if (Date.now() - loadTime > 200) renderPlayButton(context, state);
+        if (Date.now() - loadTime > 200 && !window.electronAPI) renderPlayButton(context, state);
         return;
     }
     if (state.outroTime !== false) {
