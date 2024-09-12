@@ -99,7 +99,6 @@ function onMouseDown(event) {
         state.interacted = true;
         return false;
     }
-    // This might need to be removed for touch screen devices.
     if (event.which === 1) {
         state.mouseDown = state.time;
         state.dragDistance = 0;
@@ -141,7 +140,7 @@ const update = () => {
         state.saveSlots = savedState.saveSlots;
         state.lastResized = Date.now();
         state.context = context;
-        canvas.onmousedown =  onMouseDown;
+        canvas.onmousedown = onMouseDown;
         canvas.oncontextmenu = function (event) {
             event.preventDefault();
             return false;
@@ -153,9 +152,9 @@ const update = () => {
             event.preventDefault();
             return false;
         };
-        canvas.addEventListener("touchstart", onMouseDown);
-        canvas.addEventListener("touchend", onMouseUp);
-        canvas.addEventListener("touchmove", onMouseMove);
+        canvas.addEventListener("mousedown", onMouseDown);
+        canvas.addEventListener("mouseup", onMouseUp);
+        canvas.addEventListener("mousemove", onMouseMove);
     }
 
     if (!preloadedSounds && state.interacted) {
