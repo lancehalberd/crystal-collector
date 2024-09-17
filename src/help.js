@@ -23,6 +23,7 @@ const incomingAdvice = [
     {label: 'When you find crystals you will gain energy instead of losing it.'},
     {label: 'Exclamation points mark special cargo and ship parts that survived the impact.'},
     {label: 'There is a way to tell when a stable ship part is nearby.'},
+    {label: 'If a revealed tile is empty, there will never be anything in or next to it.'},
 ];
 
 const leavingAdvice = [

@@ -14,6 +14,7 @@ module.exports = {
     getButtonColor,
     getSleepButton,
     getHelpButton,
+    getOptionsButton,
 };
 
 Number.prototype.abbreviate = function () {
@@ -192,6 +193,10 @@ const optionsButton = {
         this.left = width - padding - this.width;
     },
 };
+function getOptionsButton() {
+    return optionsButton;
+}
+
 const achievementButton = {
     render(context, state, button) {
         context.save();
@@ -802,14 +807,18 @@ function getHUDButtons(state) {
     if (state.outroTime !== false) {
         return state.outroTime > endingSequenceDuration ? [continueButton] : [];
     }
-    if (state.showAchievements) {
-        return [closeButton, ...standardButtons];
+    if (state.showOptions && !state.title) {
+        return [...getOptionButtons(state), ...standardButtons];
     }
-    if (state.showOptions) {
-        return [closeButton, ...getOptionButtons(state), ...standardButtons];
+    // don't show help or achievements on the title screen
+    if (state.showOptions && state.title) {
+        return [...getOptionButtons(state), optionsButton];
     }
     if (state.title) {
         return getTitleHUDButtons(state);
+    }
+    if (state.showAchievements) {
+        return [closeButton, ...standardButtons];
     }
     if (state.ship) {
         if (state.restart) {
@@ -875,11 +884,11 @@ function renderHUD(context, state) {
         );
     }
 
-    // Draw FUEL indicator
     if (!state.title && !state.shop
         && !state.showAchievements && !state.ship && !state.showOptions
         && state.saved.finishedIntro  && state.outroTime === false
     ) {
+        // Draw FUEL indicator
         const fuelMultiplier = 1 + getAchievementBonus(state, ACHIEVEMENT_GAIN_X_BONUS_FUEL_IN_ONE_DAY) / 100;
         const maxFuel = Math.round(state.saved.maxFuel * fuelMultiplier);
         let fuelBarTarget = new Rectangle(

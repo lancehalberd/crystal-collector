@@ -6,12 +6,14 @@ module.exports = {
     getTitleHUDButtons,
     renderTitle,
 };
-const { getNewSaveSlot, nextDay, resumeDigging, updateSave } = require('state');
+const { playSound, getNewSaveSlot, nextDay, resumeDigging, updateSave } = require('state');
 const { crystalFrame } = require('sprites');
 const { renderShipBackground, renderShip, shipPartAnimations } = require('ship');
 const { getButtonColor, getLayoutProperties, renderButtonBackground, renderBasicButton } = require('hud');
 const { achievementAnimation, getAchievementPercent, initializeAchievements } = require('achievements');
 const { applySuspendedState } = require('suspendedState');
+const { getOptionsButton } = require('hud');
+const { IS_DEMO } = require('isDemo');
 
 const titleFrame = r(100, 126, {image: requireImage('gfx/logotall.png')});
 // const fileFrame = r(150, 125, {image: requireImage('gfx/monitor.png')});
@@ -20,9 +22,27 @@ const titleBottomFrame = r(800, 800, {image: requireImage('gfx/titlebottom.png')
 // Trash icon from: https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/Trash_font_awesome.svg/480px-Trash_font_awesome.svg.png
 //const trashFrame = r(480, 480, {'image': requireImage('gfx/trash.png')});
 const loadButtonAnimationTime = 400;
+const quitGameButton = {
+    label: 'Quit',
+    onClick(state) {
+        window.electronAPI.setCloseButton(true);
+        return {...state};
+    },
+    render: renderBasicButton,
+    resize({width, height, buttonWidth, buttonHeight}) {
+        const padding = buttonHeight / 10;
+        this.height = buttonHeight;
+        this.width = buttonWidth;
+        // this.top = (5 * height / 6) + (this.height / 2) + padding - (this.height / 4);
+        this.top = height - buttonHeight - padding;
+        this.left = (width - this.width) / 2;
+        // top should always be height - buttonHeight - padding
+    },
+}
 const chooseFileButton = {
     label: 'Start',
     onClick(state) {
+        playSound(state, 'select');
         return {...state, loadScreen: state.time};
     },
     render: renderBasicButton,
@@ -31,6 +51,10 @@ const chooseFileButton = {
         this.width = buttonWidth;
         this.top = 5 * height / 6 - this.height / 2;
         this.left = (width - this.width) / 2;
+        if (window.electronAPI) {
+            const padding = buttonHeight / 10;
+            this.top = height - (2 * buttonHeight) - (2 * padding);
+        }
     },
 };
 const fileButton = {
@@ -110,6 +134,7 @@ const fileButton = {
         );
     },
     onClick(state) {
+        playSound(state, 'select');
         if (this.p < 1) return state;
         const saveData = this.getSaveData(state);
         state.saveSlot = this.index;
@@ -198,6 +223,7 @@ const deleteFileButton = {
         context.restore();
     },
     onClick(state) {
+        playSound(state, 'flag');
         return {...state, deleteSlot: this.index};
     },
     resize() {
@@ -217,6 +243,7 @@ const confirmDeleteButton = {
     activeColor: COLOR_BAD,
     label: 'Delete',
     onClick(state) {
+        playSound(state, 'select');
         state.saveSlots[state.deleteSlot] = undefined;
         return {...state, deleteSlot: false};
     },
@@ -231,6 +258,7 @@ const confirmDeleteButton = {
 const cancelDeleteButton = {
     label: 'Cancel',
     onClick(state) {
+        playSound(state, 'select');
         return {...state, deleteSlot: false};
     },
     render: renderBasicButton,
@@ -243,7 +271,12 @@ const cancelDeleteButton = {
 };
 
 function getTitleHUDButtons(state) {
-    if (!state.loadScreen) return [chooseFileButton];
+    if (window.electronAPI && !state.loadScreen) {
+        const optionsButton = getOptionsButton();
+        return [chooseFileButton, quitGameButton, optionsButton];
+    }
+    const optionsButton = getOptionsButton();
+    if (!state.loadScreen) return [chooseFileButton, optionsButton];
     if (state.deleteSlot !== false) return [confirmDeleteButton, cancelDeleteButton];
     return [...fileButtons, ...deleteFileButtons];
 }
@@ -275,6 +308,12 @@ function renderTitle(context, state) {
     target = new Rectangle(titleFrame).scale(scale)
         .moveTo((canvas.width - scale * titleFrame.width) / 2, 50)
     drawImage(context, titleFrame.image, titleFrame, target);
+    if (IS_DEMO) {
+        const padding = canvas.width / 20;
+        drawText(context, 'DEMO', padding, canvas.height - padding,
+            {fillStyle: 'white', textAlign: 'left', textBaseline: 'bottom', size: padding * 3}
+        );
+    }
 }
 function drawShipPanels(context, state, zoom = 0) {
     let scale, target;

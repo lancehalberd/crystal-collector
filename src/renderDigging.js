@@ -12,6 +12,7 @@ const Rectangle = require('Rectangle');
 const { createAnimation, requireImage, r } = require('animations');
 const { drawImage, drawText } = require('draw');
 const { renderRobot } = require('renderRobot');
+const { IS_DEMO } = require('isDemo');
 
 const {
     z, canExploreCell, getFuelCost, isCellRevealed,
@@ -129,6 +130,16 @@ function renderDigging(context, state) {
         if (!(depth % 50)) size = 30;
         else if (!(depth % 10)) size = 20;
         drawText(context, `${depth} -`, 10, y, {fillStyle: '#FFF', textAlign: 'left', textBaseline: 'middle', size});
+        if (IS_DEMO && depth <= state.displayLavaDepth && depth + 5 > state.displayLavaDepth) {
+            context.save();
+            context.globalAlpha = 1;
+            const alert = {
+                label: 'Purchase the full game to\nlower the lava and dig deeper.',
+                textProperties: {fillStyle: 'white', textAlign: 'center', textBaseline: 'middle', size: 36},
+            }
+            drawText(context, alert.label, canvas.width / 2, y, alert.textProperties);
+            context.restore();
+        }
         y += 5 * ROW_HEIGHT / 2;
         depth += 5;
     }
@@ -248,8 +259,17 @@ function renderCellShading(context, state, row, column) {
     const columnz = z(column);
     const cell = state.rows[row] && state.rows[row][columnz];
     if (!cell || cell.destroyed) return;
-    // Indicator that the player can explore this cell:
     context.strokeStyle = '#FFF';
+    // Visual aide to count pips in background cell
+    if (cell.numbersRevealed && (cell.crystals || cell.traps || cell.treasures) && isCellRevealed(state, row, column)) {
+        drawCellPath(context, state, row, column, 5);
+        context.save();
+        context.globalAlpha = 0.2;
+        context.lineWidth = 4;
+        context.stroke();
+        context.restore();
+    }
+    // Indicator that the player can explore this cell:
     if (!isCellRevealed(state, row, column)) {
         const shipPartLocation = getShipPartLocation(state);
         const p1 = getCellCenter(state, shipPartLocation.row, shipPartLocation.column);

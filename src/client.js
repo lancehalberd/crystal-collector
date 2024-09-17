@@ -66,7 +66,6 @@ function updateCanvasSize() {
     if (state) state.lastResized = Date.now();
     context.imageSmoothingEnabled = false;
 }
-// Disable resizing on Kongregate to see if it reduces flicker.
 updateCanvasSize();
 window.onresize = updateCanvasSize;
 
@@ -99,7 +98,6 @@ function onMouseDown(event) {
         state.interacted = true;
         return false;
     }
-    // This might need to be removed for touch screen devices.
     if (event.which === 1) {
         state.mouseDown = state.time;
         state.dragDistance = 0;
@@ -138,10 +136,11 @@ const update = () => {
         state = getNewState();
         state.saved.muteMusic = savedState.muteMusic;
         state.saved.muteSounds = savedState.muteSounds;
+        state.saved.fullScreen = window.electronAPI ? true : false;
         state.saveSlots = savedState.saveSlots;
         state.lastResized = Date.now();
         state.context = context;
-        canvas.onmousedown =  onMouseDown;
+        canvas.onmousedown = onMouseDown;
         canvas.oncontextmenu = function (event) {
             event.preventDefault();
             return false;
@@ -153,9 +152,9 @@ const update = () => {
             event.preventDefault();
             return false;
         };
-        canvas.addEventListener("touchstart", onMouseDown);
-        canvas.addEventListener("touchend", onMouseUp);
-        canvas.addEventListener("touchmove", onMouseMove);
+        canvas.addEventListener("mousedown", onMouseDown);
+        canvas.addEventListener("mouseup", onMouseUp);
+        canvas.addEventListener("mousemove", onMouseMove);
     }
 
     if (!preloadedSounds && state.interacted) {

@@ -1,4 +1,4 @@
-const Rectangle = require('rectangle');
+const Rectangle = require('Rectangle');
 const random = require('random');
 const { drawImage, drawRectangle } = require('draw');
 const { canvas, EDGE_LENGTH } = require('gameConstants');
@@ -141,6 +141,7 @@ function renderTransitionShipBackground(context, state) {
 
 }
 function renderShip(context, state) {
+    if (state.showOptions) console.log('Warning, renderShip() should not run during options.');
     const topTarget = getTopTarget();
     const shipBaseHeight = Math.min(
             canvas.height / 2,
@@ -180,6 +181,7 @@ function renderShip(context, state) {
     );*/
 }
 function renderShipScene(context, state) {
+    if (state.showOptions) console.log('Warning, renderShipScene() should not run during options.');
     renderShipBackground(context, state);
     renderShip(context, state);
     let frame = getFrame(warpdriveAnimation, 0);

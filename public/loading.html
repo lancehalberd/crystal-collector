@@ -1,0 +1,79 @@
+<html>
+<head>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="icon" type="image/png" href="gfx/icon.png">
+    <link rel="manifest" href="manifest.json">
+    <style>
+    body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background: #000; /* this line prevents a white flash on game start */
+    }
+    canvas {
+        position: absolute;
+        left: 0;
+        top: 0;
+        margin: 0 0;
+        display: block;
+        cursor: pointer;
+    }
+    .center {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        -ms-transform: translate(-50%, -50%);
+        transform: translate(-50%, -50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    img.game-title {
+        height: 48px;
+        width: auto;
+        object-fit: contain;
+        image-rendering: pixelated;
+        image-rendering: -moz-crisp-edges;
+        image-rendering: crisp-edges;
+        padding-bottom: 16px;
+    }
+    .loader {
+      width: 96px;
+      height: 96px;
+      border: 3px solid #FFF;
+      border-radius: 50%;
+      display: inline-block;
+      position: relative;
+      box-sizing: border-box;
+      animation: rotation 1s linear infinite;
+    }
+    .loader::after {
+      content: '';
+      box-sizing: border-box;
+      position: absolute;
+      left: 0;
+      top: 0;
+      background: #8DE7FB;
+      width: 32px;
+      height: 32px;
+      transform: translate(-50%, 50%);
+      border-radius: 50%;
+    }
+
+    @keyframes rotation {
+      0% {
+        transform: rotate(0deg);
+      }
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+    </style>
+</head>
+<body>
+    <div class="center">
+        <img class="game-title" src="gfx/gemblast_text.png" alt="Gem Blast">
+        <span class="loader"></span>
+    </div>
+</body>
+</html>

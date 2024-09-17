@@ -1,4 +1,5 @@
 const random = require('random');
+const { IS_DEMO } = require('isDemo');
 
 const {
     canvas,
@@ -371,6 +372,13 @@ function detonateDebris(state, row, column) {
     return state;
 }
 
+function emitPurchaseMessage(state) {
+    console.log('Purchase the full game to dig deeper.');
+    if (!state.emitPurchaseMessage) state.emitPurchaseMessageTimer = 3000;
+    if (state.emitPurchaseMessageTimer) state.emitPurchaseMessageTimer += -1;
+    return state = {...state, emitPurchaseMessage: true}
+}
+
 function exploreCell(state, row, column, usingExtractor = false) {
     let foundTreasure = false;
     state = revealCell(state, row, column);
@@ -438,10 +446,15 @@ function exploreCell(state, row, column, usingExtractor = false) {
             state = updateCell(state, coordsToUpdate.row, coordsToUpdate.column, {crystals});
         }
         if (!usingExtractor && depth > state.saved.lavaDepth - 11 && depth < Math.floor(state.saved.lavaDepth)) {
-            const delta = Math.floor(state.saved.lavaDepth) - depth;
-            state.saved.lavaDepth += 1.5 / delta;
-            if (1.5 / delta >= 0.1) {
-                playSound(state, 'lowerLava');
+            if (!IS_DEMO) { // only lower lava if the full game is available
+                const delta = Math.floor(state.saved.lavaDepth) - depth;
+                state.saved.lavaDepth += 1.5 / delta;
+                if (1.5 / delta >= 0.1) {
+                    playSound(state, 'lowerLava');
+                }
+            }
+            if (IS_DEMO) {
+                emitPurchaseMessage(state);
             }
         }
     } else {

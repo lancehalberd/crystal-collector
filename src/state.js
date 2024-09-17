@@ -5,6 +5,9 @@ const {
     FRAME_LENGTH, canvas, EDGE_LENGTH,
 } = require('gameConstants');
 
+
+const { isKeyDown, KEY_ESCAPE } = require('keyboard');
+
 const {
     playSound,
     playTrack,
@@ -290,13 +293,14 @@ function advanceState(state) {
         };
         delete state.hintButton;
     }
+    const isIntroPlaying = state.outroTime === false && (state.saveSlot !== false && !state.saved.finishedIntro);
     if (state.outroTime !== false) {
         if (state.outroTime === 6300) playSoundWithState(state, 'shipWarp');
         state = {
             ...state,
             outroTime: state.outroTime + FRAME_LENGTH,
         };
-    } else if (state.saveSlot !== false && !state.saved.finishedIntro) {
+    } else if (isIntroPlaying) {
         state = {
             ...state,
             introTime: (state.introTime || 0) + FRAME_LENGTH,
@@ -310,6 +314,21 @@ function advanceState(state) {
     for (let spriteId in state.spriteMap) {
         state = state.spriteMap[spriteId].advance(state, state.spriteMap[spriteId]);
     }
+    const canShowOptions = state.outroTime === false && !isIntroPlaying && !state.incoming && !state.leaving;
+    const isEscapeKeyDown = isKeyDown(KEY_ESCAPE);
+    if (canShowOptions) {
+        const wasEscapedKeyPressedThisFrame = !state.wasEscapeKeyDown && isEscapeKeyDown;
+        if (wasEscapedKeyPressedThisFrame) {
+            state = {
+                ...state,
+                showOptions: state.showOptions ? false : state.time,
+            };
+        }
+    }
+    state = {
+        ...state,
+        wasEscapeKeyDown: isEscapeKeyDown,
+    };
     return {...state, clicked: false, rightClicked: false};
 }
 

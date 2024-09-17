@@ -35,6 +35,7 @@ build/Release
 # Dependency directories
 node_modules/
 jspm_packages/
+electron/node_modules/
 
 # Typescript v1 declaration files
 typings/
@@ -62,3 +63,10 @@ etc/
 
 # osx file
 .DS_Store
+
+# output of generated Electron files
+electron/out/*
+electron/out-resources/*
+
+# output of generated js files, should be created from a github action
+public/client.js

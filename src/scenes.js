@@ -335,7 +335,7 @@ const endingSequence = [
         } else if (animationTime >= 6500) {
             renderCreditsCard(context, state,
                 'Testing',
-                ['Chris Evans', 'Leon Garcia', 'Hillary Spratt', 'And Many Others'],
+                ['Chris Evans', 'Leon Garcia', 'Blaise Spratt', 'Hillary Spratt', 'And Many Others'],
                 getCardAlpha(animationTime - 5500, 5000)
             );
         }

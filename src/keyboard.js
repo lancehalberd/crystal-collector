@@ -1,25 +1,27 @@
 /* global navigator */
-export const KEY_LEFT = 37;
-export const KEY_RIGHT = 39;
-export const KEY_UP = 38;
-export const KEY_DOWN = 40;
-export const KEY_SPACE = 32;
-export const KEY_SHIFT = 16;
-export const KEY_ENTER = 13;
-export const KEY_BACK_SPACE = 8;
-export const KEY_E = 'E'.charCodeAt(0);
-export const KEY_G = 'G'.charCodeAt(0);
-export const KEY_R = 'R'.charCodeAt(0);
-export const KEY_X = 'X'.charCodeAt(0);
-export const KEY_C = 'C'.charCodeAt(0);
-export const KEY_V = 'V'.charCodeAt(0);
-export const KEY_T = 'T'.charCodeAt(0);
+// convert to using event.key output instead of deprecated event.which
+export const KEY_LEFT = 'ArrowLeft';
+export const KEY_RIGHT = 'ArrowRight';
+export const KEY_UP = 'ArrowUp';
+export const KEY_DOWN = 'ArrowDown';
+export const KEY_SPACE = ' ';
+export const KEY_SHIFT = 'Shift';
+export const KEY_ENTER = 'Enter';
+export const KEY_BACK_SPACE = 'Backspace';
+export const KEY_ESCAPE = 'Escape';
+export const KEY_E = 'e';
+export const KEY_G = 'g';
+export const KEY_R = 'r';
+export const KEY_X = 'x';
+export const KEY_C = 'c';
+export const KEY_V = 'v';
+export const KEY_T = 't';
 
 const KEY_MAPPINGS = {
-    ['A'.charCodeAt(0)]: KEY_LEFT,
-    ['D'.charCodeAt(0)]: KEY_RIGHT,
-    ['W'.charCodeAt(0)]: KEY_UP,
-    ['S'.charCodeAt(0)]: KEY_DOWN,
+    ['a']: KEY_LEFT,
+    ['d']: KEY_RIGHT,
+    ['w']: KEY_UP,
+    ['s']: KEY_DOWN,
 };
 
 // This mapping assumes a canonical gamepad setup as seen in:
@@ -53,18 +55,18 @@ function buttonIsPressed(button) {
 }
 
 window.document.onkeydown = function (event) {
-    //console.log(event);
+    // console.log(event.key);
     // Don't process this if the key is already down.
-    if (physicalKeysDown[event.which]) return;
-    physicalKeysDown[event.which] = true;
-    const mappedKeyCode = KEY_MAPPINGS[event.which] || event.which;
+    if (physicalKeysDown[event.key]) return;
+    physicalKeysDown[event.key] = true;
+    const mappedKeyCode = KEY_MAPPINGS[event.key] || event.key;
     keysDown[mappedKeyCode] = (keysDown[mappedKeyCode] || 0) + 1;
     //console.log(keysDown[mappedKeyCode]);
 };
 
 window.document.onkeyup = function (event) {
-    physicalKeysDown[event.which] = false;
-    const mappedKeyCode = KEY_MAPPINGS[event.which] || event.which;
+    physicalKeysDown[event.key] = false;
+    const mappedKeyCode = KEY_MAPPINGS[event.key] || event.key;
     keysDown[mappedKeyCode] = Math.max(0, (keysDown[mappedKeyCode] || 0) - 1);
     //console.log(keysDown[mappedKeyCode]);
 };

@@ -149,20 +149,20 @@ function render(context, state) {
     if (!areImagesLoaded() || !state.interacted) {
         // Don't render for the first 200ms, to prevent 'Loading...' from flashing
         // when assets are cached.
-        if (Date.now() - loadTime > 200) renderPlayButton(context, state);
+        if (Date.now() - loadTime > 200 && !window.electronAPI) renderPlayButton(context, state);
         return;
     }
     if (state.outroTime !== false) {
         renderOutro(context, state);
+    } else if (state.showOptions) {
+        renderSpaceBackground(context, state);
     } else if (state.title) {
         renderTitle(context, state);
     } else if (!state.saved.finishedIntro) {
         renderIntro(context, state);
     } else if (state.showAchievements) {
         renderAchievements(context, state);
-    } else if (state.showOptions) {
-        renderSpaceBackground(context, state);
-    } else if (state.ship) {
+    }else if (state.ship) {
         renderShipScene(context, state);
     } else if (state.shop) {
         renderShop(context, state);
